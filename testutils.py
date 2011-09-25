@@ -1,0 +1,281 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright 2011, Guillaume Ryder, GNU GPL v3 license
+
+__author__ = 'Guillaume Ryder'
+
+import collections
+import io
+import os
+from StringIO import StringIO
+import unittest
+
+from executor import Branch, Executor
+from log import *
+from macros import macro, GetPublicMacros
+
+
+test_location = Location('file.txt', 42)
+test_unicode = u'Îñţérñåţîöñåļîžåţîöñ'
+special_chars = ' '.join((
+    "% &",
+    "a~b",
+    "--c---",
+    "d...",
+    "<<e>>",
+    "<< f >>",
+    "'g'h'",
+    "i ! j: k ; l?",
+    "m!:;?",
+))
+
+
+class FakeLogger(Logger):
+
+  """
+  Records logged entries in a string buffer.
+
+  Example output: GetOutput() == 'file.txt:42: some error'
+  """
+
+  FORMAT = (
+      u'{location!r}: {message}\n',
+      u'  {call_node.location!r}: ${call_node.name}\n')
+
+  def __init__(self):
+    self.output_file = StringIO()
+    super(FakeLogger, self).__init__(self.FORMAT, self.output_file)
+
+  def GetOutput(self):
+    """Returns the text logged so far."""
+    return self.output_file.getvalue().strip()
+
+  def Clear(self):
+    """Clears the log cache."""
+    self.output_file.truncate(0)
+
+
+class TestCase(unittest.TestCase):
+
+  def assertEqualExt(self, first, second, msg=None, fmt=repr):
+    """Same as assertEqual but prints expected/actual even if msg is set."""
+    if not first == second:  #pragma: no cover
+      if msg:
+        msg += '\n'
+      else:
+        msg = ''
+      raise self.failureException, '%sExpected: %s\nActual:   %s' % (
+        msg, fmt(first), fmt(second))
+
+  def assertTextEqual(self, first, second, msg=None):
+    """Same as assertEqual but prints arguments without escaping them."""
+    if not first == second:  #pragma: no cover
+      if msg:
+        msg += '\n'
+      else:
+        msg = ''
+      raise self.failureException, '%sExpected:\n%s\nActual:\n%s' % (
+        msg, first, second)
+
+  def FakeInputFile(self, contents, **kwargs):
+    """
+    Returns a fake input file supporting the read() and close() methods.
+
+    Args:
+      contents: (string) The contents of the file.
+        If None, the file raises IOError on all reads.
+    """
+    if contents is None:
+      class FakeErrorFile(object):
+        def read(self):
+          raise IOError('Fake error')
+        close = read
+      return FakeErrorFile()
+    else:
+      return io.StringIO(contents, **kwargs)
+
+  def FakeOutputFile(self, **kwargs):
+    return io.StringIO(**kwargs)
+
+
+class ExecutionTestCase(TestCase):
+
+  @staticmethod
+  @macro(public_name='identity', args_signature='*contents')
+  def IdentityMacro(executor, call_node, contents):
+    executor.ExecuteNodes(contents)
+
+  @staticmethod
+  @macro(public_name='eval.text', args_signature='text', text_compatible=True)
+  def EvalTextMacro(executor, call_node, text):
+    executor.AppendText(text)
+
+  def setUp(self):
+    super(ExecutionTestCase, self).setUp()
+    self.additional_builtin_macros = GetPublicMacros(self)
+
+  def CreateBranch(self, executor, branch_class, **kwargs):
+    kwargs.setdefault('name', 'root')
+    writer = executor.GetOutputWriter(kwargs['name'])
+    branch = branch_class(
+        parent=None, parent_context=executor.system_branch.context,
+        writer=writer, **kwargs)
+    executor.RegisterBranch(branch)
+    return branch
+
+  def GetExecutionBranch(self, executor):
+    return executor.system_branch
+
+  def PrepareInputOutput(self, text_or_iter, separator):
+    if isinstance(text_or_iter, collections.Iterable) and \
+        not isinstance(text_or_iter, basestring):
+      return separator.join(text_or_iter)
+    else:
+      return text_or_iter
+
+  def InputHook(self, text):
+    return text
+
+  def assertExecutionOutput(self, expected, actual, msg):
+    self.assertEqualExt(expected, actual, msg)
+
+  def assertExecution(self, inputs, expected_outputs=None, messages=(),
+                      fatal_error=None, strip_output=True):
+    """
+    Args:
+      inputs: (string|string list|string -> string|string list dict)
+        The input files, keyed by name. If not a dictionary, the contents of the
+        'root' input file. Each entry is processed by PrepareInputOutput with
+        '\n' as separator if a fatal error is expected, else ''.
+      expected_outputs:
+        (None|string|string list|string -> string|string list dict)
+        The expected output of each branch, keyed by branch name.
+        If not a dictionary, the expected output of GetExecutionBranch().
+        Processed by PrepareInputOutput with '' as separator.
+      messages: (string list) The expected error messages.
+      fatal_error: (bool) Whether a fatal error is expected.
+        Automatically set to True if messages is not None.
+    """
+
+    # By default, expect a fatal error if log messages are expected.
+    if fatal_error is None:
+      fatal_error = (len(messages) > 0)
+
+    # Create the input dictionary.
+    if not isinstance(inputs, collections.Mapping):
+      inputs = {'root': inputs}
+    if fatal_error:
+      input_separator = '\n'
+    else:
+      input_separator = ''
+    inputs = dict(
+        (filename, self.InputHook(
+            self.PrepareInputOutput(text_or_iter,
+                                    separator=input_separator)))
+        for filename, text_or_iter in inputs.iteritems())
+
+    output_writers = {}
+    def FakeOpen(filename, mode='rt', **kwargs):
+      if mode == 'rt':
+        # Open an input file.
+        if filename in inputs:
+          return self.FakeInputFile(inputs[filename], **kwargs)
+        else:
+          raise IOError(2, 'file not found')
+      elif mode == 'wt':
+        # Open an output file.
+        assert filename not in output_writers, \
+            'Output file already open: ' + filename
+        writer = self.FakeOutputFile(**kwargs)
+        output_writers[filename] = writer
+        return writer
+      else:  # pragma: nocover
+        assert False, 'Unsupported mode: ' + mode
+
+    logger = FakeLogger()
+    executor = Executor(output_dir='output', logger=logger, open_func=FakeOpen)
+    executor.system_branch.writer = \
+        FakeOpen(os.path.join('output', executor.system_branch.name), 'wt')
+    output_branch = self.GetExecutionBranch(executor)
+    executor.current_branch = output_branch
+    output_branch.context.AddMacros(self.additional_builtin_macros)
+
+    # Create the expected output dictionary.
+    if not isinstance(expected_outputs, collections.Mapping):
+      expected_outputs = {output_branch.name: expected_outputs}
+    expected_outputs = dict(
+        (branch_name, self.PrepareInputOutput(text_or_iter, separator=''))
+        for branch_name, text_or_iter in expected_outputs.iteritems())
+
+    # Execute the input, render the output branches.
+    try:
+      executor.ExecuteFile('root')
+      actual_fatal_error = False
+    except FatalError:
+      actual_fatal_error = True
+
+    # Retrieve the output of each branch.
+    actual_outputs = {}
+    if not actual_fatal_error:
+      try:
+        executor.RenderBranches()
+      except InternalError, e:
+        actual_fatal_error = True
+        logger.Log(Location.unknown, e)
+      output_filename_prefix = os.path.join('output', '')
+      for output_filename, output_writer in output_writers.iteritems():
+        if output_filename.startswith(output_filename_prefix):
+          output_filename = output_filename[len(output_filename_prefix):]
+        actual_output = output_writer.getvalue()
+        if strip_output:
+          actual_output = actual_output.strip()
+        actual_outputs[output_filename] = actual_output
+
+    # Verify the output.
+    if fatal_error:
+      self.assertTrue(actual_fatal_error, 'expected a fatal error')
+    else:
+      self.assertFalse(actual_fatal_error,
+                       'unexpected fatal error; messages: {0}'.format(
+                           logger.GetOutput()))
+      expected_filenames = expected_outputs.keys()
+      actual_filenames = actual_outputs.keys()
+      self.assertTrue(
+          set(expected_filenames).issubset(set(actual_filenames)),
+          ('output file names mismatch; expected filenames:\n  {expected}\n' +
+           'should be a subset of actual filenames:\n  {actual}').format(
+              expected=expected_filenames, actual=actual_filenames))
+      for filename in expected_outputs:
+        self.assertExecutionOutput(expected_outputs[filename],
+                                   actual_outputs[filename],
+                                   'output mismatch for: ' + filename)
+
+    # Verify the log messages.
+    self.assertEqualExt('\n'.join(messages), logger.GetOutput(),
+                        'messages mismatch')
+
+
+class BranchTestCase(TestCase):
+
+  def PrepareMix(self, branch):
+    sub_branch1 = branch.CreateSubBranch()
+    sub_branch2 = branch.CreateSubBranch()
+    sub_branch12 = sub_branch1.CreateSubBranch()
+    sub_branch21 = sub_branch2.CreateSubBranch()
+
+    sub_branch1.AppendText('sub1 ')
+    sub_branch1.AppendSubBranch(sub_branch12)
+    sub_branch12.AppendText('sub12 ')
+
+    branch.AppendText('one ')
+    branch.AppendSubBranch(sub_branch1)
+    branch.AppendText('two ')
+    branch.AppendSubBranch(sub_branch2)
+    branch.AppendText('three ')
+
+    sub_branch2.AppendSubBranch(sub_branch21)
+    sub_branch21.AppendText('sub21 ')
+
+    self.assertEqual(branch, branch.root)
+    self.assertEqual(branch, sub_branch1.root)
+    self.assertEqual(branch, sub_branch12.root)
