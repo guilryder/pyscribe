@@ -118,15 +118,16 @@ class Logger(object):
   Logs warnings and error messages.
   """
 
-  SIMPLE_FORMAT = (
-      u'{location}: {message}\n',
-      u'  {call_node.location}: ${call_node.name}\n')
-  PYTHON_FORMAT = (
-      u'  File "{location.filename}", line {location.lineno}\n    {message}\n',
-      u'  File "{call_node.location.filename}", ' +
-          u'line {call_node.location.lineno}, in ${call_node.name}\n')
+  FORMATS = dict(
+    simple=(u'{location}: {message}\n',
+            u'  {call_node.location}: ${call_node.name}\n'),
+    python=(u'  File "{location.filename}", line {location.lineno}\n' +
+                u'    {message}\n',
+            u'  File "{call_node.location.filename}", ' +
+                u'line {call_node.location.lineno}, in ${call_node.name}\n'),
+  )
 
-  def __init__(self, format=SIMPLE_FORMAT, output_file=None):
+  def __init__(self, format=FORMATS['simple'], output_file=None):
     (self.__top_format, self.__stack_frame_format) = format
     self.__output_file = output_file or sys.stderr
 

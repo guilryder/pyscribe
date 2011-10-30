@@ -88,20 +88,20 @@ class LoggerTest(TestCase):
                      self.output_file.getvalue())
 
   def testLog_simpleFormat(self):
-    logger = Logger(Logger.SIMPLE_FORMAT, self.output_file)
+    logger = Logger(Logger.FORMATS['simple'], self.output_file)
     logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
     logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
     self.assertOutput(['file.txt:42: one', 'other.txt:27: two'])
 
   def testLog_pythonFormat(self):
-    logger = Logger(Logger.PYTHON_FORMAT, self.output_file)
+    logger = Logger(Logger.FORMATS['python'], self.output_file)
     logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
     logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
     self.assertOutput(['  File "file.txt", line 42\n    one',
                        '  File "other.txt", line 27\n    two'])
 
   def testLog_someArgs(self):
-    logger = Logger(Logger.SIMPLE_FORMAT, self.output_file)
+    logger = Logger(Logger.FORMATS['simple'], self.output_file)
     logger.Log(test_location, 'arg={arg}; {number}', arg='value', number=42)
     self.assertOutput(['file.txt:42: arg=value; 42'])
 

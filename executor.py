@@ -288,10 +288,11 @@ class TextBranch(Branch):
 
 
 class FileSystem(object):
-  open = staticmethod(io.open)
   dirname = staticmethod(os.path.dirname)
+  getcwd = staticmethod(os.getcwd)
+  join = staticmethod(os.path.join)
   normpath = staticmethod(os.path.normpath)
-  joinpath = staticmethod(os.path.join)
+  open = staticmethod(io.open)
 
 
 class Executor(object):
@@ -344,8 +345,8 @@ class Executor(object):
         directory. Cannot be absolute.
     """
     fs = self.fs
-    abs_filename = fs.normpath(fs.joinpath(self.__output_dir, filename))
-    if not abs_filename.startswith(fs.joinpath(self.__output_dir, '')):
+    abs_filename = fs.normpath(fs.join(self.__output_dir, filename))
+    if not abs_filename.startswith(fs.join(self.__output_dir, '')):
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
                           filename=filename)
@@ -361,7 +362,7 @@ class Executor(object):
         Used if filename is relative.
     """
     fs = self.fs
-    path = fs.normpath(fs.joinpath(cur_dir, path))
+    path = fs.normpath(fs.join(cur_dir, path))
     filename = Filename(path, fs.dirname(path))
     reader = fs.open(path, encoding=ENCODING)
 
@@ -564,28 +565,3 @@ class Executor(object):
            signature=GetMacroSignature(call_node.name, macro_callback),
            min_args_count=min_args_count, max_args_count=max_args_count,
            actual=actual_args_count)
-
-
-if __name__ == '__main__':
-  # Disable stderr buffering.
-  sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
-
-  if len(sys.argv) < 2:
-    input_filename = 'small.psc'
-    #input_filename = 'big.psc'
-  else:
-    input_filename = sys.argv[1]
-
-  lib_dir = os.path.dirname(os.path.abspath(__file__))
-  cur_dir = os.path.join(lib_dir, u'samples')
-
-  output_file = sys.stdout
-
-  output_dir = os.path.join(lib_dir, u'output')
-  executor = Executor(lib_dir, output_dir, Logger(Logger.PYTHON_FORMAT))
-
-  try:
-    executor.ExecuteFile(input_filename, cur_dir)
-    executor.RenderBranches()
-  except FatalError, e:
-    pass

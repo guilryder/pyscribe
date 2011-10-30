@@ -65,17 +65,20 @@ class FakeFileSystem(object):
   def __unixpath(self, path):
     return path.replace(os.sep, '/')
 
-  def open(self, *args, **kwargs):  # pragma:nocover
-    raise NotImplementedError()
-
   def dirname(self, path):
     return self.__unixpath(os.path.dirname(path))
+
+  def getcwd(self):
+    return self.__cwd
+
+  def join(self, path1, *paths):
+    return self.__unixpath(os.path.join(path1, *paths))
 
   def normpath(self, path):
     return self.__unixpath(os.path.normpath(path))
 
-  def joinpath(self, path1, *paths):
-    return self.__unixpath(os.path.join(path1, *paths))
+  def open(self, *args, **kwargs):  # pragma:nocover
+    raise NotImplementedError()
 
 
 class TestCase(unittest.TestCase):
@@ -119,6 +122,40 @@ class TestCase(unittest.TestCase):
 
   def FakeOutputFile(self, **kwargs):
     return io.StringIO(**kwargs)
+
+  def GetFileSystem(self, inputs):
+    class TestFileSystem(FakeFileSystem):
+      def __init__(fs):
+        super(TestFileSystem, fs).__init__()
+        fs.__output_writers = {}
+
+      def open(fs, filename, mode='rt', **kwargs):
+        if mode == 'rt':
+          # Open an input file.
+          if filename in inputs:
+            return self.FakeInputFile(inputs[filename], **kwargs)
+          else:
+            raise IOError(2, 'file not found: ' + filename)
+        elif mode == 'wt':
+          # Open an output file.
+          assert filename not in fs.__output_writers, \
+              'Output file already open: ' + filename
+          writer = self.FakeOutputFile(**kwargs)
+          fs.__output_writers[filename] = writer
+          return writer
+        else:  # pragma: nocover
+          assert False, 'Unsupported mode: ' + mode
+
+      def GetOutputs(fs, strip_output=True):
+        outputs = {}
+        for output_filename, output_writer in fs.__output_writers.iteritems():
+          output = output_writer.getvalue()
+          if strip_output:
+            output = output.strip()
+          outputs[output_filename] = output
+        return outputs
+
+    return TestFileSystem()
 
 
 class ExecutionTestCase(TestCase):
@@ -197,25 +234,7 @@ class ExecutionTestCase(TestCase):
                                     separator=input_separator)))
         for filename, text_or_iter in inputs.iteritems())
 
-    output_writers = {}
-    class TestFileSystem(FakeFileSystem):
-      def open(fs, filename, mode='rt', **kwargs):
-        if mode == 'rt':
-          # Open an input file.
-          if filename in inputs:
-            return self.FakeInputFile(inputs[filename], **kwargs)
-          else:
-            raise IOError(2, 'file not found: ' + filename)
-        elif mode == 'wt':
-          # Open an output file.
-          assert filename not in output_writers, \
-              'Output file already open: ' + filename
-          writer = self.FakeOutputFile(**kwargs)
-          output_writers[filename] = writer
-          return writer
-        else:  # pragma: nocover
-          assert False, 'Unsupported mode: ' + mode
-    fs = TestFileSystem()
+    fs = self.GetFileSystem(inputs)
 
     logger = FakeLogger()
     executor = Executor(output_dir='/output', logger=logger, fs=fs)
@@ -247,11 +266,7 @@ class ExecutionTestCase(TestCase):
       except InternalError, e:
         actual_fatal_error = True
         logger.Log(loc('<unknown>', -1, dir_path='/'), e)
-      for output_filename, output_writer in output_writers.iteritems():
-        actual_output = output_writer.getvalue()
-        if strip_output:
-          actual_output = actual_output.strip()
-        actual_outputs[output_filename] = actual_output
+      actual_outputs = fs.GetOutputs(strip_output)
 
     # Verify the output.
     if fatal_error:
