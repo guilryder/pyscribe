@@ -63,10 +63,44 @@ class InternalError(BaseError):
   pass
 
 
+class Filename(object):
+  """
+  Name and path of a file.
+
+  Fields:
+    display_path: (string) The name of the file as it should be displayed in
+      error messages. Does not have to be valid or absolute. Typically set to an
+      arbitrary human-readable string for stdin/stdout files.
+    dir_path: (string) The path of the directory of the file.
+      Should always be valid; typically set to the current directory
+      for stdin/stdout files.
+  """
+
+  def __init__(self, display_path, dir_path):
+    self.display_path = display_path
+    self.dir_path = dir_path
+
+  def __str__(self):
+    return self.display_path
+
+  def __eq__(self, other):
+    return isinstance(other, Filename) and \
+        self.display_path == other.display_path and \
+        self.dir_path == other.dir_path
+
+
 class Location(object):
-  """Location of a token in a source file."""
+  """
+  Location of a token in a source file.
+
+  Fields:
+    filename: (Filename) The file of the location.
+    lineno: (int) The line index of the location, 1 for the first line,
+      -1 if no line index is available.
+  """
 
   def __init__(self, filename, lineno):
+    assert isinstance(filename, Filename)
     self.filename = filename
     self.lineno = lineno
 
@@ -77,8 +111,6 @@ class Location(object):
     return isinstance(other, Location) and \
         self.filename == other.filename and \
         self.lineno == other.lineno
-
-Location.unknown = Location('<unknown>', -1)
 
 
 class Logger(object):

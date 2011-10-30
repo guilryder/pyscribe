@@ -31,7 +31,7 @@ class TextNodeTest(TestCase):
     node = TextNode(test_location, 'text')
     self.assertEqual(TextNode(test_location, 'text'), node)
     self.assertNotEqual(CallNode(test_location, 'text', []), node)
-    self.assertNotEqual(TextNode(Location('file.txt', 43), 'text'), node)
+    self.assertNotEqual(TextNode(loc('file.txt', 43), 'text'), node)
     self.assertNotEqual(TextNode(test_location, 'other'), node)
 
 
@@ -70,12 +70,12 @@ class FormatNodesTest(TestCase):
 
   def testOneTextNode(self):
     self.assertEqual("'text'",
-                     FormatNodes([TextNode(Location('root', 1), 'text')]))
+                     FormatNodes([TextNode(loc('root', 1), 'text')]))
 
   def testTwoTextNodesDifferentLine(self):
     self.assertEqual("'one''two'",
-                     FormatNodes([TextNode(Location('root', 1), 'one'),
-                                  TextNode(Location('root', 2), 'two')]))
+                     FormatNodes([TextNode(loc('root', 1), 'one'),
+                                  TextNode(loc('root', 2), 'two')]))
 
   def testTwoTextNodesSameLine(self):
     self.assertEqual("'onetwo'",
@@ -86,7 +86,7 @@ class FormatNodesTest(TestCase):
 class ParsingTest(TestCase):
 
   def assertParsing(self, input_text, output=None, messages=(),
-                    fatal_error=None, filename='root'):
+                    fatal_error=None, filename=Filename('root', '/cur')):
     # By default, expect a fatal error if log messages are expected.
     if fatal_error is None:
       fatal_error = (len(messages) > 0)
@@ -158,9 +158,9 @@ class ParsingTest(TestCase):
     self.assertParsing('first  # comment\nsecond\n#comment\nthird',
                        r"'first''second\n''third'")
     self.assertParsing('first  # comment\nsecond\n#comment\nthird',
-                       [TextNode(Location('root', 1), 'first'),
-                        TextNode(Location('root', 2), 'second\n'),
-                        TextNode(Location('root', 4), 'third')])
+                       [TextNode(loc('root', 1), 'first'),
+                        TextNode(loc('root', 2), 'second\n'),
+                        TextNode(loc('root', 4), 'third')])
 
   def testEscapeStandard(self):
     self.assertParsing('be`fore`$after`\n  `` next',
@@ -186,18 +186,18 @@ class ParsingTest(TestCase):
             '  ]',
             'c]',
         )), [
-            CallNode(Location('root', 2), 'top', [[
-                TextNode(Location('root', 3), 'a\n'),
-                CallNode(Location('root', 5), 'inner', [
-                    [TextNode(Location('root', 5), 'arg')],
+            CallNode(loc('root', 2), 'top', [[
+                TextNode(loc('root', 3), 'a\n'),
+                CallNode(loc('root', 5), 'inner', [
+                    [TextNode(loc('root', 5), 'arg')],
                     [
-                        CallNode(Location('root', 6), 'deep', []),
-                        TextNode(Location('root', 6), ' b'),
-                        TextNode(Location('root', 7), 'before close'),
+                        CallNode(loc('root', 6), 'deep', []),
+                        TextNode(loc('root', 6), ' b'),
+                        TextNode(loc('root', 7), 'before close'),
                     ]
                 ]),
-                TextNode(Location('root', 8), '\n'),
-                TextNode(Location('root', 9), 'c'),
+                TextNode(loc('root', 8), '\n'),
+                TextNode(loc('root', 9), 'c'),
             ]]),
         ])
 
@@ -214,17 +214,17 @@ class ParsingTest(TestCase):
             '  ]',
             'c]',
         )), [
-            CallNode(Location('root', 2), 'top', [[
-                TextNode(Location('root', 3), 'a'),
-                CallNode(Location('root', 5), 'inner', [
-                    [TextNode(Location('root', 5), 'arg')],
+            CallNode(loc('root', 2), 'top', [[
+                TextNode(loc('root', 3), 'a'),
+                CallNode(loc('root', 5), 'inner', [
+                    [TextNode(loc('root', 5), 'arg')],
                     [
-                        CallNode(Location('root', 6), 'deep', []),
-                        TextNode(Location('root', 6), 'b'),
-                        TextNode(Location('root', 7), 'before close'),
+                        CallNode(loc('root', 6), 'deep', []),
+                        TextNode(loc('root', 6), 'b'),
+                        TextNode(loc('root', 7), 'before close'),
                     ],
                 ]),
-                TextNode(Location('root', 9), 'c'),
+                TextNode(loc('root', 9), 'c'),
             ]]),
         ])
 
@@ -252,23 +252,23 @@ class ParsingTest(TestCase):
             '$$whitespace.preserve$H1',
             '2',
         )), [
-            TextNode(Location('root', 2), 'A1'),
-            TextNode(Location('root', 3), '2'),
-            TextNode(Location('root', 5), 'B1\n'),
-            TextNode(Location('root', 6), '2\n'),
-            TextNode(Location('root', 8), 'C1'),
-            TextNode(Location('root', 9), '2'),
-            TextNode(Location('root', 11), 'D1\n'),
-            TextNode(Location('root', 12), '2\n'),
-            TextNode(Location('root', 13), 'E1'),
-            TextNode(Location('root', 14), '2'),
-            TextNode(Location('root', 15), 'F1\n'),
-            TextNode(Location('root', 16), '2\n'),
-            CallNode(Location('root', 17), 'G1', []),
-            TextNode(Location('root', 18), '2'),
-            CallNode(Location('root', 19), 'H1', []),
-            TextNode(Location('root', 19), '\n'),
-            TextNode(Location('root', 20), '2'),
+            TextNode(loc('root', 2), 'A1'),
+            TextNode(loc('root', 3), '2'),
+            TextNode(loc('root', 5), 'B1\n'),
+            TextNode(loc('root', 6), '2\n'),
+            TextNode(loc('root', 8), 'C1'),
+            TextNode(loc('root', 9), '2'),
+            TextNode(loc('root', 11), 'D1\n'),
+            TextNode(loc('root', 12), '2\n'),
+            TextNode(loc('root', 13), 'E1'),
+            TextNode(loc('root', 14), '2'),
+            TextNode(loc('root', 15), 'F1\n'),
+            TextNode(loc('root', 16), '2\n'),
+            CallNode(loc('root', 17), 'G1', []),
+            TextNode(loc('root', 18), '2'),
+            CallNode(loc('root', 19), 'H1', []),
+            TextNode(loc('root', 19), '\n'),
+            TextNode(loc('root', 20), '2'),
         ])
 
   def testWhitespace_preserveByDefault(self):

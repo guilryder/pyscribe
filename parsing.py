@@ -129,12 +129,13 @@ class ParsingContext(object):
   Context for parsing an input file.
 
   Fields:
-    filename: (String) The name of the file parsed.
+    filename: (Filename) The name of the file parsed.
     logger: (Logger) The logger to use to report errors
     fatal_error: (bool) Whether a fatal error has been encountered.
   """
 
   def __init__(self, filename, logger):
+    assert isinstance(filename, Filename)
     self.filename = filename
     self.logger = logger
     self.fatal_error = False
@@ -590,7 +591,7 @@ def ParseFile(reader, filename, logger):
   Parses a file into a list of nodes.
 
   Args:
-    input_file: (file) The file to parse. Will be read and closed.
+    filename: (Filename) The file to parse.
     logger: (Logger) The logger to use to report errors.
 
   Returns:
@@ -599,6 +600,7 @@ def ParseFile(reader, filename, logger):
   Throws:
     FatalError
   """
+  assert isinstance(filename, Filename)
   context = ParsingContext(filename, logger)
 
   # Read the file entirely.

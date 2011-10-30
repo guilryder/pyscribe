@@ -287,6 +287,13 @@ class TextBranch(Branch):
         output._Render(writer)
 
 
+class FileSystem(object):
+  open = staticmethod(io.open)
+  dirname = staticmethod(os.path.dirname)
+  normpath = staticmethod(os.path.normpath)
+  joinpath = staticmethod(os.path.join)
+
+
 class Executor(object):
   """
   Executes input files.
@@ -297,6 +304,8 @@ class Executor(object):
 
   Fields:
     __output_dir: (string) The parent directory of all output files
+    __logger: (Logger) The logger used to print all error messages.
+    fs: (FileSystem) The file system abstraction.
     system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (Branch list) All root branches, including the system branch.
     current_branch: (Branch) The currently selected branch.
@@ -305,13 +314,13 @@ class Executor(object):
       If set, the executor is in text-only mode: executing text-incompatible
       macros fails. If None, the executor is in normal mode.
     __call_stack: ((CallNode, callback) list) The current macro call stack.
-    __include_stack: (string list) The stack of included file names.
+    __include_stack: (Filename list) The stack of included file names.
   """
 
-  def __init__(self, output_dir, logger, open_func=io.open):
-    self.__output_dir = output_dir
+  def __init__(self, output_dir, logger, fs=FileSystem()):
+    self.__output_dir = fs.normpath(output_dir)
     self.__logger = logger
-    self.__open_func = open_func
+    self.fs = fs
     self.system_branch = TextBranch(parent=None, name='system')
     self.branches = {}
     self.root_branches = []
@@ -334,22 +343,27 @@ class Executor(object):
       filename: (string) The name of the output file, relative to the output
         directory. Cannot be absolute.
     """
-    abs_filename = os.path.normpath(os.path.join(self.__output_dir, filename))
-    if not abs_filename.startswith(os.path.join(self.__output_dir, '')):
+    fs = self.fs
+    abs_filename = fs.normpath(fs.joinpath(self.__output_dir, filename))
+    if not abs_filename.startswith(fs.joinpath(self.__output_dir, '')):
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
                           filename=filename)
-    return self.__open_func(abs_filename,
-                            mode='wt', encoding=ENCODING, newline=None)
+    return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
 
-  def ExecuteFile(self, filename):
+  def ExecuteFile(self, path, cur_dir):
     """
     Executes the given input file.
 
     Args:
-      filename: (string) The name of the file to execute.
+      path: (string) The path of the file to execute.
+      cur_dir: (string|None) The full path of the current directory.
+        Used if filename is relative.
     """
-    reader = self.__open_func (filename, encoding=ENCODING)
+    fs = self.fs
+    path = fs.normpath(fs.joinpath(cur_dir, path))
+    filename = Filename(path, fs.dirname(path))
+    reader = fs.open(path, encoding=ENCODING)
 
     if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
       raise InternalError('too many nested includes')
@@ -562,13 +576,16 @@ if __name__ == '__main__':
   else:
     input_filename = sys.argv[1]
 
+  lib_dir = os.path.dirname(os.path.abspath(__file__))
+  cur_dir = os.path.join(lib_dir, u'samples')
+
   output_file = sys.stdout
 
-  output_dir = os.path.abspath(u'output')
-  executor = Executor(output_dir, Logger(Logger.PYTHON_FORMAT))
+  output_dir = os.path.join(lib_dir, u'output')
+  executor = Executor(lib_dir, output_dir, Logger(Logger.PYTHON_FORMAT))
 
   try:
-    executor.ExecuteFile(input_filename)
+    executor.ExecuteFile(input_filename, cur_dir)
     executor.RenderBranches()
   except FatalError, e:
     pass

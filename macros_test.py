@@ -16,7 +16,7 @@ class MacroTest(TestCase):
     super(MacroTest, self).setUp()
     self.logger = FakeLogger()
     self.executor = Executor(output_dir='output', logger=self.logger,
-                             open_func=None)
+                             fs=FakeFileSystem())
     self.executor.EvalText = lambda args: 'T' + args
 
   def __MacroCall(self, macro_callback, args):

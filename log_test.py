@@ -53,15 +53,28 @@ class InternalErrorTest(TestCase, ExceptionTestCase):
   exception = InternalError
 
 
+class FilenameTest(TestCase):
+
+  test_filename = Filename('file.txt', '/cur')
+
+  def testStr(self):
+    self.assertEqual('file.txt', str(self.test_filename))
+
+  def testEq(self):
+    self.assertEqual(Filename('file.txt', '/cur'), self.test_filename)
+    self.assertNotEqual(Filename('other.txt', '/cur'), self.test_filename)
+    self.assertNotEqual(Filename('file.txt', '/'), self.test_filename)
+
+
 class LocationTest(TestCase):
 
   def testRepr(self):
     self.assertEqual('file.txt:42', repr(test_location))
 
   def testEq(self):
-    self.assertEqual(Location('file.txt', 42), test_location)
-    self.assertNotEqual(Location('other.txt', 42), test_location)
-    self.assertNotEqual(Location('file.txt', 43), test_location)
+    self.assertEqual(Location(Filename('file.txt', '/cur'), 42), test_location)
+    self.assertNotEqual(Location(Filename('other.txt', '/'), 42), test_location)
+    self.assertNotEqual(Location(test_location.filename, 43), test_location)
 
 
 class LoggerTest(TestCase):
@@ -76,14 +89,14 @@ class LoggerTest(TestCase):
 
   def testLog_simpleFormat(self):
     logger = Logger(Logger.SIMPLE_FORMAT, self.output_file)
-    logger.Log(Location('file.txt', 42), 'one')
-    logger.Log(Location('other.txt', 27), 'two')
+    logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
+    logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
     self.assertOutput(['file.txt:42: one', 'other.txt:27: two'])
 
   def testLog_pythonFormat(self):
     logger = Logger(Logger.PYTHON_FORMAT, self.output_file)
-    logger.Log(Location('file.txt', 42), 'one')
-    logger.Log(Location('other.txt', 27), 'two')
+    logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
+    logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
     self.assertOutput(['  File "file.txt", line 42\n    one',
                        '  File "other.txt", line 27\n    two'])
 

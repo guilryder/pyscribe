@@ -15,7 +15,10 @@ from log import *
 from macros import macro, GetPublicMacros
 
 
-test_location = Location('file.txt', 42)
+def loc(display_path, lineno, dir_path='/cur'):
+  return Location(Filename(display_path, dir_path), lineno)
+
+test_location = loc('file.txt', 42)
 test_unicode = u'Îñţérñåţîöñåļîžåţîöñ'
 special_chars = ' '.join((
     "% &",
@@ -53,6 +56,26 @@ class FakeLogger(Logger):
   def Clear(self):
     """Clears the log cache."""
     self.output_file.truncate(0)
+
+
+class FakeFileSystem(object):
+
+  __cwd = '/cur'
+
+  def __unixpath(self, path):
+    return path.replace(os.sep, '/')
+
+  def open(self, *args, **kwargs):  # pragma:nocover
+    raise NotImplementedError()
+
+  def dirname(self, path):
+    return self.__unixpath(os.path.dirname(path))
+
+  def normpath(self, path):
+    return self.__unixpath(os.path.normpath(path))
+
+  def joinpath(self, path1, *paths):
+    return self.__unixpath(os.path.join(path1, *paths))
 
 
 class TestCase(unittest.TestCase):
@@ -116,7 +139,7 @@ class ExecutionTestCase(TestCase):
 
   def CreateBranch(self, executor, branch_class, **kwargs):
     kwargs.setdefault('name', 'root')
-    writer = executor.GetOutputWriter(kwargs['name'])
+    writer = executor.fs.open(kwargs['name'], mode='wt')
     branch = branch_class(
         parent=None, parent_context=executor.system_branch.context,
         writer=writer, **kwargs)
@@ -145,7 +168,7 @@ class ExecutionTestCase(TestCase):
     Args:
       inputs: (string|string list|string -> string|string list dict)
         The input files, keyed by name. If not a dictionary, the contents of the
-        'root' input file. Each entry is processed by PrepareInputOutput with
+        '/root' input file. Each entry is processed by PrepareInputOutput with
         '\n' as separator if a fatal error is expected, else ''.
       expected_outputs:
         (None|string|string list|string -> string|string list dict)
@@ -163,7 +186,7 @@ class ExecutionTestCase(TestCase):
 
     # Create the input dictionary.
     if not isinstance(inputs, collections.Mapping):
-      inputs = {'root': inputs}
+      inputs = {'/root': inputs}
     if fatal_error:
       input_separator = '\n'
     else:
@@ -175,27 +198,29 @@ class ExecutionTestCase(TestCase):
         for filename, text_or_iter in inputs.iteritems())
 
     output_writers = {}
-    def FakeOpen(filename, mode='rt', **kwargs):
-      if mode == 'rt':
-        # Open an input file.
-        if filename in inputs:
-          return self.FakeInputFile(inputs[filename], **kwargs)
-        else:
-          raise IOError(2, 'file not found')
-      elif mode == 'wt':
-        # Open an output file.
-        assert filename not in output_writers, \
-            'Output file already open: ' + filename
-        writer = self.FakeOutputFile(**kwargs)
-        output_writers[filename] = writer
-        return writer
-      else:  # pragma: nocover
-        assert False, 'Unsupported mode: ' + mode
+    class TestFileSystem(FakeFileSystem):
+      def open(fs, filename, mode='rt', **kwargs):
+        if mode == 'rt':
+          # Open an input file.
+          if filename in inputs:
+            return self.FakeInputFile(inputs[filename], **kwargs)
+          else:
+            raise IOError(2, 'file not found: ' + filename)
+        elif mode == 'wt':
+          # Open an output file.
+          assert filename not in output_writers, \
+              'Output file already open: ' + filename
+          writer = self.FakeOutputFile(**kwargs)
+          output_writers[filename] = writer
+          return writer
+        else:  # pragma: nocover
+          assert False, 'Unsupported mode: ' + mode
+    fs = TestFileSystem()
 
     logger = FakeLogger()
-    executor = Executor(output_dir='output', logger=logger, open_func=FakeOpen)
+    executor = Executor(output_dir='/output', logger=logger, fs=fs)
     executor.system_branch.writer = \
-        FakeOpen(os.path.join('output', executor.system_branch.name), 'wt')
+        fs.open(executor.system_branch.name, 'wt')
     output_branch = self.GetExecutionBranch(executor)
     executor.current_branch = output_branch
     output_branch.context.AddMacros(self.additional_builtin_macros)
@@ -209,7 +234,7 @@ class ExecutionTestCase(TestCase):
 
     # Execute the input, render the output branches.
     try:
-      executor.ExecuteFile('root')
+      executor.ExecuteFile('/root', cur_dir='/cur')
       actual_fatal_error = False
     except FatalError:
       actual_fatal_error = True
@@ -221,11 +246,8 @@ class ExecutionTestCase(TestCase):
         executor.RenderBranches()
       except InternalError, e:
         actual_fatal_error = True
-        logger.Log(Location.unknown, e)
-      output_filename_prefix = os.path.join('output', '')
+        logger.Log(loc('<unknown>', -1, dir_path='/'), e)
       for output_filename, output_writer in output_writers.iteritems():
-        if output_filename.startswith(output_filename_prefix):
-          output_filename = output_filename[len(output_filename_prefix):]
         actual_output = output_writer.getvalue()
         if strip_output:
           actual_output = actual_output.strip()

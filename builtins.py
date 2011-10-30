@@ -39,19 +39,24 @@ class SpecialCharacters(object):
 
 # Core
 
-@macro(public_name='include', args_signature='filename')
-def Include(executor, call_node, filename):
+@macro(public_name='include', args_signature='path')
+def Include(executor, call_node, path):
   """
   Includes the given file.
+
+  Args:
+    path: The path of the file, relative to the current file.
+      Automatically appends the '.psc' extension to the file name if the given
+      file name has no extension.
   """
   try:
-    executor.ExecuteFile(filename)
+    executor.ExecuteFile(path, cur_dir=call_node.location.filename.dir_path)
   except IOError, e:
-    raise InternalError('unable to include "{filename}": {reason}',
-                       filename=filename, reason=e.strerror)
+    raise InternalError('unable to include "{path}": {reason}',
+                       path=path, reason=e.strerror)
   except InternalError, e:
-    raise InternalError('unable to include "{filename}": {reason}',
-                        filename=filename, reason=e)
+    raise InternalError('unable to include "{path}": {reason}',
+                        path=path, reason=e)
 
 
 __SIGNATURE_REGEX = re.compile(

@@ -208,7 +208,7 @@ class GlobalExecutionTest(EpubExecutionTestCase):
             '$tag.class.add[current][test]\n\n',
             'after',
         ),
-        messages=['root:3: removing an empty element with attributes: ' +
+        messages=['/root:3: removing an empty element with attributes: ' +
                   '<p class="test"/>'])
 
   def testAutoParaCloseAtEnd(self):
@@ -421,12 +421,12 @@ class SimpleMacrosTest(EpubExecutionTestCase):
   def testPar_cannotOpen(self):
     self.assertExecution(
         '$tag.open[div][block]before$par`after$tag.close[div]',
-        messages=['root:1: $par: unable to open a new paragraph'])
+        messages=['/root:1: $par: unable to open a new paragraph'])
 
   def testTypoSet_invalid(self):
     self.assertExecution(
         '$typo.set[invalid]',
-        messages=['root:1: $typo.set: unknown typography name: invalid; ' +
+        messages=['/root:1: $typo.set: unknown typography name: invalid; ' +
                   'expected one of: french, neutral'])
 
   def testTypoSet_multipleTimes(self):
@@ -476,7 +476,7 @@ class SimpleMacrosTest(EpubExecutionTestCase):
   def testTypoInteger_invalid(self):
     self.assertExecution(
         '$typo.integer[invalid]',
-        messages=['root:1: $typo.integer: invalid integer: invalid'])
+        messages=['/root:1: $typo.integer: invalid integer: invalid'])
 
 
 class TagOpenCloseTest(EpubExecutionTestCase):
@@ -529,7 +529,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
                 'inside 2\n',
             '$tag.close[h1]',
         ),
-        messages=['root:2: unable to open a new paragraph'])
+        messages=['/root:2: unable to open a new paragraph'])
 
   def testParaSurroundedWithParas(self):
     self.assertExecution(
@@ -583,7 +583,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             '$tag.open[span][invalid]',
                 'inside',
             '$tag.close[span]',
-        ), messages=['root:1: $tag.open: unknown level: invalid; ' +
+        ), messages=['/root:1: $tag.open: unknown level: invalid; ' +
                      'expected one of: autopara, block, inline, para.'])
 
   def testTagOpen_blockInInline(self):
@@ -593,7 +593,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
                 '$tag.open[div][block]',
                 '$tag.close[div]',
             '$tag.close[div]',
-        ), messages=['root:2: $tag.open: impossible to open a non-inline tag ' +
+        ), messages=['/root:2: $tag.open: impossible to open a non-inline tag ' +
                      'inside an inline tag'])
 
   def testTagClose_autoParaClose(self):
@@ -607,13 +607,13 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             '$tag.open[span][inline]',
                 'inside',
             '$tag.close[div]',
-        ), messages=['root:3: $tag.close: ' +
+        ), messages=['/root:3: $tag.close: ' +
                      'expected current tag to be <div>, got <span>'])
 
   def testTagClose_body(self):
     self.assertExecution(
         '$tag.close[body]',
-        messages=['root:1: $tag.close: ' +
+        messages=['/root:1: $tag.close: ' +
                   'cannot close the root element of the branch'])
 
   def testTagClose_twoTagsAtOnce(self):
@@ -626,7 +626,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
                     'nested',
             '$tag.close[div]',
             'after',
-        ), messages=['root:6: $tag.close: ' +
+        ), messages=['/root:6: $tag.close: ' +
                      'expected current tag to be <div>, got <span>'])
 
   def testTagClose_closeParaManually(self):
@@ -653,7 +653,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             'text\n',
             '$tag.class.add[current][test]',
             '$tag.close[div]',
-        ), messages=['root:5: $tag.close: removing an empty element ' +
+        ), messages=['/root:5: $tag.close: removing an empty element ' +
                      'with attributes: <p class="test"/>'])
 
 
@@ -689,7 +689,7 @@ class TagAttrSetTest(EpubExecutionTestCase):
             '$tag.open[span][inline]',
                 '$tag.attr.set[<span>][ \n \n ][value]',
             '$tag.close[span]',
-        ), messages=['root:2: $tag.attr.set: attribute name cannot be empty'])
+        ), messages=['/root:2: $tag.attr.set: attribute name cannot be empty'])
 
   def testBlankValue(self):
     self.assertExecution(
@@ -704,12 +704,12 @@ class TagAttrSetTest(EpubExecutionTestCase):
   def testInvalidTarget(self):
     self.assertExecution(
         '$tag.attr.set[invalid][name][value]',
-        messages=['root:1: $tag.attr.set: invalid target: invalid'])
+        messages=['/root:1: $tag.attr.set: invalid target: invalid'])
 
   def testTargetNotFound(self):
     self.assertExecution(
         '$tag.attr.set[<div>][name][value]',
-        messages=['root:1: $tag.attr.set: no element found for target: <div>'])
+        messages=['/root:1: $tag.attr.set: no element found for target: <div>'])
 
 
 class ParTest(EpubExecutionTestCase):
@@ -727,7 +727,7 @@ class ParTest(EpubExecutionTestCase):
   def testCannotOpen(self):
     self.assertExecution(
         '$tag.open[div][block]$par$tag.close[div]',
-        messages=['root:1: $par: unable to open a new paragraph'])
+        messages=['/root:1: $par: unable to open a new paragraph'])
 
 
 class TagClassAddTest(EpubExecutionTestCase):
@@ -871,7 +871,7 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[previous][test]',
             '$tag.close[div]',
         ),
-        messages=['root:2: $tag.class.add: no previous element exists'])
+        messages=['/root:2: $tag.class.add: no previous element exists'])
 
   def testSpecialClassName(self):
     self.assertExecution(
@@ -896,12 +896,12 @@ class TagClassAddTest(EpubExecutionTestCase):
   def testTargetNotFound(self):
     self.assertExecution(
         '$tag.class.add[<div>][first]',
-        messages=['root:1: $tag.class.add: no element found for target: <div>'])
+        messages=['/root:1: $tag.class.add: no element found for target: <div>'])
 
   def testInvalidTarget(self):
     self.assertExecution(
         '$tag.class.add[invalid][first]',
-        messages=['root:1: $tag.class.add: invalid target: invalid'])
+        messages=['/root:1: $tag.class.add: invalid target: invalid'])
 
 
 if __name__ == '__main__':

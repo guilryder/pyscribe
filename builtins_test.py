@@ -35,45 +35,45 @@ class IncludeTest(ExecutionTestCase):
   def testNested(self):
     self.assertExecution(
         {
-            'root': 'roota $include[one.psc]rootb',
-            'one.psc': '1a $include[two.psc]1b` ',
-            'two.psc': '2a $include[three.psc]2b` ',
-            'three.psc': '3` ',
+            '/root': 'roota $include[one.psc]rootb',
+            '/one.psc': '1a $include[two.psc]1b` ',
+            '/two.psc': '2a $include[three.psc]2b` ',
+            '/three.psc': '3` ',
         },
         'roota 1a 2a 3 2b 1b rootb')
 
   def testRecursive(self):
     self.assertExecution(
-        dict(
-            root=(
+        {
+            '/root': (
                 '$macro.new[callA][$include[a]]',
                 '$macro.new[callB][$include[b]]',
                 '$callA',
             ),
-            a=(
+            '/a': (
                 'A ',
                 '$callB',
             ),
-            b=(
+            '/b': (
                 'B ',
                 '$macro.new[callB][end]',
                 '$callA',
             ),
-        ),
+        },
         'A B A end')
 
   def testFileNotFound(self):
     self.assertExecution(
         '$include[dummy]',
-        messages=['root:1: $include: unable to include "dummy": ' +
-                  'file not found'])
+        messages=['/root:1: $include: unable to include "dummy": ' +
+                  'file not found: /dummy'])
 
   def testMaxNestedIncludes(self):
     self.assertExecution(
-        'test$include[root]',
-        messages=['root:1: $include: unable to include "root": ' +
+        'test$include[/root]',
+        messages=['/root:1: $include: unable to include "/root": ' +
                   'too many nested includes'] +
-                 ['  root:1: $include'] * 24)
+                 ['  /root:1: $include'] * 24)
 
 
 class MacroNewTest(ExecutionTestCase):
@@ -107,17 +107,17 @@ class MacroNewTest(ExecutionTestCase):
   def testArgumentsCountMismatch(self):
     self.assertExecution(
         '$macro.new[1]',
-        messages=['root:1: $macro.new(signature,*body): ' +
+        messages=['/root:1: $macro.new(signature,*body): ' +
                   'arguments count mismatch: expected 2, got 1'])
     self.assertExecution(
         '$macro.new[1][2][3]',
-        messages=['root:1: $macro.new(signature,*body): ' +
+        messages=['/root:1: $macro.new(signature,*body): ' +
                   'arguments count mismatch: expected 2, got 3'])
 
   def testDuplicateSignatureArguments(self):
     self.assertExecution(
         '$macro.new[test(one,two,three,two)][body]',
-        messages=['root:1: $macro.new: duplicate argument in signature: two'])
+        messages=['/root:1: $macro.new: duplicate argument in signature: two'])
 
   def testTextCompatible(self):
     self.assertExecution(
@@ -131,10 +131,10 @@ class MacroNewTest(ExecutionTestCase):
   def testInvalidSignature(self):
     self.assertExecution(
         '$macro.new[macro(][blah]',
-        messages=['root:1: $macro.new: invalid signature: macro('])
+        messages=['/root:1: $macro.new: invalid signature: macro('])
     self.assertExecution(
         '$macro.new[macro()(][blah]',
-        messages=['root:1: $macro.new: invalid signature: macro()('])
+        messages=['/root:1: $macro.new: invalid signature: macro()('])
 
   def testBranchScope(self):
     self.assertExecution(
@@ -237,7 +237,7 @@ class BranchWriteTest(ExecutionTestCase):
   def testBranchNotFound(self):
     self.assertExecution(
         '$branch.write[invalid][contents]',
-        messages=['root:1: $branch.write: branch not found: invalid'])
+        messages=['/root:1: $branch.write: branch not found: invalid'])
 
 
 class BranchCreate(ExecutionTestCase):
@@ -248,12 +248,12 @@ class BranchCreate(ExecutionTestCase):
             '$branch.create.root[text][new][out]\n',
             '$branch.write[new][one\n\ntwo]\n',
         ),
-        dict(system='', out='one\n\ntwo'))
+        {'system': '', '/output/out': 'one\n\ntwo'})
 
   def testRoot_unknownType(self):
     self.assertExecution(
         '$branch.create.root[invalid][new][output]',
-        messages=['root:1: $branch.create.root: unknown branch type: invalid;' +
+        messages=['/root:1: $branch.create.root: unknown branch type: invalid;' +
                   ' expected one of: latex, text, xhtml'])
 
   def testRoot_duplicateBranchName(self):
@@ -263,14 +263,22 @@ class BranchCreate(ExecutionTestCase):
             '$branch.create.root[text][two][b.out]',
             '$branch.create.root[text][one][c.out]',
         ),
-        messages=['root:3: $branch.create.root: ' +
+        messages=['/root:3: $branch.create.root: ' +
                   'a branch of this name already exists: one'])
 
   def testRoot_invalidOutputFilename(self):
     self.assertExecution(
         '$branch.create.root[text][one][../output]',
-        messages=["root:1: $branch.create.root: invalid output file name: " +
+        messages=["/root:1: $branch.create.root: invalid output file name: " +
                   "'../output'; must be below the output directory"])
+
+  def testRoot_relativeBelowOutput(self):
+    self.assertExecution(
+        (
+            '$branch.create.root[text][new][../output/below]\n',
+            '$branch.write[new][test]\n',
+        ),
+        {'system': '', '/output/below': 'test'})
 
   def testRoot_nameRef(self):
     self.assertExecution(
@@ -279,7 +287,7 @@ class BranchCreate(ExecutionTestCase):
             '$branch.write[$new][inside]',
             '$new',
         ),
-        dict(system='auto1', out='inside'))
+        {'system': 'auto1', '/output/out': 'inside'})
 
   def testRoot_inheritsCurrentBranch(self):
     self.assertExecution(
@@ -289,7 +297,7 @@ class BranchCreate(ExecutionTestCase):
             '$macro.new[second][two]',
             '$branch.write[new][$first $second]',
         ),
-        dict(system='', new='one two'))
+        {'system': '', '/output/new': 'one two'})
 
   def testRoot_doesNotInheritsOtherBranches(self):
     self.assertExecution(
@@ -300,8 +308,8 @@ class BranchCreate(ExecutionTestCase):
             '$branch.write[new2][',
                 '$macro]',
         ),
-        messages=['root:5: macro not found: $macro',
-                  '  root:4: $branch.write'])
+        messages=['/root:5: macro not found: $macro',
+                  '  /root:4: $branch.write'])
 
   def testSub_multiple(self):
     self.assertExecution(
@@ -357,7 +365,7 @@ class BranchCreate(ExecutionTestCase):
             '$branch.create.sub[two]',
             '$branch.create.sub[one]',
         ),
-        messages=['root:3: $branch.create.sub: ' +
+        messages=['/root:3: $branch.create.sub: ' +
                   'a branch of this name already exists: one'])
 
   def testSub_nameRef(self):
@@ -380,9 +388,9 @@ class BranchAppend(ExecutionTestCase):
             '$branch.write[one][$branch.create.sub[one-sub]]',
             '$branch.write[two][$branch.append[one-sub]]',
         ),
-        messages=["root:4: $branch.append: expected a sub-branch created by" +
+        messages=["/root:4: $branch.append: expected a sub-branch created by" +
                   " branch 'two'; got one created by branch 'one'",
-                  "  root:4: $branch.write"])
+                  "  /root:4: $branch.write"])
 
   def testParentMismatch_childIntoParent(self):
     self.assertExecution(
@@ -391,7 +399,7 @@ class BranchAppend(ExecutionTestCase):
             '$branch.write[child][$branch.create.sub[child-sub]]',
             '$branch.append[child-sub]',
         ),
-        messages=["root:3: $branch.append: expected a sub-branch created by" +
+        messages=["/root:3: $branch.append: expected a sub-branch created by" +
                   " branch 'system'; got one created by branch 'child'"])
 
   def testParentMismatch_parentIntoChild(self):
@@ -401,9 +409,9 @@ class BranchAppend(ExecutionTestCase):
             '$branch.create.sub[sibling]',
             '$branch.write[child][$branch.append[sibling]]',
         ),
-        messages=["root:3: $branch.append: expected a sub-branch created by" +
+        messages=["/root:3: $branch.append: expected a sub-branch created by" +
                   " branch 'child'; got one created by branch 'system'",
-                  "  root:3: $branch.write"])
+                  "  /root:3: $branch.write"])
 
   def testAlreadyAttached(self):
     self.assertExecution(
@@ -413,7 +421,7 @@ class BranchAppend(ExecutionTestCase):
             '$branch.append[sub]',
         ),
         messages=[
-            "root:3: $branch.append: the sub-branch 'sub' is already attached",
+            "/root:3: $branch.append: the sub-branch 'sub' is already attached",
         ])
 
 
@@ -456,13 +464,13 @@ class RomanTest(ExecutionTestCase):
   def testInvalidArabicNumber(self):
     self.assertExecution(
         '$roman[nan]',
-        messages=['root:1: $roman: invalid Arabic number: nan'])
+        messages=['/root:1: $roman: invalid Arabic number: nan'])
 
   def testUnsupportedArabicNumber(self):
     self.assertExecution(
         '$roman[0]',
         messages=[
-            'root:1: $roman: unsupported number for conversion to Roman: 0',
+            '/root:1: $roman: unsupported number for conversion to Roman: 0',
         ])
 
 
@@ -532,7 +540,7 @@ class CounterTest(ExecutionTestCase):
             '$counter.create[test]',
             '$test.set[invalid]',
         ),
-        messages=['root:2: $test.set: invalid integer value: invalid'])
+        messages=['/root:2: $test.set: invalid integer value: invalid'])
 
   def testValue(self):
     self.assertExecution(

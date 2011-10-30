@@ -103,12 +103,12 @@ class ExecutorEndToEndTest(ExecutionTestCase):
   def testSyntaxError(self):
     self.assertExecution(
         '$identity[',
-        messages=['root:1: syntax error: macro argument not closed'])
+        messages=['/root:1: syntax error: macro argument not closed'])
 
   def testMacroNotFoundError(self):
     self.assertExecution(
         '$dummy.macro',
-        messages=['root:1: macro not found: $dummy.macro'])
+        messages=['/root:1: macro not found: $dummy.macro'])
 
   def testMacroNotFoundError_nested(self):
     self.assertExecution(
@@ -116,8 +116,8 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$macro.new[main][$dummy.macro]',
             '$main',
         ),
-        messages=['root:1: macro not found: $dummy.macro',
-                  '  root:2: $main'])
+        messages=['/root:1: macro not found: $dummy.macro',
+                  '  /root:2: $main'])
 
   def testMaxNestedCalls(self):
     self.assertExecution(
@@ -125,9 +125,9 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$macro.new[recurse][x$recurse]',
             '$recurse',
         ),
-        messages=['root:1: $recurse: too many nested macro calls'] +
-                 ['  root:1: $recurse'] * 24 +
-                 ['  root:2: $recurse'])
+        messages=['/root:1: $recurse: too many nested macro calls'] +
+                 ['  /root:1: $recurse'] * 24 +
+                 ['  /root:2: $recurse'])
 
   def testTextCompatible_simpleText(self):
     self.assertExecution('$eval.text[test]', 'test')
@@ -148,9 +148,9 @@ class ExecutorEndToEndTest(ExecutionTestCase):
                 ']',
             ']',
         ),
-        messages=['root:4: $identity: text-incompatible macro call',
-                  '  root:2: $eval.text',
-                  '  root:1: $identity'])
+        messages=['/root:4: $identity: text-incompatible macro call',
+                  '  /root:2: $eval.text',
+                  '  /root:1: $identity'])
 
   def testLatex(self):
     self.assertExecution(
@@ -158,7 +158,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$branch.create.root[latex][new][newtex]',
             '$branch.write[new][%test&]',
         ),
-        dict(newtex='\\%test\\&'))
+        {'/output/newtex': '\\%test\\&'})
 
 
 if __name__ == '__main__':
