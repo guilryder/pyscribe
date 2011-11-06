@@ -13,13 +13,16 @@ class TextBranchTest(BranchTestCase):
 
   def setUp(self):
     super(TextBranchTest, self).setUp()
-    self.branch = TextBranch(parent=None)
+    self.branch = TextBranch(parent=None, name='dummy')
 
   def assertRender(self, expected):
     writer = self.FakeOutputFile()
     self.branch.writer = writer
     self.branch.Render()
     self.assertEqual(expected, writer.getvalue())
+
+  def testRepr(self):
+    self.assertEqual('<TextBranch: dummy>', repr(self.branch))
 
   def testRender_empty(self):
     self.assertRender('')
@@ -50,7 +53,7 @@ class ExecutorTest(TestCase):
   def testSystemBranch(self):
     self.assertEqual(self.executor.system_branch,
                      self.executor.branches.get('system'))
-    self.assertTrue(self.executor.system_branch in self.executor.root_branches)
+    self.assertIn(self.executor.system_branch, self.executor.root_branches)
 
   def testRegisterBranch_alreadyNamed(self):
     branch = TextBranch(parent=None, name='test')
@@ -70,14 +73,14 @@ class ExecutorTest(TestCase):
     branch = TextBranch(parent=None)
     self.executor.RegisterBranch(branch)
     self.assertEqual(branch, self.executor.branches[branch.name])
-    self.assertTrue(branch in self.executor.root_branches)
+    self.assertIn(branch, self.executor.root_branches)
 
   def testRegisterBranch_nonRoot(self):
     branch_root = TextBranch(parent=None)
     branch_child = TextBranch(parent=branch_root)
     self.executor.RegisterBranch(branch_child)
     self.assertEqual(branch_child, self.executor.branches[branch_child.name])
-    self.assertFalse(branch_child in self.executor.root_branches)
+    self.assertNotIn(branch_child, self.executor.root_branches)
 
   def testRegisterBranch_registersSubBranches(self):
     branch_root = TextBranch(parent=None)
@@ -159,6 +162,19 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$branch.write[new][%test&]',
         ),
         {'/output/newtex': '\\%test\\&'})
+
+
+class ExecutorAddConstantsTest(ExecutionTestCase):
+
+  def GetExecutionBranch(self, executor):
+    executor.AddConstants({
+        'one': 'value',
+        'two': '$~!',
+    })
+    return executor.system_branch
+
+  def testAddConstants(self):
+    self.assertExecution('$one $two', 'value $~!')
 
 
 if __name__ == '__main__':

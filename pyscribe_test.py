@@ -18,16 +18,25 @@ class MainTest(TestCase):
   def setUp(self):
     super(MainTest, self).setUp()
     self.std_output = StringIO()
+    def Output(contents):
+      return ('$branch.create.root[text][root][output.txt]' +
+              '$branch.write[root][' + contents + ']')
+
     self.fs = self.GetFileSystem({
-        '/cur/input.psc':
-            '$branch.create.root[text][root][output.txt]' +
-            '$branch.write[root][Hello, World!]',
+        '/cur/input.psc': Output('Hello, World!'),
+        '/cur/format.psc': Output('Format: $output.format'),
+        '/cur/defines.psc': Output('$one,$two,$three,$a.b'),
         '/cur/error.psc':
             '$invalid',
     })
 
   def GetStdOutput(self):
     return self.std_output.getvalue().strip()
+
+  def assertOutput(self, expected_output):
+    self.assertEqual('', self.GetStdOutput())
+    self.assertEqual({'/cur/output/output.txt': expected_output},
+                     self.fs.GetOutputs())
 
   def Execute(self, cmdline):
     class FakeOptionParser(OptionParser):
@@ -62,14 +71,12 @@ class MainTest(TestCase):
 
   def testHelp(self):
     self.assertRaises(SystemExit, self.Execute, '--help')
-    self.assert_('Usage' in self.GetStdOutput())
+    self.assertIn('Usage', self.GetStdOutput())
     self.assertEqual({}, self.fs.GetOutputs())
 
   def testSimple(self):
     self.Execute('input.psc')
-    self.assertEqual('', self.GetStdOutput())
-    self.assertEqual({'/cur/output/output.txt': 'Hello, World!'},
-                     self.fs.GetOutputs())
+    self.assertOutput('Hello, World!')
 
   def testCustomOutput(self):
     self.Execute('input.psc --output /custom')
@@ -89,6 +96,28 @@ class MainTest(TestCase):
                      '    macro not found: $invalid',
                      self.GetStdOutput())
     self.assertEqual({}, self.fs.GetOutputs())
+
+  def testDefaultOutputFormat(self):
+    self.Execute('format.psc')
+    self.assertOutput('Format:')
+
+  def testCustomOutputFormat(self):
+    self.Execute('format.psc --format xhtml')
+    self.assertOutput('Format: xhtml')
+
+  def testDefines(self):
+    self.Execute('defines.psc -d one=1 -d two=2 -d three= -d two=2bis -d a.b=c')
+    self.assertOutput('1,2bis,,c')
+
+  def testDefinesInvalidFormat(self):
+    self.assertRaises(SystemExit, self.Execute, 'defines.psc -d name')
+    self.assertIn('-d option expects format: name=text; got: name',
+                  self.GetStdOutput())
+
+  def testOutputFormatOverwritesDefines(self):
+    self.Execute('format.psc --format xhtml -d output.format=ignored')
+    self.assertOutput('Format: xhtml')
+
 
 if __name__ == '__main__':
   unittest.main()

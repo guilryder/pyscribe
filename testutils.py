@@ -84,25 +84,38 @@ class FakeFileSystem(object):
 
 class TestCase(unittest.TestCase):
 
+  def FailureMessage(self, fmt_string, msg, fmt, *args):  #pragma: no cover
+    if msg:
+      msg += '\n'
+    else:
+      msg = ''
+    return msg + (fmt_string % tuple(map(fmt, args)))
+
+  def assertIn(self, expected_contained, actual, msg=None, fmt=repr):
+    """Same as assertTrue(expected_contained in actual)."""
+    if expected_contained not in actual:  #pragma: no cover
+      raise self.failureException, self.FailureMessage(
+          'Expected to contain: %s\nActual: %s',
+          msg, fmt, expected_contained, actual)
+
+  def assertNotIn(self, expected_contained, actual, msg=None, fmt=repr):
+    """Same as assertTrue(expected_contained not in actual)."""
+    if expected_contained in actual:  #pragma: no cover
+      raise self.failureException, self.FailureMessage(
+          'Expected not to contain: %s\nActual: %s',
+          msg, fmt, expected_contained, actual)
+
   def assertEqualExt(self, first, second, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
     if not first == second:  #pragma: no cover
-      if msg:
-        msg += '\n'
-      else:
-        msg = ''
-      raise self.failureException, '%sExpected: %s\nActual:   %s' % (
-        msg, fmt(first), fmt(second))
+      raise self.failureException, self.FailureMessage(
+          'Expected: %s\nActual:   %s', msg, fmt, first, second)
 
   def assertTextEqual(self, first, second, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
     if not first == second:  #pragma: no cover
-      if msg:
-        msg += '\n'
-      else:
-        msg = ''
-      raise self.failureException, '%sExpected:\n%s\nActual:\n%s' % (
-        msg, first, second)
+      raise self.failureException, self.FailureMessage(
+          'Expected:\n%s\nActual:\n%s', msg, None, first, second)
 
   def FakeInputFile(self, contents, **kwargs):
     """

@@ -148,6 +148,9 @@ class Branch(object):
     else:
       self.writer = writer
 
+  def __repr__(self):
+    return '<%s: %s>' % (self.__class__.__name__, self.name)
+
   @abstractmethod
   def AppendText(self, text):  # pragma: no cover
     """Appends a block of text to the branch."""
@@ -335,6 +338,17 @@ class Executor(object):
     import builtins
     for macros_container in (builtins, builtins.SpecialCharacters):
       self.system_branch.context.AddMacros(GetPublicMacros(macros_container))
+
+  def AddConstants(self, constants):
+    """
+    Adds constant macros to the system branch.
+
+    Args:
+      constants: ((name, value) dict) The constants to add; values are strings.
+    """
+    context = self.system_branch.context
+    for name, value in constants.iteritems():
+      context.AddMacro(name, AppendTextCallback(value))
 
   def GetOutputWriter(self, filename):
     """
