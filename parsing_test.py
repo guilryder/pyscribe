@@ -281,6 +281,13 @@ class ParsingTest(TestCase):
                   "known instructions: $$whitespace.preserve, " +
                   "$$whitespace.skip"])
 
+  def testPreprocessing_emptyInstruction(self):
+    self.assertParsing(
+        '$$ $dummy',
+        messages=["root:1: unknown pre-processing instruction: '$$'\n" +
+                  "known instructions: $$whitespace.preserve, " +
+                  "$$whitespace.skip"])
+
   def testMacro_noArgs(self):
     self.assertParsing('before $name after', r"'before '$name' after'")
 

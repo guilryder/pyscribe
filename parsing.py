@@ -296,7 +296,7 @@ class Lexer(object):
           text_before = text_before.lstrip(' \t')
         for token in self.__text_processor(text_before):
           yield token
-        self.__skip_spaces = (text_before[-1] == '\n')
+        self.__skip_spaces = (text_before and text_before[-1] == '\n')
       if rule_callable:
         token = rule_callable(matched_text)
         if isinstance(token, Iterable):
