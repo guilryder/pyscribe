@@ -549,8 +549,8 @@ class Executor(object):
     finally:
       self.__call_stack.pop()
 
-  def CheckArgumentCount(self, call_node, macro_callback, min_args_count,
-                         max_args_count=None):
+  def CheckArgumentCount(self, call_node, macro_callback,
+                         min_args_count, max_args_count=None):
     """
     Raises an exception if a macro call has an invalid number of arguments.
 
@@ -559,23 +559,36 @@ class Executor(object):
       macro_callback: (callback) The callback of the macro called.
       min_args_count: (int) The minimum number of arguments of the macro.
       max_args_count: (int|None) The maximum number of arguments of the macro,
-        same as min_args_count if None.
+        same as min_args_count if None, unlimited if < 0.
 
     Raises:
       FatalError if len(call_node.args) != expected_args_count
     """
+
+    # Ensure max_args_count is set.
     if max_args_count is None:
       max_args_count = min_args_count
+
+    # Check the number of arguments against the range.
     actual_args_count = len(call_node.args)
-    if not min_args_count <= actual_args_count <= max_args_count:
-      expected_message = '{min_args_count}'
-      if min_args_count < max_args_count:
-        expected_message += '..{max_args_count}'
-      self.FatalError(
-          call_node.location,
-          '{signature}: arguments count mismatch: ' +
-              'expected ' + expected_message + ', got {actual}',
-           call_frame_skip=1,
-           signature=GetMacroSignature(call_node.name, macro_callback),
-           min_args_count=min_args_count, max_args_count=max_args_count,
-           actual=actual_args_count)
+    ok = min_args_count <= actual_args_count
+    if max_args_count >= 0:
+      ok &= actual_args_count <= max_args_count
+    if ok:
+      return
+
+    # Raise the error message.
+    expected_message = ''
+    if max_args_count < 0:
+      expected_message += 'at least '
+    expected_message += '{min_args_count}'
+    if min_args_count < max_args_count:
+      expected_message += '..{max_args_count}'
+    self.FatalError(
+        call_node.location,
+        '{signature}: arguments count mismatch: ' +
+            'expected ' + expected_message + ', got {actual}',
+         call_frame_skip=1,
+         signature=GetMacroSignature(call_node.name, macro_callback),
+         min_args_count=min_args_count, max_args_count=max_args_count,
+         actual=actual_args_count)

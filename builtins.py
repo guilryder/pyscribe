@@ -134,6 +134,29 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
   return MacroCallback
 
 
+@macro(public_name='macro.call', args_signature='macro_name,arg1,...,argN',
+       text_compatible=True, auto_args_parser=False)
+def MacroCall(executor, call_node):
+  """
+  Calls a macro dynamically.
+
+  Args:
+    macro_name: The name of the macro to call.
+    arg1..N: The arguments to pass to the macro.
+  """
+  executor.CheckArgumentCount(call_node, MacroCall,
+                              min_args_count=1, max_args_count=-1)
+
+  macro_name_nodes = call_node.args[0]
+  macro_name = executor.EvalText(macro_name_nodes)
+  if not (macro_name and macro_name_nodes):
+    raise InternalError('expected non-empty macro name')
+
+  called_node = CallNode(macro_name_nodes[0].location, macro_name,
+                         call_node.args[1:])
+  executor.CallMacro(called_node)
+
+
 # Branches
 
 import epub

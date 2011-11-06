@@ -45,6 +45,10 @@ class TextBranchTest(BranchTestCase):
 
 class ExecutorTest(TestCase):
 
+  @macro(public_name='name')
+  def MacroCallback():
+    pass  # pragma: no cover
+
   def setUp(self):
     super(ExecutorTest, self).setUp()
     self.logger = FakeLogger()
@@ -90,6 +94,48 @@ class ExecutorTest(TestCase):
     self.assertEqual('auto1', branch_root.name)
     self.assertEqual('auto2', branch_child.name)
     self.assertEqual('auto3', branch_grand_child.name)
+
+  def CheckArgumentCount(self, min_args_count, max_args_count,
+                         actual_args_count):
+    call_node = CallNode(test_location, 'name',
+                         map(str, range(actual_args_count)))
+    self.executor.CheckArgumentCount(
+        call_node, self.MacroCallback, min_args_count, max_args_count)
+
+  def assertCheckArgumentCountFailure(self, expected_error, *args, **kwargs):
+    self.assertRaises(FatalError, self.CheckArgumentCount, *args, **kwargs)
+    self.assertEqual('file.txt:42: $name: ' + expected_error,
+                     self.logger.GetOutput())
+
+  def testCheckArgumentCount_minAndMax(self):
+    self.CheckArgumentCount(0, 4, actual_args_count=0)
+    self.CheckArgumentCount(0, 4, actual_args_count=4)
+    self.CheckArgumentCount(1, 4, actual_args_count=2)
+    self.CheckArgumentCount(2, 3, actual_args_count=2)
+    self.CheckArgumentCount(2, 2, actual_args_count=2)
+    self.assertCheckArgumentCountFailure(
+        'arguments count mismatch: expected 1..4, got 5',
+        1, 4, actual_args_count=5)
+    self.assertCheckArgumentCountFailure(
+        'arguments count mismatch: expected 2, got 3',
+        2, 2, actual_args_count=3)
+
+  def testCheckArgumentCount_implicitMax(self):
+    self.CheckArgumentCount(0, None, actual_args_count=0)
+    self.CheckArgumentCount(2, None, actual_args_count=2)
+    self.assertCheckArgumentCountFailure(
+        'arguments count mismatch: expected 1, got 2',
+        1, None, actual_args_count=2)
+    self.assertCheckArgumentCountFailure(
+        'arguments count mismatch: expected 2, got 0',
+        2, None, actual_args_count=0)
+
+  def testCheckArgumentCount_noMax(self):
+    self.CheckArgumentCount(0, -1, actual_args_count=0)
+    self.CheckArgumentCount(2, -1, actual_args_count=2)
+    self.assertCheckArgumentCountFailure(
+        'arguments count mismatch: expected at least 2, got 1',
+        2, -1, actual_args_count=1)
 
 
 class ExecutorEndToEndTest(ExecutionTestCase):

@@ -218,6 +218,64 @@ class MacroNewTest(ExecutionTestCase):
         'x=1 y=2')
 
 
+class MacroCallTest(ExecutionTestCase):
+
+  @staticmethod
+  @macro(public_name='wrap', args_signature='*contents', text_compatible=True)
+  def WrapMacro(executor, call_node, contents):
+    executor.AppendText('A')
+    executor.ExecuteNodes(contents)
+    executor.AppendText('B')
+
+  @staticmethod
+  @macro(public_name='AoneOrTwoB', args_signature='a,b?', text_compatible=True)
+  def TwoWrappedMacro(executor, call_node, a, b):
+    executor.AppendText(a)
+    executor.AppendText('-')
+    executor.AppendText(b)
+
+  def testHardcodedName(self):
+    self.assertExecution('$macro.call[wrap][arg]', 'AargB')
+
+  def testComputedName(self):
+    self.assertExecution(
+        (
+            '$macro.new[AtestB][1]',
+            '$macro.call[$wrap[test]]',
+        ),
+        '1')
+
+  def testOneArg(self):
+    self.assertExecution('$macro.call[$wrap[oneOrTwo]][x]', 'x-')
+
+  def testTwoArgs(self):
+    self.assertExecution('$macro.call[$wrap[oneOrTwo]][x][y]', 'x-y')
+
+  def testTooManyArgs(self):
+    self.assertExecution(
+        '$macro.call[$wrap[oneOrTwo]][a][b][c]',
+        messages=['/root:1: $AoneOrTwoB(a,b?): arguments count mismatch: ' +
+                  'expected 1..2, got 3',
+                  '  /root:1: $macro.call'])
+
+  def testEmptyName(self):
+    self.assertExecution(
+        '$macro.call[]',
+        messages=['/root:1: $macro.call: expected non-empty macro name'])
+
+  def testMacroNotFound(self):
+    self.assertExecution(
+        '$macro.call[invalid]',
+        messages=['/root:1: macro not found: $invalid',
+                  '  /root:1: $macro.call'])
+
+  def testNonTextMacroName(self):
+    self.assertExecution(
+        '$macro.call[test$macro.new[inside][test]]',
+        messages=['/root:1: $macro.new: text-incompatible macro call',
+                  '  /root:1: $macro.call'])
+
+
 class BranchWriteTest(ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):

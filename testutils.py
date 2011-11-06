@@ -13,7 +13,7 @@ import unittest
 from executor import Branch, Executor
 from log import *
 from macros import macro, GetPublicMacros
-import tests
+import tests  # for unittest hooks
 
 
 def loc(display_path, lineno, dir_path='/cur'):
@@ -51,8 +51,10 @@ class FakeLogger(Logger):
     super(FakeLogger, self).__init__(self.FORMAT, self.output_file)
 
   def GetOutput(self):
-    """Returns the text logged so far."""
-    return self.output_file.getvalue().strip()
+    """Returns the text logged so far, then clears it."""
+    output = self.output_file.getvalue().strip()
+    self.Clear()
+    return output
 
   def Clear(self):
     """Clears the log cache."""
