@@ -13,6 +13,7 @@ import unittest
 from executor import Branch, Executor
 from log import *
 from macros import macro, GetPublicMacros
+import tests
 
 
 def loc(display_path, lineno, dir_path='/cur'):

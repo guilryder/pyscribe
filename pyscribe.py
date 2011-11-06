@@ -47,11 +47,13 @@ class Main(object):
       __logger: The logger to use.
     """
     parser = self.__OptionParser(usage=_USAGE, description=_DESCRIPTION)
-    parser.add_option('--error_format', dest='logger_format', metavar='FORMAT',
-                      type='choice', choices=sorted(self.__Logger.FORMATS),
-                      default='python',
+    parser.add_option('--error_format', metavar='FORMAT',
+                      dest='logger_format',
+                      type='choice', default='simple',
+                      choices=sorted(self.__Logger.FORMATS),
                       help='error reporting format')
-    parser.add_option('-o', '--output', dest='output_dir', metavar='DIR',
+    parser.add_option('-o', '--output', metavar='DIR',
+                      dest='output_dir',
                       help='output directory')
     (options, args) = parser.parse_args(self.__args)
 

@@ -240,7 +240,7 @@ class BranchWriteTest(ExecutionTestCase):
         messages=['/root:1: $branch.write: branch not found: invalid'])
 
 
-class BranchCreate(ExecutionTestCase):
+class BranchCreateTest(ExecutionTestCase):
 
   def testRoot_text(self):
     self.assertExecution(
@@ -378,7 +378,7 @@ class BranchCreate(ExecutionTestCase):
         'before inside after')
 
 
-class BranchAppend(ExecutionTestCase):
+class BranchAppendTest(ExecutionTestCase):
 
   def testParentMismatch_siblings(self):
     self.assertExecution(

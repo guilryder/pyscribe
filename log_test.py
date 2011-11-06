@@ -22,7 +22,7 @@ class FormatMessageTest(TestCase):
     self.assertEqual('message arg', FormatMessage('message {blah}', blah='arg'))
 
 
-class ExceptionTestCase(object):  # sub-classes should extend TestCase too
+class ExceptionTestCase(TestCase):
 
   def testNoArgs(self):
     self.assertEqual('unknown error', self.exception().message)
@@ -43,12 +43,12 @@ class ExceptionTestCase(object):  # sub-classes should extend TestCase too
                      str(self.exception('message {blah}', blah='arg')))
 
 
-class FatalErrorTest(TestCase, ExceptionTestCase):
+class FatalErrorTest(ExceptionTestCase):
 
   exception = FatalError
 
 
-class InternalErrorTest(TestCase, ExceptionTestCase):
+class InternalErrorTest(ExceptionTestCase):
 
   exception = InternalError
 

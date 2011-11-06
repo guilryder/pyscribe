@@ -678,10 +678,9 @@ class FrenchTypography(Typography):
     branch.AppendLineText(contents)
 
 
-TYPOGRAPHIES = {}
-for typography_type in (NeutralTypography, FrenchTypography):
-  typography = typography_type()
-  TYPOGRAPHIES[typography.name] = typography
+TYPOGRAPHIES = \
+    dict((typography_type.name, typography_type())
+         for typography_type in (NeutralTypography, FrenchTypography))
 
 
 class Macros(object):

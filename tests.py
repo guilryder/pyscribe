@@ -10,8 +10,26 @@ import coverage
 import glob
 import optparse
 import os
-import unittest
 import shutil
+import unittest
+
+
+# Inject a custom test loader to load only test case classes ending with 'Test'.
+# Allows to declare abstract test cases.
+
+class PyscribeTestLoader(unittest.TestLoader):
+  def getTestCaseNames(self, testCaseClass):
+    if testCaseClass.__name__.endswith('Test'):
+      return unittest.TestLoader.getTestCaseNames(self, testCaseClass)
+    else:
+      return []
+
+def PyscribeTestProgram(**kwargs):
+  kwargs['testLoader'] = unittest.defaultTestLoader
+  unittest.TestProgram(**kwargs)
+
+unittest.defaultTestLoader = PyscribeTestLoader()
+unittest.main = PyscribeTestProgram
 
 
 # The files to analyze for coverage or run if they are tests.
@@ -120,7 +138,7 @@ class TestsManager(object):
     """
 
     # Configure the coverage recorder.
-    cov = coverage.coverage(include=self.prod_module_files)
+    cov = coverage.coverage(include=self.python_files)
     cov.config.exclude_list.append(r'if __name__ == .__main__.:')
     cov.use_cache(False)
 

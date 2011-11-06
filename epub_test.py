@@ -162,7 +162,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
     expected_text = MakeExpectedXmlString(expected)
     actual_text = XmlToString(actual_tree)
 
-    if expected_text != actual_text:
+    if expected_text != actual_text:  # pragma: no cover
       # Mismatch: try to narrow the error message to <body>.
       namespace = 'http://www.w3.org/1999/xhtml'
       actual_body = actual_tree.find('//{' + namespace + '}body')

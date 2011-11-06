@@ -38,7 +38,7 @@ class MacroTest(TestCase):
         location=test_location, message=expected_message)
     try:
       self.__MacroCall(macro_callback, args)
-      self.fail('expected the following error: ' + expected_message)
+      self.fail('expected error: ' + expected_message)  # pragma: no cover
     except FatalError, e:
       self.assertFalse(self.called, 'expected macro callback not invoked')
       self.assertEqual(expected_message, self.logger.GetOutput())
@@ -47,7 +47,7 @@ class MacroTest(TestCase):
   def testDefault(self):
     @macro()
     def MacroCallback():
-      pass
+      pass  # pragma: no cover
     self.assertEqual(None, MacroCallback.public_name)
     self.assertEqual('', MacroCallback.args_signature)
     self.assertEqual(False, MacroCallback.text_compatible)
@@ -56,7 +56,7 @@ class MacroTest(TestCase):
     @macro(public_name='name', args_signature=',,', text_compatible=True,
            auto_args_parser=False)
     def MacroCallback():
-      pass
+      pass  # pragma: no cover
     self.assertEqual('name', MacroCallback.public_name)
     self.assertEqual(',,', MacroCallback.args_signature)
     self.assertEqual(True, MacroCallback.text_compatible)
@@ -111,14 +111,14 @@ class MacroTest(TestCase):
     def Try():
       @macro(public_name='name', args_signature='one?,two?,three')
       def MacroCallback():
-        pass
+        pass  # pragma: no cover
     self.assertRaises(AssertionError, Try)
 
   def testAutoParser_requiredThenOptionalThenRequired(self):
     def Try():
       @macro(public_name='name', args_signature='one,two?,three')
       def MacroCallback():
-        pass
+        pass  # pragma: no cover
     self.assertRaises(AssertionError, Try)
 
 
@@ -127,13 +127,13 @@ class GetMacroSignatureTest(TestCase):
   def testNoArgs(self):
     @macro()
     def MacroCallback():
-      pass
+      pass  # pragma: no cover
     self.assertEqual('$name', GetMacroSignature('name', MacroCallback))
 
   def testSomeArgs(self):
     @macro(args_signature='one,two,three')
     def MacroCallback():
-      pass
+      pass  # pragma: no cover
     self.assertEqual('$name(one,two,three)',
                      GetMacroSignature('name', MacroCallback))
 
@@ -144,17 +144,17 @@ class GetPublicMacrosTest(TestCase):
     @staticmethod
     @macro(public_name='public1')
     def PublicMacro1():
-      pass
+      pass  # pragma: no cover
 
     @staticmethod
     @macro()
     def Privatemacro():
-      pass
+      pass  # pragma: no cover
 
     @staticmethod
     @macro(public_name='public2')
     def PublicMacro2():
-      pass
+      pass  # pragma: no cover
 
   def testOnClass(self):
     self.assertEqual(dict(public1=self.TestClass.PublicMacro1,
@@ -193,16 +193,16 @@ def PublicMacro2():
       @staticmethod
       @macro(public_name='same')
       def Same1():
-        pass
+        pass  # pragma: no cover
 
       @staticmethod
       @macro(public_name='same')
       def Same2():
-        pass
+        pass  # pragma: no cover
 
     try:
       GetPublicMacros(TestClassDuplicate)
-      exception = False
+      exception = False  # pragma: no cover
     except AssertionError:
       exception = True
     self.assertEqual(True, exception, 'expected: AssertionError')
