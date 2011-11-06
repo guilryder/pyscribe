@@ -411,10 +411,6 @@ class FrenchTypographyTest(EpubExecutionTestCase):
 
 class SimpleMacrosTest(EpubExecutionTestCase):
 
-  def testType(self):
-    self.assertExecution('before $type.xhtml[xhtml]$type.latex[latex] after',
-                         '<p>before xhtml after</p>')
-
   def testPar_success(self):
     self.assertExecution('before$par`after', '<p>before</p><p>after</p>')
 

@@ -690,18 +690,6 @@ class Macros(object):
   __CLASS_NAME_SEPARATOR_REGEXP = re.compile(r'\s+')
 
   @staticmethod
-  @macro(public_name='type.xhtml', args_signature='*contents')
-  def TypeXhtml(executor, call_node, contents):
-    """Executes the argument only in XHTML mode."""
-    executor.ExecuteNodes(contents)
-
-  @staticmethod
-  @macro(public_name='type.latex', args_signature='*contents')
-  def TypeLatex(executor, call_node, contents):
-    """Executes the argument only in LaTeX mode."""
-    pass
-
-  @staticmethod
   @macro(public_name='par')
   def Par(executor, call_node):
     """Tries to close/open a new automatic paragraph."""
