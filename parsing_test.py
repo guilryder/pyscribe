@@ -120,7 +120,7 @@ class ParsingTest(TestCase):
 
   def testReadError(self):
     self.assertParsing(None, messages=[
-        'root:1: unable to read the input file\nFake error'])
+        'root:1: unable to read the input file: root\nFake error'])
 
   def testEmpty(self):
     self.assertParsing('', '')

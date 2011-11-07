@@ -607,10 +607,11 @@ def ParseFile(reader, filename, logger):
   try:
     input_text = reader.read()
     reader.close()
-  except IOError as e:
-    raise context.FatalError(context.Location(1),
-                             'unable to read the input file\n{error}'.format(
-                                 error=e))
+  except Exception as e:
+    raise context.FatalError(
+        context.Location(1),
+        'unable to read the input file: {filename}\n{error}'.format(
+            filename=filename, error=e))
 
   # Parse the file contents.
   lexer = Lexer(context, input_text)
