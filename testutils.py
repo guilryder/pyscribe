@@ -24,6 +24,7 @@ test_unicode = u'Îñţérñåţîöñåļîžåţîöñ'
 special_chars = ' '.join((
     "% & _ ^$ $text.dollar ^# $text.hash",
     "a~b",
+    "n$-o",
     "--c---",
     "d...",
     "<<e>>",

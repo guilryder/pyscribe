@@ -9,8 +9,9 @@ import itertools
 import operator
 
 
-MACRO_NAME_PATTERN = r'(?:[\\]|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
-VALID_MACRO_NAME_PATTERN = r'(?:[\\_]|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)'
+MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
+VALID_MACRO_NAME_PATTERN = \
+    r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)'
 
 
 class macro(object):

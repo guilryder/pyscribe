@@ -20,6 +20,7 @@ class SpecialCharsTest(ExecutionTestCase):
         ' '.join((
             u"% & _ $ $ # #",
             u"a\xa0b",
+            u"no",
             u"–c—",
             u"d…",
             u"«e»",
@@ -28,6 +29,14 @@ class SpecialCharsTest(ExecutionTestCase):
             u"i ! j: k ; l?",
             u"m!:;?",
         )))
+
+  def testSoftHyphenAlias(self):
+    self.assertExecution(
+        (
+            '$macro.new[text.softhyphen][OK]',
+            'a$-b',
+        ),
+        'aOKb')
 
 
 class EmptyTest(ExecutionTestCase):

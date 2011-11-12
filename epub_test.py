@@ -254,6 +254,7 @@ class NeutralTypographyTest(EpubExecutionTestCase):
         u'<p>{0}</p>'.format(' '.join((
             u"% &amp; _ $ $ # #",
             u"a\xa0b",
+            u"no",
             u"–c—",
             u"d…",
             u"«e»",
@@ -319,6 +320,7 @@ class FrenchTypographyTest(EpubExecutionTestCase):
         u'<p>{0}</p>'.format(' '.join((
             u"% &amp; _ $ $ # #",
             u"a\xa0b",
+            u"no",
             u"–c—",
             u"d…",
             u"«\xa0e\xa0»",

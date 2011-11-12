@@ -24,6 +24,7 @@ class SpecialCharacters(object):
   TextDollar = StaticAppendTextCallback('$', public_name='text.dollar')
   TextHash = StaticAppendTextCallback('#', public_name='text.hash')
   TextNbsp = StaticAppendTextCallback(u'\xa0', public_name='text.nbsp')
+  TextSoftHyphen = StaticAppendTextCallback('', public_name='text.softhyphen')
   TextDashEn = StaticAppendTextCallback(u'–', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback(u'—', public_name='text.dash.em')
   TextEllipsis = StaticAppendTextCallback(u'…', public_name='text.ellipsis')
@@ -39,6 +40,12 @@ class SpecialCharacters(object):
          text_compatible=True)
   def TextPunctuationDouble(executor, call_node, contents):
     executor.AppendText(contents)
+
+  @staticmethod
+  @macro(public_name='-', text_compatible=True)
+  def TextSoftHyphenAlias(executor, call_node):
+    called_node = CallNode(call_node.location, 'text.softhyphen', [])
+    executor.CallMacro(called_node)
 
 
 # Core

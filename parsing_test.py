@@ -422,6 +422,7 @@ class ParsingTest(TestCase):
             "$text.percent' '$text.ampersand' '$text.underscore'",
             "$ '$text.dollar' # '$text.hash'",
             "a'$text.nbsp'b",
+            "n'$-'o",
             "'$text.dash.en'c'$text.dash.em'",
             "d'$text.ellipsis'",
             "'$text.guillemet.open'e'$text.guillemet.close'",
