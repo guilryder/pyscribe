@@ -419,7 +419,8 @@ class ParsingTest(TestCase):
     self.assertParsing(
         special_chars,
         ' '.join((
-            "$text.percent' '$text.ampersand'",
+            "$text.percent' '$text.ampersand' '$text.underscore'",
+            "$ '$text.dollar' # '$text.hash'",
             "a'$text.nbsp'b",
             "'$text.dash.en'c'$text.dash.em'",
             "d'$text.ellipsis'",

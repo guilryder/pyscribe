@@ -18,7 +18,7 @@ class SpecialCharsTest(ExecutionTestCase):
     self.assertExecution(
         special_chars,
         ' '.join((
-            u"% &",
+            u"% & _ $ $ # #",
             u"a\xa0b",
             u"–c—",
             u"d…",
@@ -490,6 +490,15 @@ class BranchAppendTest(ExecutionTestCase):
         messages=[
             "/root:3: $branch.append: the sub-branch 'sub' is already attached",
         ])
+
+
+class CaseTest(ExecutionTestCase):
+
+  def testLower(self):
+    self.assertExecution(u"$case.lower[Ôô! ça Ç'était]", u"ôô! ça ç'était")
+
+  def testUpper(self):
+    self.assertExecution(u"$case.upper[Ôô! ça Ç'était]", u"ÔÔ! ÇA Ç'ÉTAIT")
 
 
 class ArabicToRomanTest(TestCase):

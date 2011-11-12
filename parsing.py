@@ -441,6 +441,10 @@ class Lexer(object):
     r'&'
     return self.__MacroToken('text.ampersand')
 
+  def RuleUnderscore(self, _):
+    r'_'
+    return self.__MacroToken('text.underscore')
+
   def RuleNonBreakingSpace(self, _):
     r'~'
     return self.__MacroToken('text.nbsp')

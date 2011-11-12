@@ -27,6 +27,9 @@ class Macros(object):
 
   TextPercent = StaticAppendTextCallback('\%', public_name='text.percent')
   TextAmpersand = StaticAppendTextCallback('\&', public_name='text.ampersand')
+  TextUnderscore = StaticAppendTextCallback('\_', public_name='text.underscore')
+  TextDollar = StaticAppendTextCallback('\$', public_name='text.dollar')
+  TextHash = StaticAppendTextCallback('\#', public_name='text.hash')
   TextNbsp = StaticAppendTextCallback('~', public_name='text.nbsp')
   TextDashEn = StaticAppendTextCallback('--', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback('---', public_name='text.dash.em')

@@ -22,7 +22,7 @@ def loc(display_path, lineno, dir_path='/cur'):
 test_location = loc('file.txt', 42)
 test_unicode = u'Îñţérñåţîöñåļîžåţîöñ'
 special_chars = ' '.join((
-    "% &",
+    "% & _ `$ $text.dollar `# $text.hash",
     "a~b",
     "--c---",
     "d...",

@@ -20,6 +20,9 @@ class SpecialCharacters(object):
 
   TextPercent = StaticAppendTextCallback('%', public_name='text.percent')
   TextAmpersand = StaticAppendTextCallback('&', public_name='text.ampersand')
+  TextUnderscore = StaticAppendTextCallback('_', public_name='text.underscore')
+  TextDollar = StaticAppendTextCallback('$', public_name='text.dollar')
+  TextHash = StaticAppendTextCallback('#', public_name='text.hash')
   TextNbsp = StaticAppendTextCallback(u'\xa0', public_name='text.nbsp')
   TextDashEn = StaticAppendTextCallback(u'–', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback(u'—', public_name='text.dash.em')
@@ -301,6 +304,18 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
 
 
 # Text operations
+
+@macro(public_name='case.lower', args_signature='text', text_compatible=True)
+def CaseLower(executor, call_node, text):
+  """Converts text to lowercase."""
+  executor.AppendText(text.lower())
+
+
+@macro(public_name='case.upper', args_signature='text', text_compatible=True)
+def CaseUpper(executor, call_node, text):
+  """Converts text to uppercase."""
+  executor.AppendText(text.upper())
+
 
 def ArabicToRoman(number):
   """

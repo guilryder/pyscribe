@@ -252,7 +252,7 @@ class NeutralTypographyTest(EpubExecutionTestCase):
     self.assertExecution(
         special_chars,
         u'<p>{0}</p>'.format(' '.join((
-            u"% &amp;",
+            u"% &amp; _ $ $ # #",
             u"a\xa0b",
             u"–c—",
             u"d…",
@@ -317,7 +317,7 @@ class FrenchTypographyTest(EpubExecutionTestCase):
     self.assertExecution(
         special_chars,
         u'<p>{0}</p>'.format(' '.join((
-            u"% &amp;",
+            u"% &amp; _ $ $ # #",
             u"a\xa0b",
             u"–c—",
             u"d…",

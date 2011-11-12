@@ -29,7 +29,7 @@ class LatexEndToEndTest(ExecutionTestCase):
     self.assertExecution(
         special_chars,
         u' '.join((
-            u"\\% \\&",
+            u"\\% \\& \\_ $ \\$ # \\#",
             u"a~b",
             u"--c---",
             u"d…",
