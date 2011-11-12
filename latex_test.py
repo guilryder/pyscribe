@@ -31,7 +31,7 @@ class LatexEndToEndTest(ExecutionTestCase):
         u' '.join((
             u"\\% \\&",
             u"a~b",
-            u"–c—",
+            u"--c---",
             u"d…",
             u"«e»",
             u"« f »",

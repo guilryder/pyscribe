@@ -29,6 +29,7 @@ class SpecialCharacters(object):
   TextGuillemetClose = \
       StaticAppendTextCallback(u'»', public_name='text.guillemet.close')
   TextApostrophe = StaticAppendTextCallback(u"'", public_name='text.apostrophe')
+  Newline = StaticAppendTextCallback('\n', public_name='newline')
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents',
@@ -38,6 +39,11 @@ class SpecialCharacters(object):
 
 
 # Core
+
+@macro(public_name='empty', text_compatible=True)
+def Empty(executor, call_node):
+  pass
+
 
 @macro(public_name='include', args_signature='path')
 def Include(executor, call_node, path):

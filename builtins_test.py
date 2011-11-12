@@ -30,6 +30,15 @@ class SpecialCharsTest(ExecutionTestCase):
         )))
 
 
+class EmptyTest(ExecutionTestCase):
+
+  def testNodes(self):
+    self.assertExecution('before$empty`after', 'beforeafter')
+
+  def testText(self):
+    self.assertExecution('$macro.new[name$empty][inside]$name', 'inside')
+
+
 class IncludeTest(ExecutionTestCase):
 
   def testNested(self):
