@@ -126,7 +126,7 @@ class ParsingTest(TestCase):
     self.assertParsing('', '')
 
   def testEscapeOnly(self):
-    self.assertParsing('`', '')
+    self.assertParsing('^', '')
 
   def testText(self):
     self.assertParsing('text', "'text'")
@@ -139,10 +139,10 @@ class ParsingTest(TestCase):
                        r"'\xa0text\xa0'")
 
   def testTrailingEscapeDropped(self):
-    self.assertParsing('test`', "'test'")
+    self.assertParsing('test^', "'test'")
 
   def testTrailingEscapeBeforeWhitespace(self):
-    self.assertParsing('test`  ', "'test '")
+    self.assertParsing('test^  ', "'test '")
 
   def testNewline(self):
     self.assertParsing('first\nsecond', r"'first\n''second'")
@@ -163,11 +163,11 @@ class ParsingTest(TestCase):
                         TextNode(loc('root', 4), 'third')])
 
   def testEscapeStandard(self):
-    self.assertParsing('be`fore`$after`\n  `` next',
-                       r"'before$after`\n''` next'")
+    self.assertParsing('be^fore^$after^\n  ^^ next',
+                       r"'before$after^\n''^ next'")
 
   def testEscapeSpecialCharacters(self):
-    self.assertParsing(u"`% `& `~ `-- `-`-- `... `« `» `<< `>> `' `!`:`;`?",
+    self.assertParsing(u"^% ^& ^~ ^-- ^-^-- ^... ^« ^» ^<< ^>> ^' ^!^:^;^?",
                        u'"% & ~ -- --- ... \\xab \\xbb << >> \' !:;?"')
 
   def testBackslashNoEscape(self):
@@ -243,9 +243,9 @@ class ParsingTest(TestCase):
             '$$whitespace.skip$$whitespace.preserve',
             'D1',
             '2',
-            '$$whitespace.skip`E1',
+            '$$whitespace.skip^E1',
             '2',
-            '$$whitespace.preserve`F1',
+            '$$whitespace.preserve^F1',
             '2',
             '$$whitespace.skip$G1',
             '2',

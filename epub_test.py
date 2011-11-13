@@ -412,11 +412,11 @@ class FrenchTypographyTest(EpubExecutionTestCase):
 class SimpleMacrosTest(EpubExecutionTestCase):
 
   def testPar_success(self):
-    self.assertExecution('before$par`after', '<p>before</p><p>after</p>')
+    self.assertExecution('before$par^after', '<p>before</p><p>after</p>')
 
   def testPar_cannotOpen(self):
     self.assertExecution(
-        '$tag.open[div][block]before$par`after$tag.close[div]',
+        '$tag.open[div][block]before$par^after$tag.close[div]',
         messages=['/root:1: $par: unable to open a new paragraph'])
 
   def testTypoSet_invalid(self):
@@ -712,12 +712,12 @@ class ParTest(EpubExecutionTestCase):
 
   def testCloseAndOpen(self):
     self.assertExecution(
-        'one\n\ntwo$par`three',
+        'one\n\ntwo$par^three',
         '<p>one</p><p>two</p><p>three</p>')
 
   def testOpenOnly(self):
     self.assertExecution(
-        '$par`one\n\n$par`two',
+        '$par^one\n\n$par^two',
         '<p>one</p><p>two</p>')
 
   def testCannotOpen(self):

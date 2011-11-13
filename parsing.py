@@ -219,7 +219,7 @@ class RegexpParser(object):
 
 class Lexer(object):
 
-  __GLOBAL_STRIP_REGEXP = re.compile(r'(?:|`|\s*(.*?)(?<=[^`])\s*`?)\Z',
+  __GLOBAL_STRIP_REGEXP = re.compile(r'(?:|\^|\s*(.*?)(?<=[^\^])\s*\^?)\Z',
                               re.MULTILINE | re.DOTALL)
   __LINE_REGEXP = re.compile(r'[ \t]*(\n+)[ \t]*')
 
@@ -371,7 +371,7 @@ class Lexer(object):
     return None
 
   def RuleEscape(self, value):
-    r'`.'
+    r'\^.'
     self.__skip_spaces = False
     return Token('TEXT', self.__lineno, value[1:])
 

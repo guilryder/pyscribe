@@ -33,7 +33,7 @@ class SpecialCharsTest(ExecutionTestCase):
 class EmptyTest(ExecutionTestCase):
 
   def testNodes(self):
-    self.assertExecution('before$empty`after', 'beforeafter')
+    self.assertExecution('before$empty^after', 'beforeafter')
 
   def testText(self):
     self.assertExecution('$macro.new[name$empty][inside]$name', 'inside')
@@ -45,9 +45,9 @@ class IncludeTest(ExecutionTestCase):
     self.assertExecution(
         {
             '/root': 'roota $include[one.psc]rootb',
-            '/one.psc': '1a $include[two.psc]1b` ',
-            '/two.psc': '2a $include[three.psc]2b` ',
-            '/three.psc': '3` ',
+            '/one.psc': '1a $include[two.psc]1b^ ',
+            '/two.psc': '2a $include[three.psc]2b^ ',
+            '/three.psc': '3^ ',
         },
         'roota 1a 2a 3 2b 1b rootb')
 
@@ -192,8 +192,8 @@ class MacroNewTest(ExecutionTestCase):
         ''.join((
             '$macro.new[id(arg)][$arg]',
             '$macro.new[outer(arg)][',
-                '$macro.new[inner(arg)][$id[I$arg]` ]',
-                'Oarg$arg` ',
+                '$macro.new[inner(arg)][$id[I$arg]^ ]',
+                'Oarg$arg^ ',
                 '$inner[Onested]',
             ']',
             '$outer[1]',
@@ -206,8 +206,8 @@ class MacroNewTest(ExecutionTestCase):
         ''.join((
             '$macro.new[id(x)][$x]',
             '$macro.new[outer(y)][',
-                '$macro.new[inner(z)][$id[I$z]` ]',
-                'Oy$y` ',
+                '$macro.new[inner(z)][$id[I$z]^ ]',
+                'Oy$y^ ',
                 '$inner[Onested]',
             ']',
             '$outer[1]',
@@ -382,17 +382,17 @@ class BranchCreateTest(ExecutionTestCase):
     self.assertExecution(
         (
             '$branch.create.sub[one]',
-            'one` ',
+            'one^ ',
             '$branch.append[one]',
-            'two` ',
-            '$branch.write[one][oneA` ]'
+            'two^ ',
+            '$branch.write[one][oneA^ ]'
             '$branch.create.sub[two]',
             '$branch.append[two]',
-            '$branch.write[one][oneB` ]'
-            'three` ',
-            '$branch.write[two][twoA` ]'
+            '$branch.write[one][oneB^ ]'
+            'three^ ',
+            '$branch.write[two][twoA^ ]'
             '$branch.create.sub[three]',
-            '$branch.write[one][oneC` ]'
+            '$branch.write[one][oneC^ ]'
             '$branch.append[three]',
             'four',
         ),
@@ -401,27 +401,27 @@ class BranchCreateTest(ExecutionTestCase):
   def testSub_nested(self):
     self.assertExecution(
         (
-            'one` ',
+            'one^ ',
             '$branch.create.sub[one]',
             '$branch.append[one]',
-            'two` ',
+            'two^ ',
             '$branch.create.sub[two]',
             '$branch.append[two]',
             'three',
             '$branch.write[one]['
-                'oneB` '
+                'oneB^ '
                 '$branch.create.sub[oneA]',
                 '$branch.append[oneA]',
-                'oneE` ',
+                'oneE^ ',
             ']',
             '$branch.write[two]['
-                'twoB` '
+                'twoB^ '
                 '$branch.create.sub[twoA]',
                 '$branch.append[twoA]',
-                'twoE` ',
+                'twoE^ ',
             ']',
-            '$branch.write[oneA][oneI` ]',
-            '$branch.write[twoA][twoI` ]',
+            '$branch.write[oneA][oneI^ ]',
+            '$branch.write[twoA][twoI^ ]',
         ),
         'one oneB oneI oneE two twoB twoI twoE three')
 

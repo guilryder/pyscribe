@@ -23,7 +23,7 @@ class LatexEndToEndTest(ExecutionTestCase):
     self.assertExecution(test_unicode, test_unicode)
 
   def testEscape(self):
-    self.assertExecution('`% `&', '% &')
+    self.assertExecution('^% ^&', '% &')
 
   def testAllSpecialChars(self):
     self.assertExecution(
