@@ -16,6 +16,13 @@ from macros import *
 
 NBSP = u'\xa0'
 
+# Groups:
+# 0: sign (possibly empty)
+# 1: digits before decimal separator (possibly empty)
+# 2: decimal separator (optional)
+# 3: digits after the decinal separator (optional)
+NUMBER_REGEXP = re.compile(r'^([-+]?)([0-9]*)(?:([.,])([0-9]+))?$')
+
 
 class TagLevel(object):
   """
@@ -605,12 +612,13 @@ class Typography(object):
     self.context.AddMacros(GetPublicMacros(self.macros_container))
 
   @abstractmethod
-  def FormatInteger(self, number):  # pragma: no cover
+  def FormatNumber(self, number):  # pragma: no cover
     """
-    Formats an integer number to a string.
+    Formats a number to a string.
 
     Args:
-      number: (int) The number to format.
+      number: (string) The number to format. Prefixed with '-' if negative.
+        Can use '.' or ',' as decimal separator.
 
     Returns:
       (string) The formatted number.
@@ -625,8 +633,8 @@ class NeutralTypography(Typography):
   macros_container = __import__('builtins').SpecialCharacters
 
   @staticmethod
-  def FormatInteger(number):
-    return str(number)
+  def FormatNumber(number):
+    return number
 
 
 class FrenchTypography(Typography):
@@ -635,14 +643,26 @@ class FrenchTypography(Typography):
   name = 'french'
 
   @staticmethod
-  def FormatInteger(number):
+  def FormatNumber(number):
     # Separate thoushands with a non-breaking space.
-    digits = tuple(unicode(abs(number)))
-    text = NBSP.join(reversed([''.join(digits[max(0,group_end-3):group_end])
-                               for group_end in range(len(digits), 0, -3)]))
+    (sign, before_decimal, decimal_sep, after_decimal) = \
+        NUMBER_REGEXP.match(number).groups()
+
     # Use an en-dash as minus sign.
-    if number < 0:
-      text = u'–' + text
+    if sign == '-':
+      sign = u'–'
+    text = sign
+
+    text += NBSP.join(
+        reversed([before_decimal[max(0,group_end-3):group_end]
+                  for group_end in range(len(before_decimal), 0, -3)]))
+
+    if decimal_sep:
+      text += decimal_sep
+      text += NBSP.join(
+          [after_decimal[group_start:group_start+3]
+           for group_start in range(0, len(after_decimal), 3)])
+
     return text
 
   TextBacktick = StaticAppendTextCallback(u"‘", public_name='text.backtick')
@@ -804,18 +824,16 @@ class Macros(object):
     executor.current_branch.typography = typography
 
   @staticmethod
-  @macro(public_name='typo.integer', args_signature='number')
-  def TypoInteger(executor, call_node, number):
+  @macro(public_name='typo.number', args_signature='number')
+  def TypoNumber(executor, call_node, number):
     """
-    Formats an integer according to the current typography rules.
+    Formats a number according to the current typography rules.
     """
-    # Parse the Arabic number. Reject invalid values.
-    try:
-      integer = int(number)
-    except ValueError:
+    # Reject invalid values.
+    if not NUMBER_REGEXP.match(number):
       executor.MacroFatalError(
           call_node, 'invalid integer: {number}', number=number)
-    text = executor.current_branch.root.typography.FormatInteger(integer)
+    text = executor.current_branch.root.typography.FormatNumber(number)
     executor.AppendText(text)
 
   @staticmethod

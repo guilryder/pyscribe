@@ -21,7 +21,7 @@ def FormatMessage(message, **kwargs):
   if not message:
     return 'unknown error'
   if kwargs:
-    message = message.format(**kwargs)
+    message = unicode(message).format(**kwargs)
   elif isinstance(message, InternalError):
     message = message.message
   return message

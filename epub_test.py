@@ -230,22 +230,22 @@ class NeutralTypographyTest(EpubExecutionTestCase):
   def InputHook(self, text):
     return '$typo.set[neutral]' + text
 
-  def testFormatInteger_zero(self):
-    self.assertEqual('0', NeutralTypography.FormatInteger(0))
+  def testFormatNumber_zero(self):
+    self.assertEqual('0', NeutralTypography.FormatNumber('0'))
 
-  def testFormatInteger_small(self):
-    self.assertEqual('123', NeutralTypography.FormatInteger(123))
+  def testFormatNumber_small(self):
+    self.assertEqual('123', NeutralTypography.FormatNumber('123'))
 
-  def testFormatInteger_negative(self):
+  def testFormatNumber_negative(self):
     self.assertEqual('-12345678',
-                     NeutralTypography.FormatInteger(-12345678))
+                     NeutralTypography.FormatNumber('-12345678'))
 
-  def testFormatInteger_positive(self):
-    self.assertEqual('12345678',
-                     NeutralTypography.FormatInteger(12345678))
+  def testFormatNumber_positive(self):
+    self.assertEqual('+12345678',
+                     NeutralTypography.FormatNumber('+12345678'))
 
-  def testTypoInteger(self):
-    self.assertExecution(u'before $typo.integer[-12345678] after',
+  def testTypoNumber(self):
+    self.assertExecution(u'before $typo.number[-12345678] after',
                          u'<p>before -12345678 after</p>')
 
   def testAllSpecialChars(self):
@@ -296,22 +296,42 @@ class FrenchTypographyTest(EpubExecutionTestCase):
   def InputHook(self, text):
     return '$typo.set[french]' + text
 
-  def testFormatInteger_zero(self):
-    self.assertEqual(u'0', FrenchTypography.FormatInteger(0))
+  def testFormatNumber_zero(self):
+    self.assertEqual(u'0', FrenchTypography.FormatNumber('0'))
 
-  def testFormatInteger_small(self):
-    self.assertEqual(u'123', FrenchTypography.FormatInteger(123))
+  def testFormatNumber_short(self):
+    self.assertEqual(u'123', FrenchTypography.FormatNumber('123'))
 
-  def testFormatInteger_negative(self):
-    self.assertEqual(u'\u201312\xa0345\xa0678',
-                     FrenchTypography.FormatInteger(-12345678))
-
-  def testFormatInteger_positive(self):
+  def testFormatNumber_long(self):
     self.assertEqual(u'12\xa0345\xa0678',
-                     FrenchTypography.FormatInteger(12345678))
+                     FrenchTypography.FormatNumber('12345678'))
+    self.assertEqual(u'123\xa0456',
+                     FrenchTypography.FormatNumber('123456'))
 
-  def testTypoInteger(self):
-    self.assertExecution(u'before $typo.integer[-12345678] after',
+  def testFormatNumber_negative(self):
+    self.assertEqual(u'\u20131\xa0234,567\xa08',
+                     FrenchTypography.FormatNumber('-1234,5678'))
+
+  def testFormatNumber_positive(self):
+    self.assertEqual(u'+1\xa0234.567\xa08',
+                     FrenchTypography.FormatNumber('+1234.5678'))
+
+  def testFormatNumber_decimalShort(self):
+    self.assertEqual(u'3.5', FrenchTypography.FormatNumber('3.5'))
+
+  def testFormatNumber_decimalLong(self):
+    self.assertEqual(u'3.567\xa0890',
+                     FrenchTypography.FormatNumber('3.567890'))
+    self.assertEqual(u'3,567\xa0890\xa01',
+                     FrenchTypography.FormatNumber('3,5678901'))
+
+  def testFormatNumber_decimalOnly(self):
+    self.assertEqual(u'.5', FrenchTypography.FormatNumber('.5'))
+    self.assertEqual(u',123', FrenchTypography.FormatNumber(',123'))
+    self.assertEqual(u'\u2013.5', FrenchTypography.FormatNumber('-.5'))
+
+  def testTypoNumber(self):
+    self.assertExecution(u'before $typo.number[-12345678] after',
                          u'<p>before \u201312&#160;345&#160;678 after</p>')
 
   def testAllSpecialChars(self):
@@ -471,10 +491,16 @@ class SimpleMacrosTest(EpubExecutionTestCase):
             u'<p>two neutral?</p>',
         ))
 
-  def testTypoInteger_invalid(self):
+  def testTypoNumber_invalid(self):
     self.assertExecution(
-        '$typo.integer[invalid]',
-        messages=['/root:1: $typo.integer: invalid integer: invalid'])
+        '$typo.number[invalid]',
+        messages=['/root:1: $typo.number: invalid integer: invalid'])
+    self.assertExecution(
+        '$typo.number[1.2,3]',
+        messages=['/root:1: $typo.number: invalid integer: 1.2,3'])
+    self.assertExecution(
+        '$typo.number[--3]',
+        messages=[u'/root:1: $typo.number: invalid integer: \u20133'])
 
 
 class TagOpenCloseTest(EpubExecutionTestCase):
