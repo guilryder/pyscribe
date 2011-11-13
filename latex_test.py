@@ -36,7 +36,7 @@ class LatexEndToEndTest(ExecutionTestCase):
             u"d…",
             u"«e»",
             u"« f »",
-            u"'g'h'",
+            u"`g'h' 'g`h`",
             u"i ! j: k ; l?",
             u"m!:;?",
         )))

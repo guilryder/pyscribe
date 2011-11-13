@@ -636,22 +636,17 @@ class FrenchTypography(Typography):
 
   @staticmethod
   def FormatInteger(number):
+    # Separate thoushands with a non-breaking space.
     digits = tuple(unicode(abs(number)))
     text = NBSP.join(reversed([''.join(digits[max(0,group_end-3):group_end])
                                for group_end in range(len(digits), 0, -3)]))
+    # Use an en-dash as minus sign.
     if number < 0:
       text = u'–' + text
     return text
 
-  @staticmethod
-  @macro(public_name='text.apostrophe')
-  def TextApostrophe(executor, call_node):
-    branch = executor.current_branch
-    tail_chr = branch.inline_tail_chr
-    if not tail_chr or tail_chr.isspace():
-      branch.AppendLineText(u'‘')
-    else:
-      branch.AppendLineText(u'’')
+  TextBacktick = StaticAppendTextCallback(u"‘", public_name='text.backtick')
+  TextApostrophe = StaticAppendTextCallback(u"’", public_name='text.apostrophe')
 
   @staticmethod
   @macro(public_name='text.guillemet.open')

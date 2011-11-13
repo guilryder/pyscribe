@@ -32,6 +32,7 @@ class SpecialCharacters(object):
       StaticAppendTextCallback(u'«', public_name='text.guillemet.open')
   TextGuillemetClose = \
       StaticAppendTextCallback(u'»', public_name='text.guillemet.close')
+  TextBacktick = StaticAppendTextCallback(u"`", public_name='text.backtick')
   TextApostrophe = StaticAppendTextCallback(u"'", public_name='text.apostrophe')
   Newline = StaticAppendTextCallback('\n', public_name='newline')
 

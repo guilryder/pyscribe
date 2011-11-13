@@ -259,7 +259,7 @@ class NeutralTypographyTest(EpubExecutionTestCase):
             u"d…",
             u"«e»",
             u"« f »",
-            u"'g'h'",
+            u"`g'h' 'g`h`",
             u"i ! j: k ; l?",
             u"m!:;?",
         ))))
@@ -286,9 +286,9 @@ class NeutralTypographyTest(EpubExecutionTestCase):
     self.assertExecution(u'one «two» three',
                          u'<p>one «two» three</p>')
 
-  def testApostrophes(self):
-    self.assertExecution(u"'one' 'two' ' 'three'",
-                         u"<p>'one' 'two' ' 'three'</p>")
+  def testBackticksApostrophes(self):
+    self.assertExecution(u"`one' 'two` `' ' `",
+                         u"<p>`one' 'two` `' ' `</p>")
 
 
 class FrenchTypographyTest(EpubExecutionTestCase):
@@ -325,7 +325,7 @@ class FrenchTypographyTest(EpubExecutionTestCase):
             u"d…",
             u"«\xa0e\xa0»",
             u"«\xa0f\xa0»",
-            u"‘g’h’",
+            u"‘g’h’ ’g‘h‘",
             u"i\xa0! j\xa0: k\xa0; l\xa0?",
             u"m\xa0!:;?",
         ))))
@@ -403,9 +403,9 @@ class FrenchTypographyTest(EpubExecutionTestCase):
         u'one «$tag.open[div][block]two$tag.close[div]» three',
         u'<p>one «</p><div>two</div><p>» three</p>')
 
-  def testApostrophes(self):
-    self.assertExecution(u"'one' 'two' ' 'three'",
-                         u"<p>‘one’ ‘two’ ‘ ‘three’</p>")
+  def testBackticksApostrophes(self):
+    self.assertExecution(u"`one' 'two` `' ' `",
+                         u"<p>‘one’ ’two‘ ‘’ ’ ‘</p>")
 
   def testTypoNewline(self):
     self.assertExecution("<<$typo.newline>>", u'<p>«»</p>')

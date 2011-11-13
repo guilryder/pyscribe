@@ -393,6 +393,17 @@ class ParsingTest(TestCase):
     self.assertParsing('before<<<<in>>>>after',
                        "'before<<<<in>>>>after'")
 
+  def testBacktick(self):
+    self.assertParsing(
+        "a`b `c` d",
+        ''.join((
+            "'a'$text.backtick'b '",
+            "$text.backtick",
+            "'c'",
+            "$text.backtick",
+            "' d'",
+        )))
+
   def testApostrophe(self):
     self.assertParsing(
         "a'b 'c' d",
@@ -427,7 +438,8 @@ class ParsingTest(TestCase):
             "d'$text.ellipsis'",
             "'$text.guillemet.open'e'$text.guillemet.close'",
             "'$text.guillemet.open' f '$text.guillemet.close'",
-            "'$text.apostrophe'g'$text.apostrophe'h'$text.apostrophe'",
+            "'$text.backtick'g'$text.apostrophe'h'$text.apostrophe'",
+            "'$text.apostrophe'g'$text.backtick'h'$text.backtick'",
             "i '$text.punctuation.double['!']'",
             "j'$text.punctuation.double[':']'",
             "k '$text.punctuation.double[';']'",

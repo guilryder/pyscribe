@@ -481,6 +481,10 @@ class Lexer(object):
     else:
       return Token('TEXT', self.__lineno, value)
 
+  def RuleBacktick(self, value):
+    r"`"
+    return self.__MacroToken('text.backtick')
+
   def RuleApostrophe(self, value):
     r"'"
     return self.__MacroToken('text.apostrophe')
