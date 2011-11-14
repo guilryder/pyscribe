@@ -82,9 +82,43 @@ class IncludeTest(ExecutionTestCase):
 
   def testFileNotFound(self):
     self.assertExecution(
-        '$include[dummy]',
-        messages=['/root:1: $include: unable to include "dummy": ' +
-                  'file not found: /dummy'])
+        '$include[404.psc]',
+        messages=['/root:1: $include: unable to include "404.psc": ' +
+                  'file not found: /404.psc'])
+
+  def testAutoExtension(self):
+    self.assertExecution(
+        {
+            '/root': '$include[other]',
+            '/other.psc': 'OK',
+        },
+        'OK')
+
+  def testAutoExtension_hiddenFile(self):
+    self.assertExecution(
+        {
+            '/root': '$include[.other]',
+            '/.other.psc': 'OK',
+        },
+        'OK')
+
+  def testAutoExtension_ignoredIfFileExists(self):
+    self.assertExecution(
+        {
+            '/root': '$include[other]',
+            '/other': 'OK',
+            '/other.psc': 'SHOULD NOT BE INCLUDED',
+        },
+        'OK')
+
+  def testAutoExtension_notIfExtensionPresent(self):
+    self.assertExecution(
+        {
+            '/root': '$include[other.ext]',
+            '/other.ext.psc': 'SHOULD NOT BE INCLUDED',
+        },
+        messages=['/root:1: $include: unable to include "other.ext": ' +
+                  'file not found: /other.ext'])
 
   def testMaxNestedIncludes(self):
     self.assertExecution(

@@ -78,6 +78,10 @@ class MainTest(TestCase):
     self.Execute('input.psc')
     self.assertOutput('Hello, World!')
 
+  def testSimple_autoExtension(self):
+    self.Execute('input')
+    self.assertOutput('Hello, World!')
+
   def testCustomOutput(self):
     self.Execute('input.psc --output /custom')
     self.assertEqual('', self.GetStdOutput())

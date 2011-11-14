@@ -78,11 +78,16 @@ class FakeFileSystem(object):
   def join(self, path1, *paths):
     return self.__unixpath(os.path.join(path1, *paths))
 
+  def lexists(self, path):  # pragma:nocover
+    raise NotImplementedError()
+
   def normpath(self, path):
     return self.__unixpath(os.path.normpath(path))
 
   def open(self, *args, **kwargs):  # pragma:nocover
     raise NotImplementedError()
+
+  splitext = staticmethod(os.path.splitext)
 
 
 class TestCase(unittest.TestCase):
@@ -145,6 +150,9 @@ class TestCase(unittest.TestCase):
       def __init__(fs):
         super(TestFileSystem, fs).__init__()
         fs.__output_writers = {}
+
+      def lexists(self, path):
+        return path in inputs
 
       def open(fs, filename, mode='rt', **kwargs):
         if mode == 'rt':

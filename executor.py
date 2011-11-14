@@ -15,6 +15,7 @@ from parsing import CallNode, TextNode, ParseFile
 
 
 ENCODING = 'utf8'
+DEFAULT_EXT = '.psc'
 
 MAX_NESTED_CALLS = 25
 MAX_NESTED_INCLUDES = 25
@@ -294,8 +295,10 @@ class FileSystem(object):
   dirname = staticmethod(os.path.dirname)
   getcwd = staticmethod(os.getcwd)
   join = staticmethod(os.path.join)
+  lexists = staticmethod(os.path.lexists)
   normpath = staticmethod(os.path.normpath)
   open = staticmethod(io.open)
+  splitext = staticmethod(os.path.splitext)
 
 
 class Executor(object):
@@ -377,6 +380,8 @@ class Executor(object):
     """
     fs = self.fs
     path = fs.normpath(fs.join(cur_dir, path))
+    if not fs.splitext(path)[1] and not fs.lexists(path):
+      path += DEFAULT_EXT
     filename = Filename(path, fs.dirname(path))
     reader = fs.open(path, encoding=ENCODING)
 
