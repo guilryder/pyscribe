@@ -450,7 +450,7 @@ class ParsingTest(TestCase):
   def testNoValidToken(self):
     self.assertParsing(
         '$macro[',
-        messages=["root:1: syntax error: macro argument not closed"])
+        messages=["root:1: syntax error: macro argument should be closed"])
 
   def testUnclosedMacroArgument(self):
     self.assertParsing(
@@ -460,7 +460,7 @@ class ParsingTest(TestCase):
             'b',
             'c',
         )),
-        messages=["root:2: syntax error: macro argument not closed"])
+        messages=["root:2: syntax error: macro argument should be closed"])
 
   def testUnclosedMacroArgumentNested(self):
     self.assertParsing(
@@ -473,7 +473,7 @@ class ParsingTest(TestCase):
             '$macro3[',  # other error - ignored
             'd',
         )),
-        messages=["root:4: syntax error: macro argument not closed"])
+        messages=["root:4: syntax error: macro argument should be closed"])
 
 
 if __name__ == '__main__':

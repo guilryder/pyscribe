@@ -152,7 +152,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
   def testSyntaxError(self):
     self.assertExecution(
         '$identity[',
-        messages=['/root:1: syntax error: macro argument not closed'])
+        messages=['/root:1: syntax error: macro argument should be closed'])
 
   def testMacroNotFoundError(self):
     self.assertExecution(

@@ -567,7 +567,7 @@ class Parser(object):
       if first_unclosed_lbracket:
         self.__context.FatalError(
             self.__context.Location(first_unclosed_lbracket.lineno),
-            "syntax error: macro argument not closed")
+            "syntax error: macro argument should be closed")
       else:  # should never happen
         self.__context.FatalError(self.__context.Location(-1),
                                   "unexpected syntax error at end of file")
