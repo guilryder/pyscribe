@@ -99,6 +99,13 @@ class TestCase(unittest.TestCase):
       msg = ''
     return msg + (fmt_string % tuple(map(fmt, args)))
 
+  def assertIs(self, actual, expected, msg=None, fmt=repr):
+    """Same as assertTrue(actual is expected)."""
+    if actual is not expected:  #pragma: no cover
+      raise self.failureException, self.FailureMessage(
+          'Expected to be: %s\nActual: %s',
+          msg, fmt, expected, actual)
+
   def assertIn(self, expected_contained, actual, msg=None, fmt=repr):
     """Same as assertTrue(expected_contained in actual)."""
     if expected_contained not in actual:  #pragma: no cover

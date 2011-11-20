@@ -83,6 +83,43 @@ class FormatNodesTest(TestCase):
                                   TextNode(test_location, 'two')]))
 
 
+class PeekableIteratorTest(TestCase):
+
+  def testEmpty(self):
+    it = PeekableIterator([])
+    self.assertIs(it.peek(), None)
+    self.assertIs(it.next(), None)
+    self.assertIs(it.peek(), None)
+    self.assertIs(it.next(), None)
+
+  def testOneElement_peekFirst(self):
+    elem1 = '1'
+    it = PeekableIterator([elem1])
+    self.assertIs(it.peek(), elem1)
+    self.assertIs(it.next(), elem1)
+    self.assertIs(it.peek(), None)
+    self.assertIs(it.next(), None)
+
+  def testOneElement_nextFirst(self):
+    elem1 = '1'
+    it = PeekableIterator([elem1])
+    self.assertIs(it.next(), elem1)
+    self.assertIs(it.peek(), None)
+    self.assertIs(it.next(), None)
+    self.assertIs(it.peek(), None)
+
+  def testThreeElements(self):
+    elem1, elem2, elem3 = '1', '2', '3'
+    it = PeekableIterator([elem1, elem2, elem3])
+    self.assertIs(it.peek(), elem1)
+    self.assertIs(it.next(), elem1)
+    self.assertIs(it.next(), elem2)
+    self.assertIs(it.peek(), elem3)
+    self.assertIs(it.next(), elem3)
+    self.assertIs(it.peek(), None)
+    self.assertIs(it.next(), None)
+
+
 class ParsingTest(TestCase):
 
   def assertParsing(self, input_text, output=None, messages=(),
@@ -473,7 +510,7 @@ class ParsingTest(TestCase):
             '$macro3[',  # other error - ignored
             'd',
         )),
-        messages=["root:4: syntax error: macro argument should be closed"])
+        messages=["root:6: syntax error: macro argument should be closed"])
 
   def testTooManyArgumentClose(self):
     self.assertParsing(
