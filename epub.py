@@ -179,7 +179,7 @@ class XhtmlBranch(executor.Branch):
       if typography:
         return typography
       branch = branch.parent
-    return None  # pragma:nocover
+    return None  # pragma: no cover
 
   def SetTypography(self, typography):
     self.__typography = typography

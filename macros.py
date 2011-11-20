@@ -112,7 +112,9 @@ class macro(object):
                                     min_args_count=min_args_count,
                                     max_args_count=max_args_count)
         args = call_node.args
-        args = args + [None] * (max_args_count - len(args))
+        missing_args_count = max_args_count - len(args)
+        if missing_args_count > 0:
+          args = args + [None] * missing_args_count
         extra_args = dict(
             (name, parser(executor, arg))
             for (name, parser), arg in zip(arg_parsers, args))

@@ -11,7 +11,7 @@ import sys
 from executor import ExecutionContext, TextBranch
 from log import *
 from macros import *
-from parsing import CallNode, ParseFile, TextNode, VALID_MACRO_NAME_PATTERN
+from parsing import CallNode, TextNode, VALID_MACRO_NAME_PATTERN
 
 
 # Special characters
