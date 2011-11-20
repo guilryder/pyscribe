@@ -49,7 +49,6 @@ generated_files = [
 # The files to exclude explicitly.
 ignored_files = [
     'tests.py',
-    'yacc.py',
   ]
 
 
