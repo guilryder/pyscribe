@@ -475,6 +475,18 @@ class ParsingTest(TestCase):
         )),
         messages=["root:4: syntax error: macro argument should be closed"])
 
+  def testTooManyArgumentClose(self):
+    self.assertParsing(
+        '\n'.join((
+            '$macro[',
+            'a',
+            ']',
+            'b',
+            ']',  # error
+            'c',
+        )),
+        messages=["root:5: syntax error: no macro argument to close"])
+
 
 if __name__ == '__main__':
   unittest.main()

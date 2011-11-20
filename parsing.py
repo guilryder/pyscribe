@@ -383,9 +383,8 @@ class Lexer(object):
 
   def RuleRbracket(self, value):
     r'\s*\]'
-    token = Token('RBRACKET', self.__lineno, value)
     self.__UpdateLineno(value)
-    return token
+    return Token('RBRACKET', self.__lineno, value)
 
   # Pre-processing statement
 
@@ -553,7 +552,11 @@ class Parser(object):
     result.append(p[3])
 
   def p_error(self, p):
-    if p:
+    if p and p.type == 'RBRACKET':
+      # Unexpected ']'.
+      self.__context.FatalError(self.__context.Location(p.lineno),
+                                "syntax error: no macro argument to close")
+    elif p:
       # Location available.
       self.__context.FatalError(self.__context.Location(p.lineno),
                                 "syntax error: '{token.value}'".format(token=p))
