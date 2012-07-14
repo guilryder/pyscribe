@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
 __author__ = 'Guillaume Ryder'
