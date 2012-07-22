@@ -371,6 +371,15 @@ def Roman(executor, call_node, number):
 
 # Conditions
 
+@macro(public_name='if.def',
+       args_signature='macro_name,*then_block,*else_block?',
+       text_compatible=True)
+def IfDef(executor, call_node, macro_name, then_block, else_block):
+  if executor.LookupMacro(macro_name, text_compatible=False):
+    executor.ExecuteNodes(then_block)
+  elif else_block:
+    executor.ExecuteNodes(else_block)
+
 @macro(public_name='if.eq', args_signature='a,b,*then_block,*else_block?',
        text_compatible=True)
 def IfEq(executor, call_node, a, b, then_block, else_block):

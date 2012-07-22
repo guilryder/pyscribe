@@ -593,12 +593,38 @@ class RomanTest(ExecutionTestCase):
         ])
 
 
+class IfDefTest(ExecutionTestCase):
+
+  def testDef_builtin(self):
+    self.assertExecution('$identity[$if.def[identity][yes][no]]', 'yes')
+
+  def testDef_custom(self):
+    self.assertExecution(
+        (
+            '$macro.new[dummy][]',
+            '$identity[$if.def[dummy][yes][no]]',
+        ),
+        'yes')
+
+  def testDef_noElseBlock(self):
+    self.assertExecution('$identity[$if.def[identity][yes]]', 'yes')
+
+  def testUndef(self):
+    self.assertExecution('$identity[$if.def[foobar][yes][no]]', 'no')
+
+  def testUndef_noElseBlock(self):
+    self.assertExecution('$identity[$if.def[foobar][yes]]', '')
+
+
 class IfEqTest(ExecutionTestCase):
 
   def testEq(self):
     self.assertExecution('$identity[$if.eq[test][test][yes][no]]', 'yes')
 
-  def testNotEq_elseBlock(self):
+  def testEq_noElseBlock(self):
+    self.assertExecution('$identity[$if.eq[test][test][yes]]', 'yes')
+
+  def testNotEq(self):
     self.assertExecution('$identity[$if.eq[one][two][yes][no]]', 'no')
 
   def testNotEq_noElseBlock(self):
