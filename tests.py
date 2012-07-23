@@ -12,6 +12,7 @@ import optparse
 import os
 import shutil
 import unittest
+import webbrowser
 
 
 # Inject a custom test loader to load only test case classes ending with 'Test'.
@@ -159,7 +160,7 @@ class TestsManager(object):
 
   def ShowCoverage(self):
     """Opens coverage summary HTML file in the default Internet browser."""
-    os.system(self.COVERAGE_INDEX)
+    webbrowser.open(self.COVERAGE_INDEX)
 
   def Lint(self):
     """Runs the linter against all source files."""
