@@ -109,7 +109,7 @@ class Main(object):
       executor.ExecuteFile(input_filename, self.__current_dir)
       executor.RenderBranches()
     except log.FatalError:
-      pass
+      sys.exit(1)
 
 
 if __name__ == '__main__':

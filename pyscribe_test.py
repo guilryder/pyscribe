@@ -89,13 +89,14 @@ class MainTest(TestCase):
                      self.fs.GetOutputs())
 
   def testExecutionError(self):
-    self.Execute('error.psc')
+    self.assertRaises(SystemExit, self.Execute, 'error.psc')
     self.assertEqual('/cur/error.psc:1: macro not found: $invalid',
                      self.GetStdOutput())
     self.assertEqual({}, self.fs.GetOutputs())
 
   def testCustomErrorFormat(self):
-    self.Execute('error.psc --error_format python')
+    self.assertRaises(SystemExit, self.Execute,
+                      'error.psc --error_format python')
     self.assertEqual('File "/cur/error.psc", line 1\n' +
                      '    macro not found: $invalid',
                      self.GetStdOutput())
