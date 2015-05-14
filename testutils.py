@@ -146,9 +146,11 @@ class TestCase(unittest.TestCase):
         close = read
       return FakeErrorFile()
     else:
-      return io.StringIO(contents, **kwargs)
+      kwargs.pop('encoding', None)
+      return io.StringIO(unicode(contents), **kwargs)
 
   def FakeOutputFile(self, **kwargs):
+    kwargs.pop('encoding', None)
     return io.StringIO(**kwargs)
 
   def GetFileSystem(self, inputs):

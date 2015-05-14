@@ -26,8 +26,7 @@ class MainTest(TestCase):
         '/cur/input.psc': Output('Hello, World!'),
         '/cur/format.psc': Output('Format: $output.format'),
         '/cur/defines.psc': Output('$one,$two,$three,$a.b'),
-        '/cur/error.psc':
-            '$invalid',
+        '/cur/error.psc': '$invalid',
     })
 
   def GetStdOutput(self):
