@@ -33,9 +33,9 @@ class MainTest(TestCase):
     return self.std_output.getvalue().strip()
 
   def assertOutput(self, expected_output):
-    self.assertEqual('', self.GetStdOutput())
-    self.assertEqual({'/cur/output/output.txt': expected_output},
-                     self.fs.GetOutputs())
+    self.assertEqual(self.GetStdOutput(), '')
+    self.assertEqual(self.fs.GetOutputs(),
+                     {'/cur/output/output.txt': expected_output})
 
   def Execute(self, cmdline):
     class FakeOptionParser(OptionParser):
@@ -59,19 +59,22 @@ class MainTest(TestCase):
     Main(args, self.fs, FakeOptionParser, TestLogger).Run()
 
   def testNoArguments(self):
-    self.assertRaises(SystemExit, self.Execute, '')
-    self.assertEqual('error: expected one argument', self.GetStdOutput())
-    self.assertEqual({}, self.fs.GetOutputs())
+    with self.assertRaises(SystemExit):
+      self.Execute('')
+    self.assertEqual(self.GetStdOutput(), 'error: expected one argument')
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testTwoArguments(self):
-    self.assertRaises(SystemExit, self.Execute, 'first second')
-    self.assertEqual('error: expected one argument', self.GetStdOutput())
-    self.assertEqual({}, self.fs.GetOutputs())
+    with self.assertRaises(SystemExit):
+      self.Execute('first second')
+    self.assertEqual(self.GetStdOutput(), 'error: expected one argument')
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testHelp(self):
-    self.assertRaises(SystemExit, self.Execute, '--help')
+    with self.assertRaises(SystemExit):
+      self.Execute('--help')
     self.assertIn('Usage', self.GetStdOutput())
-    self.assertEqual({}, self.fs.GetOutputs())
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testSimple(self):
     self.Execute('input.psc')
@@ -83,23 +86,24 @@ class MainTest(TestCase):
 
   def testCustomOutput(self):
     self.Execute('input.psc --output /custom')
-    self.assertEqual('', self.GetStdOutput())
-    self.assertEqual({'/custom/output.txt': 'Hello, World!'},
-                     self.fs.GetOutputs())
+    self.assertEqual(self.GetStdOutput(), '')
+    self.assertEqual(self.fs.GetOutputs(),
+                     {'/custom/output.txt': 'Hello, World!'})
 
   def testExecutionError(self):
-    self.assertRaises(SystemExit, self.Execute, 'error.psc')
-    self.assertEqual('/cur/error.psc:1: macro not found: $invalid',
-                     self.GetStdOutput())
-    self.assertEqual({}, self.fs.GetOutputs())
+    with self.assertRaises(SystemExit):
+      self.Execute('error.psc')
+    self.assertEqual(self.GetStdOutput(),
+                     '/cur/error.psc:1: macro not found: $invalid')
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testCustomErrorFormat(self):
-    self.assertRaises(SystemExit, self.Execute,
-                      'error.psc --error_format python')
-    self.assertEqual('File "/cur/error.psc", line 1\n' +
-                     '    macro not found: $invalid',
-                     self.GetStdOutput())
-    self.assertEqual({}, self.fs.GetOutputs())
+    with self.assertRaises(SystemExit):
+      self.Execute('error.psc --error_format python')
+    self.assertEqual(self.GetStdOutput(),
+                     'File "/cur/error.psc", line 1\n' +
+                     '    macro not found: $invalid')
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testDefaultOutputFormat(self):
     self.Execute('format.psc')
@@ -114,7 +118,8 @@ class MainTest(TestCase):
     self.assertOutput('1,2bis,,c')
 
   def testDefinesInvalidFormat(self):
-    self.assertRaises(SystemExit, self.Execute, 'defines.psc -d name')
+    with self.assertRaises(SystemExit):
+      self.Execute('defines.psc -d name')
     self.assertIn('-d option expects format: name=text; got: name',
                   self.GetStdOutput())
 

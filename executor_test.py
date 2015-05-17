@@ -20,10 +20,10 @@ class TextBranchTest(BranchTestCase):
     writer = self.FakeOutputFile()
     self.branch.writer = writer
     self.branch.Render()
-    self.assertEqual(expected, writer.getvalue())
+    self.assertEqual(writer.getvalue(), expected)
 
   def testRepr(self):
-    self.assertEqual('<TextBranch: dummy>', repr(self.branch))
+    self.assertEqual(repr(self.branch), '<TextBranch: dummy>')
 
   def testRender_empty(self):
     self.assertRender('')
@@ -56,35 +56,36 @@ class ExecutorTest(TestCase):
     self.executor = Executor(output_dir='output', logger=self.logger)
 
   def testSystemBranch(self):
-    self.assertEqual(self.executor.system_branch,
-                     self.executor.branches.get('system'))
+    self.assertEqual(self.executor.branches.get('system'),
+                     self.executor.system_branch)
     self.assertIn(self.executor.system_branch, self.executor.root_branches)
 
   def testRegisterBranch_alreadyNamed(self):
     branch = TextBranch(parent=None, name='test')
     self.executor.RegisterBranch(branch)
-    self.assertEqual('test', branch.name)
-    self.assertEqual(branch, self.executor.branches.get('test'))
+    self.assertEqual(branch.name, 'test')
+    self.assertEqual(self.executor.branches.get('test'), branch)
 
   def testRegisterBranch_unnamed(self):
     branch1 = TextBranch(parent=None)
     self.executor.RegisterBranch(branch1)
     branch2 = TextBranch(parent=None)
     self.executor.RegisterBranch(branch2)
-    self.assertEqual('auto1', branch1.name)
-    self.assertEqual('auto2', branch2.name)
+    self.assertEqual(branch1.name, 'auto1')
+    self.assertEqual(branch2.name, 'auto2')
 
   def testRegisterBranch_root(self):
     branch = TextBranch(parent=None)
     self.executor.RegisterBranch(branch)
-    self.assertEqual(branch, self.executor.branches[branch.name])
+    self.assertEqual(self.executor.branches.get(branch.name), branch)
     self.assertIn(branch, self.executor.root_branches)
 
   def testRegisterBranch_nonRoot(self):
     branch_root = TextBranch(parent=None)
     branch_child = TextBranch(parent=branch_root)
     self.executor.RegisterBranch(branch_child)
-    self.assertEqual(branch_child, self.executor.branches[branch_child.name])
+    self.assertEqual(self.executor.branches.get(branch_child.name),
+                     branch_child)
     self.assertNotIn(branch_child, self.executor.root_branches)
 
   def testRegisterBranch_registersSubBranches(self):
@@ -92,9 +93,9 @@ class ExecutorTest(TestCase):
     branch_child = TextBranch(parent=branch_root)
     branch_grand_child = TextBranch(parent=branch_child)
     self.executor.RegisterBranch(branch_root)
-    self.assertEqual('auto1', branch_root.name)
-    self.assertEqual('auto2', branch_child.name)
-    self.assertEqual('auto3', branch_grand_child.name)
+    self.assertEqual(branch_root.name, 'auto1')
+    self.assertEqual(branch_child.name, 'auto2')
+    self.assertEqual(branch_grand_child.name, 'auto3')
 
   def CheckArgumentCount(self, min_args_count, max_args_count,
                          actual_args_count):
@@ -104,9 +105,10 @@ class ExecutorTest(TestCase):
         call_node, self.MacroCallback, min_args_count, max_args_count)
 
   def assertCheckArgumentCountFailure(self, expected_error, *args, **kwargs):
-    self.assertRaises(FatalError, self.CheckArgumentCount, *args, **kwargs)
-    self.assertEqual('file.txt:42: $name: ' + expected_error,
-                     self.logger.GetOutput())
+    with self.assertRaises(FatalError):
+      self.CheckArgumentCount(*args, **kwargs)
+    self.assertEqual(self.logger.GetOutput(),
+                     'file.txt:42: $name: ' + expected_error)
 
   def testCheckArgumentCount_minAndMax(self):
     self.CheckArgumentCount(0, 4, actual_args_count=0)

@@ -547,19 +547,22 @@ class CaseTest(ExecutionTestCase):
 class ArabicToRomanTest(TestCase):
 
   def testZeroUnsupported(self):
-    self.assertRaises(InternalError, lambda: ArabicToRoman(0))
+    with self.assertRaises(InternalError):
+      ArabicToRoman(0)
 
   def testNegativeUnsupported(self):
-    self.assertRaises(InternalError, lambda: ArabicToRoman(-1))
+    with self.assertRaises(InternalError):
+      ArabicToRoman(-1)
 
   def testTooLargeUnsupported(self):
-    self.assertRaises(InternalError, lambda: ArabicToRoman(5000))
+    with self.assertRaises(InternalError):
+      ArabicToRoman(5000)
 
   def testSmallValues(self):
     values = ((1, 'I'), (2, 'II'), (3, 'III'), (4, 'IV'), (5, 'V'), (6, 'VI'),
               (7, 'VII'), (8, 'VIII'), (9, 'IX'), (10, 'X'))
     for arabic, roman in values:
-      self.assertEqualExt(roman, ArabicToRoman(arabic),
+      self.assertEqualExt(ArabicToRoman(arabic), roman,
                           'ArabicToRoman mismatch for ' + str(arabic))
 
   def testLargeValues(self):
@@ -567,7 +570,7 @@ class ArabicToRomanTest(TestCase):
               (399, 'CCCXCIX'), (499, 'CDXCIX'), (1000, 'M'), (1999, 'MCMXCIX'),
               (3789, 'MMMDCCLXXXIX'), (3999, 'MMMCMXCIX'))
     for arabic, roman in values:
-      self.assertEqualExt(roman, ArabicToRoman(arabic),
+      self.assertEqualExt(ArabicToRoman(arabic), roman,
                           'ArabicToRoman mismatch for ' + str(arabic))
 
   def testAllValues(self):

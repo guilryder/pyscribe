@@ -10,37 +10,37 @@ from testutils import *
 class FormatMessageTest(TestCase):
 
   def testNoneMessage(self):
-    self.assertEqual('unknown error', FormatMessage(None))
+    self.assertEqual(FormatMessage(None), 'unknown error')
 
   def testEmptyMessage(self):
-    self.assertEqual('unknown error', FormatMessage(''))
+    self.assertEqual(FormatMessage(''), 'unknown error')
 
   def testMessageOnly(self):
-    self.assertEqual('message {blah}', FormatMessage('message {blah}'))
+    self.assertEqual(FormatMessage('message {blah}'), 'message {blah}')
 
   def testMessageAndArgs(self):
-    self.assertEqual('message arg', FormatMessage('message {blah}', blah='arg'))
+    self.assertEqual(FormatMessage('message {blah}', blah='arg'), 'message arg')
 
 
 class ExceptionTestCase(TestCase):
 
   def testNoArgs(self):
-    self.assertEqual('unknown error', self.exception().message)
+    self.assertEqual(self.exception().message, 'unknown error')
 
   def testEmptyMessage(self):
-    self.assertEqual('unknown error', self.exception('').message)
+    self.assertEqual(self.exception('').message, 'unknown error')
 
   def testMessageOnly(self):
-    self.assertEqual('message {blah}',
-                     self.exception('message {blah}').message)
+    self.assertEqual(self.exception('message {blah}').message,
+                     'message {blah}')
 
   def testMessageAndArgs(self):
-    self.assertEqual('message arg',
-                     self.exception('message {blah}', blah='arg').message)
+    self.assertEqual(self.exception('message {blah}', blah='arg').message,
+                     'message arg')
 
   def testStr(self):
-    self.assertEqual('message arg',
-                     str(self.exception('message {blah}', blah='arg')))
+    self.assertEqual(str(self.exception('message {blah}', blah='arg')),
+                     'message arg')
 
 
 class FatalErrorTest(ExceptionTestCase):
@@ -58,23 +58,23 @@ class FilenameTest(TestCase):
   test_filename = Filename('file.txt', '/cur')
 
   def testStr(self):
-    self.assertEqual('file.txt', str(self.test_filename))
+    self.assertEqual(str(self.test_filename), 'file.txt')
 
   def testEq(self):
-    self.assertEqual(Filename('file.txt', '/cur'), self.test_filename)
-    self.assertNotEqual(Filename('other.txt', '/cur'), self.test_filename)
-    self.assertNotEqual(Filename('file.txt', '/'), self.test_filename)
+    self.assertEqual(self.test_filename, Filename('file.txt', '/cur'))
+    self.assertNotEqual(self.test_filename, Filename('other.txt', '/cur'))
+    self.assertNotEqual(self.test_filename, Filename('file.txt', '/'))
 
 
 class LocationTest(TestCase):
 
   def testRepr(self):
-    self.assertEqual('file.txt:42', repr(test_location))
+    self.assertEqual(repr(test_location), 'file.txt:42')
 
   def testEq(self):
-    self.assertEqual(Location(Filename('file.txt', '/cur'), 42), test_location)
-    self.assertNotEqual(Location(Filename('other.txt', '/'), 42), test_location)
-    self.assertNotEqual(Location(test_location.filename, 43), test_location)
+    self.assertEqual(test_location, Location(Filename('file.txt', '/cur'), 42))
+    self.assertNotEqual(test_location, Location(Filename('other.txt', '/'), 42))
+    self.assertNotEqual(test_location, Location(test_location.filename, 43))
 
 
 class LoggerTest(TestCase):
@@ -84,8 +84,8 @@ class LoggerTest(TestCase):
     self.output_file = self.FakeOutputFile()
 
   def assertOutput(self, expected_lines):
-    self.assertEqual('\n'.join(expected_lines + ['']),
-                     self.output_file.getvalue())
+    self.assertEqual(self.output_file.getvalue(),
+                     '\n'.join(expected_lines + ['']))
 
   def testLog_simpleFormat(self):
     logger = Logger(Logger.FORMATS['simple'], self.output_file)

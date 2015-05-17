@@ -98,38 +98,17 @@ class TestCase(unittest.TestCase):
       msg = ''
     return msg + (fmt_string % tuple(map(fmt, args)))
 
-  def assertIs(self, actual, expected, msg=None, fmt=repr):
-    """Same as assertTrue(actual is expected)."""
-    if actual is not expected:  #pragma: no cover
-      raise self.failureException, self.FailureMessage(
-          'Expected to be: %s\nActual: %s',
-          msg, fmt, expected, actual)
-
-  def assertIn(self, expected_contained, actual, msg=None, fmt=repr):
-    """Same as assertTrue(expected_contained in actual)."""
-    if expected_contained not in actual:  #pragma: no cover
-      raise self.failureException, self.FailureMessage(
-          'Expected to contain: %s\nActual: %s',
-          msg, fmt, expected_contained, actual)
-
-  def assertNotIn(self, expected_contained, actual, msg=None, fmt=repr):
-    """Same as assertTrue(expected_contained not in actual)."""
-    if expected_contained in actual:  #pragma: no cover
-      raise self.failureException, self.FailureMessage(
-          'Expected not to contain: %s\nActual: %s',
-          msg, fmt, expected_contained, actual)
-
-  def assertEqualExt(self, first, second, msg=None, fmt=repr):
+  def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
-    if not first == second:  #pragma: no cover
+    if not actual == expected:  #pragma: no cover
       raise self.failureException, self.FailureMessage(
-          'Expected: %s\nActual:   %s', msg, fmt, first, second)
+          'Actual:   %s\nExpected: %s', msg, fmt, actual, expected)
 
-  def assertTextEqual(self, first, second, msg=None):
+  def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
-    if not first == second:  #pragma: no cover
+    if not actual == expected:  #pragma: no cover
       raise self.failureException, self.FailureMessage(
-          'Expected:\n%s\nActual:\n%s', msg, None, first, second)
+          'Actual:\n%s\nExpected:\n%s', msg, None, actual, expected)
 
   def FakeInputFile(self, contents, **kwargs):
     """
@@ -229,8 +208,8 @@ class ExecutionTestCase(TestCase):
   def InputHook(self, text):
     return text
 
-  def assertExecutionOutput(self, expected, actual, msg):
-    self.assertEqualExt(expected, actual, msg)
+  def assertExecutionOutput(self, actual, expected, msg):
+    self.assertEqualExt(actual, expected, msg)
 
   def assertExecution(self, inputs, expected_outputs=None, messages=(),
                       fatal_error=None, strip_output=True):
@@ -321,12 +300,12 @@ class ExecutionTestCase(TestCase):
            'should be a subset of actual filenames:\n  {actual}').format(
               expected=expected_filenames, actual=actual_filenames))
       for filename in expected_outputs:
-        self.assertExecutionOutput(expected_outputs[filename],
-                                   actual_outputs[filename],
+        self.assertExecutionOutput(actual_outputs[filename],
+                                   expected_outputs[filename],
                                    'output mismatch for: ' + filename)
 
     # Verify the log messages.
-    self.assertEqualExt('\n'.join(messages), logger.GetOutput(),
+    self.assertEqualExt(logger.GetOutput(), '\n'.join(messages),
                         'messages mismatch')
     return executor
 
@@ -352,6 +331,6 @@ class BranchTestCase(TestCase):
     sub_branch2.AppendSubBranch(sub_branch21)
     sub_branch21.AppendText('sub21 ')
 
-    self.assertEqual(branch, branch.root)
-    self.assertEqual(branch, sub_branch1.root)
-    self.assertEqual(branch, sub_branch12.root)
+    self.assertEqual(branch.root, branch)
+    self.assertEqual(sub_branch1.root, branch)
+    self.assertEqual(sub_branch12.root, branch)

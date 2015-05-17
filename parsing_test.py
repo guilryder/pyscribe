@@ -15,72 +15,72 @@ from testutils import *
 class TokenTest(TestCase):
 
   def testRepr(self):
-    self.assertEqual(r"(TEXT l42 'a\nb')", repr(Token('TEXT', 42, 'a\nb')))
+    self.assertEqual(repr(Token('TEXT', 42, 'a\nb')), r"(TEXT l42 'a\nb')")
 
 
 class TextNodeTest(TestCase):
 
   def testStr(self):
-    self.assertEqual(r"'a\nb'", str(TextNode(test_location, 'a\nb')))
+    self.assertEqual(str(TextNode(test_location, 'a\nb')), r"'a\nb'")
 
   def testRepr(self):
-    self.assertEqual(r"file.txt:42'a\nb'",
-                     repr(TextNode(test_location, 'a\nb')))
+    self.assertEqual(repr(TextNode(test_location, 'a\nb')),
+                     r"file.txt:42'a\nb'")
 
   def testEq(self):
     node = TextNode(test_location, 'text')
-    self.assertEqual(TextNode(test_location, 'text'), node)
-    self.assertNotEqual(CallNode(test_location, 'text', []), node)
-    self.assertNotEqual(TextNode(loc('file.txt', 43), 'text'), node)
-    self.assertNotEqual(TextNode(test_location, 'other'), node)
+    self.assertEqual(node, TextNode(test_location, 'text'))
+    self.assertNotEqual(node, CallNode(test_location, 'text', []))
+    self.assertNotEqual(node, TextNode(loc('file.txt', 43), 'text'))
+    self.assertNotEqual(node, TextNode(test_location, 'other'))
 
 
 class CallNodeTest(TestCase):
 
   def testStr_noArgs(self):
-    self.assertEqual('$name',
-                     str(CallNode(test_location, 'name', [])))
+    self.assertEqual(str(CallNode(test_location, 'name', [])),
+                     '$name')
 
   def testStr_twoArgs(self):
-    self.assertEqual("$name['one']['two']",
-                     str(CallNode(test_location, 'name',
+    self.assertEqual(str(CallNode(test_location, 'name',
                                   [[TextNode(test_location, 'one')],
-                                   [TextNode(test_location, 'two')]])))
+                                   [TextNode(test_location, 'two')]])),
+                     "$name['one']['two']")
 
   def testRepr_noArgs(self):
-    self.assertEqual('$name',
-                     repr(CallNode(test_location, 'name', [])))
+    self.assertEqual(repr(CallNode(test_location, 'name', [])),
+                     '$name')
 
   def testRepr_twoArgs(self):
-    self.assertEqual("$name['one']['two']",
-                     repr(CallNode(test_location, 'name', [['one'], ['two']])))
+    self.assertEqual(repr(CallNode(test_location, 'name', [['one'], ['two']])),
+                     "$name['one']['two']")
 
   def testEq(self):
     node = CallNode(test_location, 'name', ['one', 'two'])
-    self.assertEqual(CallNode(test_location, 'name', ['one', 'two']), node)
-    self.assertNotEqual(TextNode(test_location, 'text'), node)
-    self.assertNotEqual(CallNode(test_location, 'name', ['other']), node)
-    self.assertNotEqual(CallNode(test_location, 'other', ['one', 'two']), node)
+    self.assertEqual(node, CallNode(test_location, 'name', ['one', 'two']))
+    self.assertNotEqual(node, TextNode(test_location, 'text'))
+    self.assertNotEqual(node, CallNode(test_location, 'name', ['other']))
+    self.assertNotEqual(node, CallNode(test_location, 'other', ['one', 'two']))
 
 
 class FormatNodesTest(TestCase):
 
   def testEmpty(self):
-    self.assertEqual('', FormatNodes([]))
+    self.assertEqual(FormatNodes([]), '')
 
   def testOneTextNode(self):
-    self.assertEqual("'text'",
-                     FormatNodes([TextNode(loc('root', 1), 'text')]))
+    self.assertEqual(FormatNodes([TextNode(loc('root', 1), 'text')]),
+                     "'text'")
 
   def testTwoTextNodesDifferentLine(self):
-    self.assertEqual("'one''two'",
-                     FormatNodes([TextNode(loc('root', 1), 'one'),
-                                  TextNode(loc('root', 2), 'two')]))
+    self.assertEqual(FormatNodes([TextNode(loc('root', 1), 'one'),
+                                  TextNode(loc('root', 2), 'two')]),
+                     "'one''two'")
 
   def testTwoTextNodesSameLine(self):
-    self.assertEqual("'onetwo'",
-                     FormatNodes([TextNode(test_location, 'one'),
-                                  TextNode(test_location, 'two')]))
+    self.assertEqual(FormatNodes([TextNode(test_location, 'one'),
+                                  TextNode(test_location, 'two')]),
+                     "'onetwo'")
 
 
 class PeekableIteratorTest(TestCase):
@@ -146,13 +146,13 @@ class ParsingTest(TestCase):
                        'unexpected fatal error; messages: {0}'.format(
                           logger.GetOutput()))
       if isinstance(output, basestring):
-        self.assertEqualExt(output, FormatNodes(nodes), 'nodes text mismatch')
+        self.assertEqualExt(FormatNodes(nodes), output, 'nodes text mismatch')
       else:
-        self.assertEqualExt(output, nodes, 'nodes mismatch',
+        self.assertEqualExt(nodes, output, 'nodes mismatch',
                             fmt=ReprNodes)
 
     # Verify the log messages.
-    self.assertEqualExt('\n'.join(messages), logger.GetOutput(),
+    self.assertEqualExt(logger.GetOutput(), '\n'.join(messages),
                         'messages mismatch')
 
   def testReadError(self):

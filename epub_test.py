@@ -51,8 +51,9 @@ class AppendTextToXmlTest(TestCase):
     expected_xml_string = '<root>' + expected_xml_string + '</root>'
     tree = ParseXml(initial_xml_string)
     XhtmlBranch._AppendTextToXml(text, tree.find('//tail'), tree.find('//text'))
-    self.assertTextEqual(CanonicalizeXml(expected_xml_string),
-                         XmlToString(tree), 'output mismatch')
+    self.assertTextEqual(XmlToString(tree),
+                         CanonicalizeXml(expected_xml_string),
+                         'output mismatch')
 
   def testNoText(self):
     self.check(None, 'text', 'text')
@@ -81,8 +82,8 @@ class InlineXmlElementTest(TestCase):
   def check(self, initial_xml_string, expected_xml_string):
     tree = ParseXml(initial_xml_string)
     XhtmlBranch(parent=None)._InlineXmlElement(tree.find('//inline'))
-    self.assertTextEqual(CanonicalizeXml(expected_xml_string),
-                         XmlToString(tree))
+    self.assertTextEqual(XmlToString(tree),
+                         CanonicalizeXml(expected_xml_string))
 
   def testEmptyAlone(self):
     self.check('<root><inline></inline></root>',
@@ -105,9 +106,8 @@ class InlineXmlElementTest(TestCase):
                '<root>before 1 <sub>2</sub> 3 after</root>')
 
   def testAttributesLost(self):
-    self.assertRaises(
-        InternalError,
-        self.check, '<root><inline attr="value">inside</inline></root>', '')
+    with self.assertRaises(InternalError):
+      self.check('<root><inline attr="value">inside</inline></root>', '')
 
 
 class XhtmlBranchTest(BranchTestCase):
@@ -121,8 +121,8 @@ class XhtmlBranchTest(BranchTestCase):
     self.branch.writer = writer
     self.branch._Render(writer)
     self.assertTextEqual(
-        MakeExpectedXmlString(expected_xml_string),
-        CanonicalizeXml(writer.getvalue()))
+        CanonicalizeXml(writer.getvalue()),
+        MakeExpectedXmlString(expected_xml_string))
 
   def testRender_empty(self):
     self.assertRender('')
@@ -157,7 +157,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
   def GetExecutionBranch(self, executor):
     return self.CreateBranch(executor, XhtmlBranch)
 
-  def assertExecutionOutput(self, expected, actual, msg):
+  def assertExecutionOutput(self, actual, expected, msg):
     actual_tree = ParseXml(actual)
     expected_text = MakeExpectedXmlString(expected)
     actual_text = XmlToString(actual_tree)
@@ -181,7 +181,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
           # The <body> elements differ: we have a discrepancy to show.
           (expected_text, actual_text) = (body_expected_text, body_actual_text)
 
-    self.assertTextEqual(expected_text, actual_text, msg)
+    self.assertTextEqual(actual_text, expected_text, msg)
 
 
 class GlobalExecutionTest(EpubExecutionTestCase):
@@ -231,10 +231,10 @@ class NeutralTypographyTest(EpubExecutionTestCase):
     return '$typo.set[neutral]' + text
 
   def testFormatNumber_zero(self):
-    self.assertEqual('0', NeutralTypography.FormatNumber('0'))
+    self.assertEqual(NeutralTypography.FormatNumber('0'), '0')
 
   def testFormatNumber_small(self):
-    self.assertEqual('123', NeutralTypography.FormatNumber('123'))
+    self.assertEqual(NeutralTypography.FormatNumber('123'), '123')
 
   def testFormatNumber_negative(self):
     self.assertEqual('-12345678',
@@ -297,38 +297,38 @@ class FrenchTypographyTest(EpubExecutionTestCase):
     return '$typo.set[french]' + text
 
   def testFormatNumber_zero(self):
-    self.assertEqual(u'0', FrenchTypography.FormatNumber('0'))
+    self.assertEqual(FrenchTypography.FormatNumber('0'), u'0')
 
   def testFormatNumber_short(self):
-    self.assertEqual(u'123', FrenchTypography.FormatNumber('123'))
+    self.assertEqual(FrenchTypography.FormatNumber('123'), u'123')
 
   def testFormatNumber_long(self):
-    self.assertEqual(u'12\xa0345\xa0678',
-                     FrenchTypography.FormatNumber('12345678'))
-    self.assertEqual(u'123\xa0456',
-                     FrenchTypography.FormatNumber('123456'))
+    self.assertEqual(FrenchTypography.FormatNumber('12345678'),
+                     u'12\xa0345\xa0678')
+    self.assertEqual(FrenchTypography.FormatNumber('123456'),
+                     u'123\xa0456')
 
   def testFormatNumber_negative(self):
-    self.assertEqual(u'\u20131\xa0234,567\xa08',
-                     FrenchTypography.FormatNumber('-1234,5678'))
+    self.assertEqual(FrenchTypography.FormatNumber('-1234,5678'),
+                     u'\u20131\xa0234,567\xa08')
 
   def testFormatNumber_positive(self):
-    self.assertEqual(u'+1\xa0234.567\xa08',
-                     FrenchTypography.FormatNumber('+1234.5678'))
+    self.assertEqual(FrenchTypography.FormatNumber('+1234.5678'),
+                     u'+1\xa0234.567\xa08')
 
   def testFormatNumber_decimalShort(self):
-    self.assertEqual(u'3.5', FrenchTypography.FormatNumber('3.5'))
+    self.assertEqual(FrenchTypography.FormatNumber('3.5'), u'3.5')
 
   def testFormatNumber_decimalLong(self):
-    self.assertEqual(u'3.567\xa0890',
-                     FrenchTypography.FormatNumber('3.567890'))
-    self.assertEqual(u'3,567\xa0890\xa01',
-                     FrenchTypography.FormatNumber('3,5678901'))
+    self.assertEqual(FrenchTypography.FormatNumber('3.567890'),
+                     u'3.567\xa0890')
+    self.assertEqual(FrenchTypography.FormatNumber('3,5678901'),
+                     u'3,567\xa0890\xa01')
 
   def testFormatNumber_decimalOnly(self):
-    self.assertEqual(u'.5', FrenchTypography.FormatNumber('.5'))
-    self.assertEqual(u',123', FrenchTypography.FormatNumber(',123'))
-    self.assertEqual(u'\u2013.5', FrenchTypography.FormatNumber('-.5'))
+    self.assertEqual(FrenchTypography.FormatNumber('.5'), u'.5')
+    self.assertEqual(FrenchTypography.FormatNumber(',123'), u',123')
+    self.assertEqual(FrenchTypography.FormatNumber('-.5'), u'\u2013.5')
 
   def testTypoNumber(self):
     self.assertExecution(u'before $typo.number[-12345678] after',
