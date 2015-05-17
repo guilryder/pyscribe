@@ -17,7 +17,7 @@ class macro(object):
   """Decorator for macro callbacks."""
 
   def __init__(self, public_name=None, args_signature='',
-               auto_args_parser=True, text_compatible=False):
+               auto_args_parser=True, text_compatible=False, builtin=True):
     """
     Args:
       public_name: (string) The name of the macro if it is builtin,
@@ -31,6 +31,8 @@ class macro(object):
         the end of the arguments list.
       text_compatible: (bool) Whether the macro has no side-effects and can
         produce text-only output.
+      builtin: (bool) Whether the macro is builtin as opposed to defined by the
+        user via $macro.new; determines if the macro can be wrapped.
     """
     if auto_args_parser:
       self.__arg_parsers = self.__BuildArgParsers(args_signature)
@@ -41,6 +43,7 @@ class macro(object):
         public_name=public_name,
         args_signature=args_signature,
         text_compatible=text_compatible,
+        builtin=builtin,
     )
 
   def __BuildArgParsers(self, args_signature):

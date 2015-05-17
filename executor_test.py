@@ -5,6 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import collections
 
+import builtins
 from executor import *
 from testutils import *
 
@@ -208,6 +209,32 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$branch.write[new][%test&]',
         ),
         {'/output/newtex': '\\%test\\&'})
+
+  def testAllBranchTypes(self):
+    for branch_type_name in builtins.BRANCH_TYPES:
+      executor = self.assertExecution(
+          (
+              '$branch.create.root[%s][new][newoutput]' % branch_type_name,
+              '$branch.write[new][test]',
+          ),
+          {})
+      self.__VerifyBranchType(branch_type_name,
+                              executor.branches.get('new').context)
+
+  def __VerifyBranchType(self, branch_type_name, context):
+    # Collect all macros available in the branch.
+    macros = []
+    while context:
+      macros.extend(context.macros.itervalues())
+      context = context.parent
+    self.assertGreater(len(macros), 10)
+
+    # Check that the macros are all built-in.
+    for macro in macros:
+      self.assertTrue(
+          macro.builtin,
+          'initial macros should be built-in: {0} in branch of type {1}'.format(
+              macro.public_name, branch_type_name))
 
 
 class ExecutorAddConstantsTest(ExecutionTestCase):

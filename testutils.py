@@ -236,18 +236,23 @@ class ExecutionTestCase(TestCase):
                       fatal_error=None, strip_output=True):
     """
     Args:
-      inputs: (string|string list|string -> string|string list dict)
-        The input files, keyed by name. If not a dictionary, the contents of the
-        '/root' input file. Each entry is processed by PrepareInputOutput with
-        '\n' as separator if a fatal error is expected, else ''.
-      expected_outputs:
-        (None|string|string list|string -> string|string list dict)
-        The expected output of each branch, keyed by branch name.
+      inputs: (input|(string, input) dict) The input files.
+        If a dictionary, the input files keyed by name.
+        If not a dictionary, the contents of the '/root' input file.
+        Each entry is processed by PrepareInputOutput to generate the file
+        contents: either a string, or a sequence of strings joined with '\n' if
+        fatal_error is true, or '' if fatal_error is false.
+      expected_outputs: (output|(string, output) dict) The expected branch
+        outputs. If a dictionary, the outputs keyed by branch name.
         If not a dictionary, the expected output of GetExecutionBranch().
-        Processed by PrepareInputOutput with '' as separator.
+        Each entry is processed by PrepareInputOutput: either a string, or a
+        sequence of strings to concatenate.
       messages: (string list) The expected error messages.
       fatal_error: (bool) Whether a fatal error is expected.
         Automatically set to True if messages is not None.
+      strip_output: (bool) Whether to strip the output text of outer spaces
+        before comparison.
+    Returns: (Executor) The executor created to do the verification.
     """
 
     # By default, expect a fatal error if log messages are expected.
@@ -323,6 +328,7 @@ class ExecutionTestCase(TestCase):
     # Verify the log messages.
     self.assertEqualExt('\n'.join(messages), logger.GetOutput(),
                         'messages mismatch')
+    return executor
 
 
 class BranchTestCase(TestCase):

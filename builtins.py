@@ -128,8 +128,8 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
 
   Defined outside of MacroNew to avoid using the wrong variables.
   """
-  @macro(args_signature=','.join(macro_arg_names), text_compatible=True,
-         auto_args_parser=False)
+  @macro(args_signature=','.join(macro_arg_names), auto_args_parser=False,
+         text_compatible=True, builtin=False)
   def MacroCallback(executor, call_node):
     executor.CheckArgumentCount(call_node, MacroCallback, len(macro_arg_names))
 
@@ -183,8 +183,8 @@ __BRANCH_CLASSES = (
     epub.XhtmlBranch,
     latex.LatexBranch,
 )
-__BRANCH_TYPES = dict((branch_class.type_name, branch_class)
-                      for branch_class in __BRANCH_CLASSES)
+BRANCH_TYPES = dict((branch_class.type_name, branch_class)
+                    for branch_class in __BRANCH_CLASSES)
 
 @macro(public_name='branch.write', args_signature='branch_name,*contents')
 def BranchWrite(executor, call_node, branch_name, contents):
@@ -210,7 +210,7 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
   The new branch starts with a context containing only the builtin macros.
 
   Args:
-    branch_type: The name of the type of branch to create, see __BRANCH_TYPES.
+    branch_type: The name of the type of branch to create, see BRANCH_TYPES.
     name_or_ref: The name of the branch to create, or, if prefixed with '!', the
       name of the macro to store the automatically generated branch name into.
     filename: The name of the file to save the branch to, relative to the output
@@ -218,11 +218,11 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
   """
 
   # Parse the branch type.
-  branch_class = __BRANCH_TYPES.get(branch_type)
+  branch_class = BRANCH_TYPES.get(branch_type)
   if not branch_class:
     raise InternalError(
         'unknown branch type: {branch_type}; expected one of: {known}',
-        branch_type=branch_type, known=', '.join(sorted(__BRANCH_TYPES)))
+        branch_type=branch_type, known=', '.join(sorted(BRANCH_TYPES)))
 
   # Create the branch.
   __CreateBranch(

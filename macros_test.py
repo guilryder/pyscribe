@@ -51,15 +51,17 @@ class MacroTest(TestCase):
     self.assertEqual(None, MacroCallback.public_name)
     self.assertEqual('', MacroCallback.args_signature)
     self.assertEqual(False, MacroCallback.text_compatible)
+    self.assertEqual(True, MacroCallback.builtin)
 
   def testCustom(self):
-    @macro(public_name='name', args_signature=',,', text_compatible=True,
-           auto_args_parser=False)
+    @macro(public_name='name', args_signature=',,', auto_args_parser=False,
+           text_compatible=True, builtin=False)
     def MacroCallback():
       pass  # pragma: no cover
     self.assertEqual('name', MacroCallback.public_name)
     self.assertEqual(',,', MacroCallback.args_signature)
     self.assertEqual(True, MacroCallback.text_compatible)
+    self.assertEqual(False, MacroCallback.builtin)
 
   def testAutoParser_noArgs(self):
     @macro(public_name='name', args_signature='')
@@ -172,7 +174,7 @@ def PublicMacro1():
   pass
 
 @macro()
-def Privatemacro():
+def PrivateMacro():
   pass
 
 @macro(public_name='public2')
