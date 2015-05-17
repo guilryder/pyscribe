@@ -147,8 +147,11 @@ class TestsManager(object):
     self.RunTests()
     cov.stop()
 
-    # Generate reports.
+    # Generate HTML reports.
     cov.html_report(directory=self.COVERAGE_DIR)
+
+    # Print a coverage summary to the standard output.
+    cov.report()
 
   def Clean(self):
     """Deletes compiled Python files and coverage reports."""
