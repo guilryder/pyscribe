@@ -146,6 +146,37 @@ class MacroNewTest(ExecutionTestCase):
         ),
         '1 + 2 = 2 + 1')
 
+  def testRecursiveCallsBasic(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(arg)][',
+                '$arg!',
+                '$if.def[recursed][][',
+                    '$macro.new[recursed][]',
+                    'REC($test[recursing])',
+                ']',
+            ']',
+            '$test[top]',
+        ),
+        'top!REC(recursing!)')
+
+  def testRecursiveCallsRedefined(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(arg)][',
+                '$arg!',
+                '$if.def[recursed][',
+                    '$macro.new[test(arg)][REDEF:$arg]',
+                '][',
+                    '$macro.new[recursed][]',
+                    'REC($test[recursing1])',
+                    'REC($test[recursing2])',
+                ']',
+            ']',
+            '$test[top]',
+        ),
+        'top!REC(recursing1!)REC(REDEF:recursing2)')
+
   def testNestedCallsSameArgumentNames(self):
     self.assertExecution(
         (
@@ -166,6 +197,34 @@ class MacroNewTest(ExecutionTestCase):
         messages=['/root:1: $macro.new(signature,*body): ' +
                   'arguments count mismatch: expected 2, got 3'])
 
+  def testInvalidSignature(self):
+    self.assertExecution(
+        '$macro.new[macro(][blah]',
+        messages=['/root:1: $macro.new: invalid signature: macro('])
+    self.assertExecution(
+        '$macro.new[macro()(][blah]',
+        messages=['/root:1: $macro.new: invalid signature: macro()('])
+
+  def testInvalidName(self):
+    self.assertExecution(
+        '$macro.new[!][body]',
+        messages=['/root:1: $macro.new: invalid signature: !'])
+
+  def testEmptyNameNoArgs(self):
+    self.assertExecution(
+        '$macro.new[][body]',
+        messages=['/root:1: $macro.new: invalid signature:'])
+
+  def testEmptyNameOneArg(self):
+    self.assertExecution(
+        '$macro.new[(arg)][body]',
+        messages=['/root:1: $macro.new: invalid signature: (arg)'])
+
+  def testEmptyArgName(self):
+    self.assertExecution(
+        '$macro.new[test(one,,three)][body]',
+        messages=['/root:1: $macro.new: invalid signature: test(one,,three)'])
+
   def testDuplicateSignatureArguments(self):
     self.assertExecution(
         '$macro.new[test(one,two,three,two)][body]',
@@ -179,14 +238,6 @@ class MacroNewTest(ExecutionTestCase):
             '$testtest[input]'
         ),
         '!input!')
-
-  def testInvalidSignature(self):
-    self.assertExecution(
-        '$macro.new[macro(][blah]',
-        messages=['/root:1: $macro.new: invalid signature: macro('])
-    self.assertExecution(
-        '$macro.new[macro()(][blah]',
-        messages=['/root:1: $macro.new: invalid signature: macro()('])
 
   def testBranchScope(self):
     self.assertExecution(
@@ -213,6 +264,30 @@ class MacroNewTest(ExecutionTestCase):
         ),
         '1 2')
 
+  def testMacroSameNameInCurrentContext(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial]',
+            '$macro.new[test][new]',
+            '$test',
+        ),
+        'new')
+
+  def testMacroSameNameInParentContext(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial!]',
+            '$branch.create.sub[sub]',
+            '$branch.write[sub][',
+                '$macro.new[test][new!]',
+                '$test',
+            ']',
+            '$test',
+            '$branch.append[sub]',
+            '$test',
+        ),
+        'initial!new!initial!')
+
   def testArgumentSameNameInOtherMacro(self):
     self.assertExecution(
         (
@@ -232,7 +307,7 @@ class MacroNewTest(ExecutionTestCase):
 
   def testArgumentSameNameInNestedDefinitions(self):
     self.assertExecution(
-        ''.join((
+        (
             '$macro.new[id(arg)][$arg]',
             '$macro.new[outer(arg)][',
                 '$macro.new[inner(arg)][$id[I$arg]^ ]',
@@ -241,12 +316,12 @@ class MacroNewTest(ExecutionTestCase):
             ']',
             '$outer[1]',
             '$inner[2]',
-        )),
+        ),
         'Oarg1 IOnested I2')
 
   def testDifferentNamesInNestedDefinitions(self):
     self.assertExecution(
-        ''.join((
+        (
             '$macro.new[id(x)][$x]',
             '$macro.new[outer(y)][',
                 '$macro.new[inner(z)][$id[I$z]^ ]',
@@ -255,18 +330,18 @@ class MacroNewTest(ExecutionTestCase):
             ']',
             '$outer[1]',
             '$inner[2]',
-        )),
+        ),
         'Oy1 IOnested I2')
 
   def testPartialMacros(self):
     self.assertExecution(
-        ''.join((
+        (
             '$macro.new[outer(x)][',
                 '$macro.new[inner(y)][x=$x y=$y]',
             ']',
             '$outer[1]',
             '$inner[2]',
-        )),
+        ),
         'x=1 y=2')
 
 
