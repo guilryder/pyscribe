@@ -345,6 +345,214 @@ class MacroNewTest(ExecutionTestCase):
         'x=1 y=2')
 
 
+class MacroOverrideTest(ExecutionTestCase):
+
+  def testNoArgs(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial]',
+            '$macro.override[test][original][new1 $original new2]',
+            '$test',
+        ),
+        'new1 initial new2')
+
+  def testTwoArgsSameArgNamesAsOriginal(self):
+    self.assertExecution(
+        (
+            '$macro.new[plusRule(a,b)][$a + $b = $b + $a]',
+            '$macro.override[plusRule(a,b)][original][$a+$b $original[$a][$b]]',
+            '$plusRule[1][2]',
+        ),
+        '1+2 1 + 2 = 2 + 1')
+
+  def testTwoArgsDifferentArgNamesThanOriginal(self):
+    self.assertExecution(
+        (
+            '$macro.new[a][topA]',
+            '$macro.new[b][topB]',
+            '$macro.new[plusRule(a,b)][$a + $b = $b + $a]',
+            '$macro.override[plusRule(c,d)][original][',
+            'a=$a b=$b c=$c d=$d $original[$c][$d]]',
+            '$plusRule[1][2]',
+        ),
+        'a=topA b=topB c=1 d=2 1 + 2 = 2 + 1')
+
+  def testDifferentSignatureThanOriginal(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(a)][initial:$a]',
+            '$test[1]',
+            '$macro.override[test(b,c)][original][_$original[$b+$c]]',
+            '$test[2][3]',
+        ),
+        'initial:1_initial:2+3')
+
+  def testRecursiveCallsBasic(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(arg)][',
+              'initial:$arg!',
+              '$if.def[recursed][][',
+                '$macro.new[recursed][]',
+                'REC($test[recursing])',
+              ']',
+            ']',
+            '$macro.override[test(arg)][original][O($original[$arg])]',
+            '$test[top]',
+        ),
+        'O(initial:top!REC(O(initial:recursing!)))')
+
+  def testMultipleOverridesOrdered(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]',
+            '$macro.override[listener][original][a $original A]',
+            '$macro.override[listener][original][b $original B]',
+            '$listener'
+        ),
+        'b a initial A B')
+
+  def testNestedOverrides(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(arg)][',
+                'original:$arg ',
+                '$macro.override[test(arg)][original1][',
+                    'override1:$arg ',
+                    '$original1[$arg]',
+                    '$macro.override[test(arg)][original2][',
+                        'override2:$arg ',
+                        '$original2[$arg]',
+                     ']',
+                 ']',
+            ']',
+            '!$test[1]',
+            '!$test[2]',
+            '!$test[3]',
+        ), (
+            '!original:1 ',
+            '!override1:2 original:2 ',
+            '!override2:3 override1:3 override1:3 original:3',
+        ))
+
+  def testRecursiveCallsRedefined(self):
+    self.assertExecution(
+        (
+            '$macro.new[test(arg)][',
+              'initial:$arg!',
+              '$if.def[recursed][',
+                  '$macro.override[test(arg)][original][O($original[$arg])]',
+              '][',
+                  '$macro.new[recursed][]',
+                  'REC($test[recursing1])',
+                  'REC($test[recursing2])',
+              ']',
+            ']',
+            '$test[top]',
+        ),
+        'initial:top!REC(initial:recursing1!)REC(O(initial:recursing2!))')
+
+  def testNestedCallsSameArgumentNames(self):
+    self.assertExecution(
+        (
+            '$macro.new[plusRule(a,b)][$a + $b = $b + $a]',
+            '$macro.new[plus(a,b)][$a + $b]',
+            '$macro.new[minus(a,b)][$a - ($b)]',
+            '$plusRule[$minus[$minus[6][1]][2]][$minus[3][$plus[4][5]]]',
+        ),
+        '6 - (1) - (2) + 3 - (4 + 5) = 3 - (4 + 5) + 6 - (1) - (2)')
+
+  def testInvalidSignature(self):
+    self.assertExecution(
+        '$macro.override[macro(][original][blah]',
+        messages=['/root:1: $macro.override: invalid signature: macro('])
+    self.assertExecution(
+        '$macro.override[macro()(][original][blah]',
+        messages=['/root:1: $macro.override: invalid signature: macro()('])
+
+  def testInvalidName(self):
+    self.assertExecution(
+        '$macro.override[!][original][body]',
+        messages=['/root:1: $macro.override: invalid signature: !'])
+
+  def testEmptyNameNoArgs(self):
+    self.assertExecution(
+        '$macro.override[][original][body]',
+        messages=['/root:1: $macro.override: invalid signature:'])
+
+  def testEmptyNameOneArg(self):
+    self.assertExecution(
+        '$macro.override[(arg)][original][body]',
+        messages=['/root:1: $macro.override: invalid signature: (arg)'])
+
+  def testEmptyArgName(self):
+    self.assertExecution(
+        '$macro.override[test(a,,c)][original][body]',
+        messages=['/root:1: $macro.override: invalid signature: test(a,,c)'])
+
+  def testDuplicateSignatureArguments(self):
+    self.assertExecution(
+        '$macro.override[test(one,two,three,two)][original][body]',
+        messages=['/root:1: $macro.override: ' +
+                  'duplicate argument in signature: two'])
+
+  def testEmptyOriginalName(self):
+    self.assertExecution(
+        '$macro.override[test][][body]',
+        messages=['/root:1: $macro.override: invalid original macro name:'])
+
+  def testInvalidOriginalName(self):
+    self.assertExecution(
+        '$macro.override[test][!][body]',
+        messages=['/root:1: $macro.override: invalid original macro name: !'])
+
+  def testOriginalNameSameAsArg(self):
+    self.assertExecution(
+        '$macro.override[test(a,b)][b][body]',
+        messages=['/root:1: $macro.override: original macro name conflicts ' +
+                  'with signature: b vs. test(a,b)'])
+
+  def testBuiltinMacro(self):
+    self.assertExecution(
+        '$macro.override[empty][original][]',
+        messages=['/root:1: $macro.override: ' +
+                  'cannot override a built-in macro: empty'])
+
+  def testTextCompatible(self):
+    self.assertExecution(
+        (
+            '$macro.new[double(arg)][$arg$arg]',
+            '$macro.new[testtest(arg)][initial:$arg]',
+            '$macro.override[$double[test](arg)][$double[x]][!$arg! $xx[x]]',
+            '$testtest[input]'
+        ),
+        '!input! initial:x')
+
+  def testMacroSameNameInCurrentContext(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial]',
+            '$macro.new[test][new]',
+            '$test',
+        ),
+        'new')
+
+  def testMacroSameNameInParentContext(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial!]',
+            '$branch.create.sub[sub]',
+            '$branch.write[sub][',
+                '$macro.override[test][original][new($original)!]',
+                '$test',
+            ']',
+            '$test',
+            '$branch.append[sub]',
+            '$test',
+        ),
+        'initial!new(initial!)!initial!')
+
+
 class MacroWrapTest(ExecutionTestCase):
 
   def testBasic(self):

@@ -8,11 +8,8 @@ import itertools
 import re
 import sys
 
-from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_PATTERN
+from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 from log import *
-
-
-VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
 
 TOKEN_LBRACKET = 0  # value: ignored

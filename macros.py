@@ -6,11 +6,13 @@ from collections import defaultdict
 import inspect
 import itertools
 import operator
+import re
 
 
 MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
 VALID_MACRO_NAME_PATTERN = \
     r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)'
+VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
 
 class macro(object):

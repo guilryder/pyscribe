@@ -10,7 +10,7 @@ import sys
 from executor import ExecutionContext, TextBranch
 from log import *
 from macros import *
-from parsing import CallNode, TextNode, VALID_MACRO_NAME_PATTERN
+from parsing import CallNode, TextNode
 
 
 # Special characters
@@ -92,16 +92,29 @@ def MacroNew(executor, call_node, signature, body):
   """
   Defines a new macro in the branch context.
 
-  The signature has the following format:
-  - with arguments: 'name(arg1,...,argN)'
-  - with no arguments: 'name' or 'name()'
-  Spaces between tokens are ignored.
+  See the signature format specification in ParseMacroSignature.
 
   When invoked, the body of the macro is executed in a call context containing
   a macro for each argument, set to the value provided by the caller.
   """
+  macro_name, macro_arg_names = ParseMacroSignature(signature)
+  callback = MacroNewCallback(executor.call_context, macro_arg_names, body)
+  executor.current_branch.context.AddMacro(macro_name, callback)
 
-  # Parse the signature.
+def ParseMacroSignature(signature):
+  """
+  Parses the given macro signature.
+  
+  Accepted formats:
+  - with arguments: 'name(arg1,...,argN)'
+  - with no arguments: 'name' or 'name()'
+  Spaces between tokens are ignored.
+
+  Returns: (string, string list)
+    The macro name and list of arguments.
+  """
+
+  # Parse the macro name and arguments.
   signature_match = __SIGNATURE_REGEX.match(signature)
   if not signature_match:
     raise InternalError('invalid signature: {signature}', signature=signature)
@@ -118,9 +131,7 @@ def MacroNew(executor, call_node, signature, body):
     map(macro_arg_names.remove, macro_arg_names_set)
     raise InternalError('duplicate argument in signature: {argument}',
                         argument=macro_arg_names[0])
-
-  callback = MacroNewCallback(executor.call_context, macro_arg_names, body)
-  executor.current_branch.context.AddMacro(macro_name, callback)
+  return (macro_name, macro_arg_names)
 
 def MacroNewCallback(macro_call_context, macro_arg_names, body):
   """
@@ -162,6 +173,38 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
   return MacroCallback
 
 
+@macro(public_name='macro.override', args_signature='signature,original,*body')
+def MacroOverride(executor, call_node, signature, original, body):
+  """
+  Overrides the definition of an existing macro.
+
+  Args:
+    signature: Same syntax as in $macro.new. The new macro may have a different
+      signature than the original.
+    original: The name of the variable to set with the original macro.
+      Allows the new macro to call the original one.
+    body: The body of the new macro.
+
+  When invoked, the body of the macro is executed in a call context containing:
+  * a macro for each argument, set to the value provided by the caller
+  * $original set to the overridden macro
+  """
+  macro_name, macro_arg_names = ParseMacroSignature(signature)
+  if not VALID_MACRO_NAME_REGEXP.match(original):
+    raise InternalError('invalid original macro name: ' + original)
+  if original in macro_arg_names:
+    raise InternalError('original macro name conflicts with signature: ' +
+                        '%s vs. %s' % (original, signature))
+  macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'override')
+
+  # Create the override execution context: map the original macro to $original.
+  body_call_context = ExecutionContext(parent=executor.call_context)
+  body_call_context.AddMacro(original, macro_callback)
+
+  callback = MacroNewCallback(body_call_context, macro_arg_names, body)
+  executor.current_branch.context.AddMacro(macro_name, callback)
+
+
 @macro(public_name='macro.wrap', args_signature='macro_name,*head,*tail')
 def MacroWrap(executor, call_node, macro_name, head, tail):
   """
@@ -172,13 +215,7 @@ def MacroWrap(executor, call_node, macro_name, head, tail):
   """
 
   # Check that the macro exists and is not builtin.
-  macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
-  if not macro_callback:
-    raise InternalError('cannot wrap a non-existing macro: {macro_name}',
-                        macro_name=macro_name)
-  if macro_callback.builtin:
-    raise InternalError('cannot wrap a built-in macro: {macro_name}',
-                        macro_name=macro_name)
+  macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'wrap')
 
   # Add the hooks.
   if head:
@@ -215,6 +252,18 @@ def MacroCall(executor, call_node):
   called_node = CallNode(macro_name_nodes[0].location, macro_name,
                          call_node.args[1:])
   executor.CallMacro(called_node)
+
+
+def _LookupNonBuiltinMacro(executor, macro_name, verb):
+  """Looks up a non-built-in macro by name."""
+  macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
+  if not macro_callback:
+    raise InternalError('cannot {verb} a non-existing macro: {macro_name}',
+                        verb=verb, macro_name=macro_name)
+  if macro_callback.builtin:
+    raise InternalError('cannot {verb} a built-in macro: {macro_name}',
+                        verb=verb, macro_name=macro_name)
+  return macro_callback
 
 
 # Branches
