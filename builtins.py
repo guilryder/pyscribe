@@ -126,6 +126,8 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
   """
   The callback of a macro defined by MacroNew.
 
+  Allows $macro.wrap to add head and tail hooks to the initial macro body.
+
   Defined outside of MacroNew to avoid using the wrong variables.
   """
   @macro(args_signature=','.join(macro_arg_names), auto_args_parser=False,
@@ -136,9 +138,13 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
     # Execute the arguments in the current context.
     arg_call_context = executor.call_context
 
+    # Execute the head hooks, if any.
+    for hook in MacroCallback.head_hooks:
+      hook(executor)
+
     # Execute the body in the macro definition context augmented with arguments.
     # Using the macro definition context instead of the current context allows
-    # partial macro definitions such as $inner[y] below that depends on the
+    # partial macro definitions such as $inner[y] below: it depends on the
     # argument $x of the enclosing macro definition $outer[x]:
     # $macro.new[outer(x)][$macro.new[inner(y)][$x $y]]
     body_call_context = ExecutionContext(parent=macro_call_context)
@@ -147,14 +153,52 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
                                  ExecuteCallback(arg, arg_call_context))
     executor.ExecuteInCallContext(body, body_call_context)
 
+    # Execute the tail hooks, if any.
+    for hook in MacroCallback.tail_hooks:
+      hook(executor)
+
+  MacroCallback.head_hooks = []
+  MacroCallback.tail_hooks = []
   return MacroCallback
+
+
+@macro(public_name='macro.wrap', args_signature='macro_name,*head,*tail')
+def MacroWrap(executor, call_node, macro_name, head, tail):
+  """
+  Wraps an existing non-builtin macro with head and tail contents.
+
+  The head and tail are executed in a context that does not contain the
+  arguments of the wrapped macro.
+  """
+
+  # Check that the macro exists and is not builtin.
+  macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
+  if not macro_callback:
+    raise InternalError('cannot wrap a non-existing macro: {macro_name}',
+                        macro_name=macro_name)
+  if macro_callback.builtin:
+    raise InternalError('cannot wrap a built-in macro: {macro_name}',
+                        macro_name=macro_name)
+
+  # Add the hooks.
+  if head:
+    macro_callback.head_hooks.insert(
+        0, _MakeHook(head, executor.call_context))
+  if tail:
+    macro_callback.tail_hooks.append(
+        _MakeHook(tail, executor.call_context))
+
+def _MakeHook(nodes, call_context):
+  def Hook(executor):
+    executor.ExecuteInCallContext(nodes, call_context=call_context)
+  return Hook
 
 
 @macro(public_name='macro.call', args_signature='macro_name,arg1,...,argN',
        text_compatible=True, auto_args_parser=False)
 def MacroCall(executor, call_node):
   """
-  Calls a macro dynamically.
+  Calls a macro dynamically, by reflection.
 
   Args:
     macro_name: The name of the macro to call.

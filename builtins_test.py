@@ -345,6 +345,156 @@ class MacroNewTest(ExecutionTestCase):
         'x=1 y=2')
 
 
+class MacroWrapTest(ExecutionTestCase):
+
+  def testBasic(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]',
+            '$macro.wrap[listener][head!][!tail]',
+            '$listener'
+        ),
+        'head!initial!tail')
+
+  def testMultipleWrapsOrdered(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][!initial!]',
+            '$macro.wrap[listener][a][A]',
+            '$macro.wrap[listener][b][B]',
+            '$macro.wrap[listener][c][C]',
+            '$listener'
+        ),
+        'cba!initial!ABC')
+
+  def testEmptyHeadOrTail(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][!initial!]',
+            '$macro.wrap[listener][][A]',
+            '$macro.wrap[listener][][]',
+            '$macro.wrap[listener][c][]',
+            '$listener'
+        ),
+        'c!initial!A')
+
+  def testMultipleWrappedMacrosIndependently(self):
+    self.assertExecution(
+        (
+            '$macro.new[listenerX][X]',
+            '$macro.new[listenerY][Y]',
+            '$macro.wrap[listenerX][a][A]',
+            '$macro.wrap[listenerY][b][B]',
+            '$macro.wrap[listenerX][c][C]',
+            '$macro.wrap[listenerY][d][D]',
+            '$listenerX $listenerY',
+        ),
+        'caXAC dbYBD')
+
+  def testMacroNotExisting(self):
+    self.assertExecution(
+        (
+            '$macro.wrap[nonExistingMacro][head][tail]',
+        ),
+        messages=['/root:1: $macro.wrap: cannot wrap ' +
+                  'a non-existing macro: nonExistingMacro'])
+
+  def testBuiltinMacro(self):
+    self.assertExecution(
+        '$macro.wrap[empty][head][tail]',
+        messages=['/root:1: $macro.wrap: cannot wrap a built-in macro: empty'])
+
+  def testMacroWithArgsAllowed(self):
+    self.assertExecution(
+        (
+            '$macro.new[withArgs(a,b)][$a and $b]',
+            '$macro.wrap[withArgs][head!][!tail]',
+            '$withArgs[1][2]',
+        ),
+        'head!1 and 2!tail')
+
+  def testMacroWithArgsDoesNotSetArgVariables(self):
+    self.assertExecution(
+        (
+            '$macro.new[arg][top]',
+            '$macro.new[withArg(arg)][$arg]',
+            '$macro.wrap[withArg][head:$arg!][!tail:$arg]',
+            '$withArg[call]',
+        ),
+        'head:top!call!tail:top')
+
+  def testTextCompatible(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]',
+            '$macro.wrap[listener][head!][!tail]',
+            '$eval.text[$listener]',
+        ),
+        'head!initial!tail')
+
+  def testBranchScope(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]'
+            '$macro.new[top][$macro.wrap[listener][head!][!tail]]',
+            '$top'
+            '$listener',
+        ),
+        'head!initial!tail')
+
+  def testParentMacroArgumentsInBody(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]'
+            '$macro.new[top(arg)][$macro.wrap[listener][$arg!][!$arg]]',
+            '$top[top-arg]',
+            '$listener',
+        ),
+        'top-arg!initial!top-arg')
+
+  def testReferenceSameNameInMultipleAppends(self):
+    self.assertExecution(
+        (
+            '$macro.new[listener][initial]'
+            '$macro.new[A(ref)][$macro.wrap[listener][a=$ref!][!A=$ref]]',
+            '$macro.new[B(ref)][$macro.wrap[listener][b=$ref!][!B=$ref]]',
+            '$macro.new[ref][top]',
+            '$A[a]',
+            '$macro.wrap[listener][top1=$ref!][!Top1=$ref]',
+            '$macro.new[ref][topMODIF]',
+            '$B[b]',
+            '$macro.wrap[listener][top2=$ref!][!Top2=$ref]',
+            '$listener',
+        ), (
+            'top2=topMODIF!',
+            'b=b!',
+            'top1=topMODIF!',
+            'a=a!',
+            'initial',
+            '!A=a',
+            '!Top1=topMODIF',
+            '!B=b!Top2=topMODIF',
+        ))
+
+  def testMacroInParentContext(self):
+    self.assertExecution(
+        (
+            '$macro.new[test][initial]',
+            '$branch.create.sub[sub]',
+            '$branch.write[sub][',
+                '$macro.wrap[test][head!][!tail]',
+                '($test)',
+            ']',
+            '($test)',
+            '$branch.append[sub]',
+            '($test)',
+        ), (
+            '(head!initial!tail)',
+            '(head!initial!tail)',
+            '(head!initial!tail)',
+        ))
+
+
 class MacroCallTest(ExecutionTestCase):
 
   @staticmethod
