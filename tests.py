@@ -168,8 +168,8 @@ class TestsManager:
   def Lint(self):
     """Runs the linter against all source files."""
     lint_files = self.python_files | set(['tests.py'])
-    os.system('python -m pychecker.checker --limit {limit} --only {files}'
-        .format(files=' '.join(lint_files), limit=100))
+    os.system('python -m pylint --output-format=parseable {files}'
+        .format(files=' '.join(lint_files)))
 
 
 if __name__ == '__main__':
