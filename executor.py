@@ -261,7 +261,6 @@ class TextBranch(Branch):
     self.text_hook = lambda text: text
     self.__outputs = []
     self.__text_accu = StringIO()
-    # TODO: consider using cStringIO + codecs.getwriter(ENCODING)(buffer)
 
   def AppendText(self, text):
     text = self.text_hook(text)
@@ -272,7 +271,8 @@ class TextBranch(Branch):
     text = self.__text_accu.getvalue()
     if text:
       self.__outputs.append(text)
-      self.__text_accu.truncate(0)
+      self.__text_accu.seek(0)
+      self.__text_accu.truncate()
 
   def CreateSubBranch(self):
     return TextBranch(parent=self)
@@ -337,8 +337,8 @@ class Executor(object):
     self.__include_stack = []
     self.RegisterBranch(self.system_branch)
 
-    import builtins
-    for macros_container in (builtins, builtins.SpecialCharacters):
+    import builtin_macros
+    for macros_container in (builtin_macros, builtin_macros.SpecialCharacters):
       self.system_branch.context.AddMacros(GetPublicMacros(macros_container))
 
   def AddConstants(self, constants):

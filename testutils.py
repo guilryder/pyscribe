@@ -6,7 +6,6 @@ __author__ = 'Guillaume Ryder'
 import collections
 import io
 import os
-from StringIO import StringIO
 import unittest
 
 from executor import Branch, Executor
@@ -47,7 +46,7 @@ class FakeLogger(Logger):
       u'  {call_node.location!r}: ${call_node.name}\n')
 
   def __init__(self):
-    self.output_file = StringIO()
+    self.output_file = io.StringIO()
     super(FakeLogger, self).__init__(self.FORMAT, self.output_file)
 
   def GetOutput(self):
@@ -58,7 +57,8 @@ class FakeLogger(Logger):
 
   def Clear(self):
     """Clears the log cache."""
-    self.output_file.truncate(0)
+    self.output_file.seek(0)
+    self.output_file.truncate()
 
 
 class FakeFileSystem(object):
@@ -96,19 +96,21 @@ class TestCase(unittest.TestCase):
       msg += '\n'
     else:
       msg = ''
+    if fmt is None:
+      fmt = lambda x: x
     return msg + (fmt_string % tuple(map(fmt, args)))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
     if not actual == expected:  #pragma: no cover
-      raise self.failureException, self.FailureMessage(
-          'Actual:   %s\nExpected: %s', msg, fmt, actual, expected)
+      raise self.failureException(self.FailureMessage(
+          'Actual:   %s\nExpected: %s', msg, fmt, actual, expected))
 
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
     if not actual == expected:  #pragma: no cover
-      raise self.failureException, self.FailureMessage(
-          'Actual:\n%s\nExpected:\n%s', msg, None, actual, expected)
+      raise self.failureException(self.FailureMessage(
+          'Actual:\n%s\nExpected:\n%s', msg, None, actual, expected))
 
   def FakeInputFile(self, contents, **kwargs):
     """
@@ -162,6 +164,7 @@ class TestCase(unittest.TestCase):
         outputs = {}
         for output_filename, output_writer in fs.__output_writers.iteritems():
           output = output_writer.getvalue()
+          output_writer.close()
           if strip_output:
             output = output.strip()
           outputs[output_filename] = output
@@ -292,10 +295,10 @@ class ExecutionTestCase(TestCase):
       self.assertFalse(actual_fatal_error,
                        'unexpected fatal error; messages: {0}'.format(
                            logger.GetOutput()))
-      expected_filenames = expected_outputs.keys()
-      actual_filenames = actual_outputs.keys()
+      expected_filenames = set(expected_outputs.keys())
+      actual_filenames = set(actual_outputs.keys())
       self.assertTrue(
-          set(expected_filenames).issubset(set(actual_filenames)),
+          expected_filenames.issubset(actual_filenames),
           ('output file names mismatch; expected filenames:\n  {expected}\n' +
            'should be a subset of actual filenames:\n  {actual}').format(
               expected=expected_filenames, actual=actual_filenames))

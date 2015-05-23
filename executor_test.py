@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import collections
 
-import builtins
+from builtin_macros import BRANCH_TYPES
 from executor import *
 from testutils import *
 
@@ -100,7 +100,7 @@ class ExecutorTest(TestCase):
   def CheckArgumentCount(self, min_args_count, max_args_count,
                          actual_args_count):
     call_node = CallNode(test_location, 'name',
-                         map(str, range(actual_args_count)))
+                         [str(i) for i in range(actual_args_count)])
     self.executor.CheckArgumentCount(
         call_node, self.MacroCallback, min_args_count, max_args_count)
 
@@ -213,7 +213,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
         {'/output/newtex': '\\%test\\&'})
 
   def testAllBranchTypes(self):
-    for branch_type_name in builtins.BRANCH_TYPES:
+    for branch_type_name in BRANCH_TYPES:
       executor = self.assertExecution(
           (
               '$branch.create.root[%s][new][newoutput]' % branch_type_name,

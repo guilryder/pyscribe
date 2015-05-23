@@ -7,7 +7,7 @@ __author__ = 'Guillaume Ryder'
 import collections
 import os
 
-from builtins import *
+from builtin_macros import *
 from executor import *
 from testutils import *
 
@@ -37,6 +37,9 @@ class SpecialCharsTest(ExecutionTestCase):
             'a$-b',
         ),
         'aOKb')
+
+  def testWhitespaceMacros(self):
+    self.assertExecution('A$newline^B', 'A\nB')
 
 
 class EmptyTest(ExecutionTestCase):
@@ -717,7 +720,8 @@ class MacroCallTest(ExecutionTestCase):
   def TwoWrappedMacro(executor, call_node, a, b):
     executor.AppendText(a)
     executor.AppendText('-')
-    executor.AppendText(b)
+    if b:
+      executor.AppendText(b)
 
   def testHardcodedName(self):
     self.assertExecution('$macro.call[wrap][arg]', 'AargB')

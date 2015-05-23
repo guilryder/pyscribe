@@ -57,7 +57,7 @@ class macro(object):
 
     Returns:
       (arg parser list, arg parser list) The required and optional argument
-      parsers of the macro. Each argument parser is a (string, parser) tuple,
+      parsers of the macro. Each argument parser is a (name, parser) tuple,
       where 'name' is the parameter name without special prefixes/suffixes,
       and 'parser' is a (Executor, node list) -> object function.
       Parsers for nodes arguments return their argument as is.
@@ -87,17 +87,17 @@ class macro(object):
       return (optional, (arg_signature, args_parser))
 
     # Split the list of arguments in two: first required, then optional.
-    parsers_list = map(ParseArgSignature, args_signature.split(','))
+    parsers_list = [ParseArgSignature(sig) for sig in args_signature.split(',')]
     parsers_grouped_by_optional = \
-        [(optional, map(operator.itemgetter(1), parsers))
+        [(optional, [parser[1] for parser in parsers])
          for (optional, parsers)
          in itertools.groupby(parsers_list, operator.itemgetter(0))]
-    optionals = map(operator.itemgetter(0), parsers_grouped_by_optional)
+    optionals = [parser[0] for parser in parsers_grouped_by_optional]
     assert len(optionals) <= 2 and optionals != [True, False], \
         'Invalid args signature: optional arguments must be grouped at the end'
 
     parsers_keyed_by_optional = defaultdict(list, parsers_grouped_by_optional)
-    return map(parsers_keyed_by_optional.__getitem__, (False, True))
+    return [parsers_keyed_by_optional[optional] for optional in (False, True)]
 
   def __call__(self, callback):
     # If automatic arguments parsing is enabled, wrap the callback.

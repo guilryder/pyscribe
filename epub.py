@@ -4,9 +4,9 @@
 __author__ = 'Guillaume Ryder'
 
 from abc import ABCMeta, abstractmethod
+import io
 from lxml import etree
 import re
-from cStringIO import StringIO
 
 import executor
 from log import FatalError, InternalError, Location
@@ -103,7 +103,7 @@ class XhtmlBranch(executor.Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XHTML_STUB = """\
+  __XHTML_STUB = b"""\
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -207,6 +207,9 @@ class XhtmlBranch(executor.Branch):
         # Should never happen: at most one paragraph break per chunk of text.
         self.AppendLineText(para)
 
+  __NBSP_TRIM_REGEXP = re.compile(r' *' + NBSP + r' *')
+  __MULTIPLE_SPACES = re.compile(r' +')
+
   def AppendLineText(self, text):
     """
     Appends text to the current line.
@@ -214,11 +217,11 @@ class XhtmlBranch(executor.Branch):
     Faster equivalent of AppendText() when the text to append is newlines-free.
 
     Args:
-      text: (string) The string to append. Must not contain any '\n'.
+      text: (string) The non-empty string to append. Must not contain any '\n'.
     """
     assert text
-    text = re.sub(r'\s*' + NBSP + r'\s*', NBSP, text)
-    text = re.sub(r'\s+', ' ', text)
+    text = self.__NBSP_TRIM_REGEXP.sub(NBSP, text)
+    text = self.__MULTIPLE_SPACES.sub(' ', text)
 
     sep = self.__text_sep
     if sep:
@@ -486,10 +489,11 @@ class XhtmlBranch(executor.Branch):
     for elem in self.__root_elem.iter():
       self.__PostProcessElement(elem)
 
-    str_writer = StringIO()
-    self.__tree.write(str_writer, encoding=self.__tree.docinfo.encoding,
+    # TODO: find a way to not use an intermediate buffer
+    bytes_writer = io.BytesIO()
+    self.__tree.write(bytes_writer, encoding=executor.ENCODING,
                       xml_declaration=True, pretty_print=False)
-    writer.write(unicode(str_writer.getvalue(), encoding=executor.ENCODING))
+    writer.write(bytes_writer.getvalue().decode(executor.ENCODING))
 
   def __Finalize(self):
     """
@@ -544,7 +548,7 @@ class XhtmlBranch(executor.Branch):
       elem.text = None
       raise InternalError(
           'removing an empty element with attributes: {elem}',
-          elem=etree.tostring(elem))
+          elem=etree.tostring(elem, encoding='unicode'))
     return True
 
   @staticmethod
@@ -590,7 +594,8 @@ class XhtmlBranch(executor.Branch):
                                      text_elem=parent_elem)
 
     # Replace the placeholder element with its children.
-    map(elem.addprevious, elem)
+    for child in elem:
+      elem.addprevious(child)
     del elem[:]
     elem.text = elem.tail = None
     assert self._RemoveElementIfEmpty(elem)
@@ -629,7 +634,7 @@ class NeutralTypography(Typography):
   """Language-neutral typography rules."""
 
   name = 'neutral'
-  macros_container = __import__('builtins').SpecialCharacters
+  macros_container = __import__('builtin_macros').SpecialCharacters
 
   @staticmethod
   def FormatNumber(number):
@@ -685,6 +690,8 @@ class FrenchTypography(Typography):
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents')
   def RulePunctuationDouble(executor, call_node, contents):
+    if not contents:
+      return
     branch = executor.current_branch
     tail_chr = branch.inline_tail_chr
     if tail_chr not in (u'…', '.'):
@@ -851,4 +858,5 @@ class Macros(object):
 
   @classmethod
   def _ParseClassNames(cls, class_names):
-    return filter(None, cls.__CLASS_NAME_SEPARATOR_REGEXP.split(class_names))
+    return [cn for cn in cls.__CLASS_NAME_SEPARATOR_REGEXP.split(class_names)
+            if cn]

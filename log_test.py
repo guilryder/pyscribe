@@ -86,6 +86,7 @@ class LoggerTest(TestCase):
   def assertOutput(self, expected_lines):
     self.assertEqual(self.output_file.getvalue(),
                      '\n'.join(expected_lines + ['']))
+    self.output_file.close()
 
   def testLog_simpleFormat(self):
     logger = Logger(Logger.FORMATS['simple'], self.output_file)

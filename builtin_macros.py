@@ -128,7 +128,8 @@ def ParseMacroSignature(signature):
   # Check that the macro arguments are unique.
   macro_arg_names_set = set(macro_arg_names)
   if len(macro_arg_names_set) != len(macro_arg_names):
-    map(macro_arg_names.remove, macro_arg_names_set)
+    for macro_arg_name in macro_arg_names:
+      macro_arg_names.remove(macro_arg_name)
     raise InternalError('duplicate argument in signature: {argument}',
                         argument=macro_arg_names[0])
   return (macro_name, macro_arg_names)

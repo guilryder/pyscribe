@@ -14,15 +14,17 @@ def ParseXml(xml_string):
   return etree.fromstring(xml_string.encode('utf8')).getroottree()
 
 def XmlToString(elem_or_tree):
-  # Strip out '\n' tails from all nodes.
   root_elem = elem_or_tree
   if hasattr(root_elem, 'getroot'):
     root_elem = root_elem.getroot()
+
+  # Strip out '\n' tails from all nodes.
   for elem in root_elem.iterdescendants():
     if elem.tail == '\n':
       elem.tail = None
+
   # Convert the tree to an XML string.
-  return etree.tostring(elem_or_tree, pretty_print=True)
+  return etree.tostring(elem_or_tree, pretty_print=True, encoding='unicode')
 
 def CanonicalizeXml(xml_string):
   return XmlToString(ParseXml(xml_string))
@@ -117,12 +119,12 @@ class XhtmlBranchTest(BranchTestCase):
     self.branch = XhtmlBranch(parent=None)
 
   def assertRender(self, expected_xml_string):
-    writer = self.FakeOutputFile(encoding='utf8')
-    self.branch.writer = writer
-    self.branch._Render(writer)
-    self.assertTextEqual(
-        CanonicalizeXml(writer.getvalue()),
-        MakeExpectedXmlString(expected_xml_string))
+    with self.FakeOutputFile(encoding='utf8') as writer:
+      self.branch.writer = writer
+      self.branch._Render(writer)
+      self.assertTextEqual(
+          CanonicalizeXml(writer.getvalue()),
+          MakeExpectedXmlString(expected_xml_string))
 
   def testRender_empty(self):
     self.assertRender('')
@@ -404,6 +406,16 @@ class FrenchTypographyTest(EpubExecutionTestCase):
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
                          u'<p>what&#160;!?;: wtf&#160;:;?!</p>')
+
+  def testPunctuationDouble_cornerCases(self):
+    self.assertExecution(
+        (
+            'A', '$text.punctuation.double[]',
+            'B', '$text.punctuation.double[ ]',
+            'C', '$text.punctuation.double[^ ]',
+            'D',
+        ),
+        u'<p>ABC\xa0D</p>')
 
   def testGuillemets_convertsSpaces(self):
     self.assertExecution(u'one « two » three',

@@ -5,7 +5,6 @@
 __author__ = 'Guillaume Ryder'
 
 import itertools
-from StringIO import StringIO
 
 from log import *
 from parsing import *

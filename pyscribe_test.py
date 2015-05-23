@@ -40,7 +40,7 @@ class MainTest(TestCase):
   def Execute(self, cmdline):
     class FakeOptionParser(OptionParser):
       """Option parser that prints to self.std_output."""
-      def exit(parser, status=0, msg=None, **kwargs):
+      def exit(parser, status=0, msg='', **kwargs):
         self.std_output.write(msg)
         sys.exit(status)
 
