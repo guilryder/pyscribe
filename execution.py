@@ -6,7 +6,7 @@ from abc import ABCMeta, abstractmethod
 import io
 import os
 
-from log import *
+from log import Filename, FormatMessage, InternalError
 from macros import *
 from parsing import TextNode, ParseFile
 
@@ -118,6 +118,8 @@ class Branch(metaclass=ABCMeta):
     writer: (stream) The output writer of the branch (root branch only).
       Must have a write() method.
   """
+
+  type_name = None  # must be set in implementations
 
   def __init__(self, parent, parent_context=None, name=None, writer=None):
     """

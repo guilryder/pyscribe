@@ -1008,7 +1008,7 @@ class ArabicToRomanTest(TestCase):
       self.assertEqualExt(ArabicToRoman(arabic), roman,
                           'ArabicToRoman mismatch for ' + str(arabic))
 
-  def testAllValues(self):
+  def testAllValues(self):  # pylint: disable=no-self-use
     for arabic in range(1, 4000):
       ArabicToRoman(arabic)
 

@@ -180,6 +180,7 @@ class XhtmlBranch(execution.Branch):
     return None  # pragma: no cover
 
   def SetTypography(self, typography):
+    # pylint: disable=attribute-defined-outside-init
     self.__typography = typography
     self.__typography_context.macros = \
         typography and typography.context.macros or {}
@@ -604,7 +605,7 @@ class Typography(metaclass=ABCMeta):
 
   def __init__(self):
     super(Typography, self).__init__()
-    assert self.name
+    assert self.name  # pylint: disable=no-member
     if self.macros_container is None:
       self.macros_container = self
     self.context = execution.ExecutionContext(parent=None)
@@ -632,7 +633,7 @@ class NeutralTypography(Typography):
   macros_container = __import__('builtin_macros').SpecialCharacters
 
   @staticmethod
-  def FormatNumber(number):
+  def FormatNumber(number):  # pylint: disable=arguments-differ
     return number
 
 
@@ -642,7 +643,7 @@ class FrenchTypography(Typography):
   name = 'french'
 
   @staticmethod
-  def FormatNumber(number):
+  def FormatNumber(number):  # pylint: disable=arguments-differ
     # Separate thoushands with a non-breaking space.
     (sign, before_decimal, decimal_sep, after_decimal) = \
         NUMBER_REGEXP.match(number).groups()

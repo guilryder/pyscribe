@@ -3,7 +3,7 @@ jobs=4
 extension-pkg-whitelist=lxml.etree
 
 [MESSAGES CONTROL]
-disable=W1637,W1612,W1617,E1603,W1606,W1638,E1605,W1616,W1621,W1620,W1626,W1613,W1614,W1622,W1604,W1609,W1632,W1605,W1629,W1634,E1607,W1624,W1608,W1619,W1603,E1604,W1607,W1633,E1602,W1635,I0021,W1628,W1610,W1640,W1611,W1618,W1636,I0020,W0704,E1601,W1623,W1630,W1639,E1606,W1627,W1601,W1625,E1608,W1602,W1615,invalid-name,missing-docstring,bad-continuation,wildcard-import,unused-wildcard-import,too-few-public-methods,too-many-public-methods,too-many-arguments,too-many-instance-attributes,too-many-locals,too-many-local-variables,too-many-lines
+disable=W1637,W1612,W1617,E1603,W1606,W1638,E1605,W1616,W1621,W1620,W1626,W1613,W1614,W1622,W1604,W1609,W1632,W1605,W1629,W1634,E1607,W1624,W1608,W1619,W1603,E1604,W1607,W1633,E1602,W1635,I0021,W1628,W1610,W1640,W1611,W1618,W1636,I0020,W0704,E1601,W1623,W1630,W1639,E1606,W1627,W1601,W1625,E1608,W1602,W1615,invalid-name,missing-docstring,bad-continuation,wildcard-import,unused-wildcard-import,too-few-public-methods,too-many-public-methods,too-many-arguments,too-many-instance-attributes,too-many-locals,too-many-local-variables,too-many-lines,locally-disabled,protected-access
 
 [BASIC]
 bad-functions=

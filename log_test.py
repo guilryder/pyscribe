@@ -27,7 +27,7 @@ class FormatMessageTest(TestCase):
 class ExceptionTestCase(TestCase):
 
   @abstractmethod
-  def exception(self):
+  def exception(self, *unused_args, **unused_kwargs):
     pass  # pragma: no cover
 
   def testNoArgs(self):

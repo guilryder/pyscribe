@@ -46,7 +46,7 @@ class TextBranchTest(BranchTestCase):
 class ExecutorTest(TestCase):
 
   @macro(public_name='name')
-  def MacroCallback():
+  def MacroCallback(self):
     pass  # pragma: no cover
 
   def setUp(self):
@@ -231,11 +231,11 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     self.assertGreater(len(macros), 10)
 
     # Check that the macros are all built-in.
-    for macro in macros:
+    for callback in macros:
       self.assertTrue(
-          macro.builtin,
+          callback.builtin,
           'initial macros should be built-in: {0} in branch of type {1}'.format(
-              macro.public_name, branch_type_name))
+              callback.public_name, branch_type_name))
 
 
 class ExecutorAddConstantsTest(ExecutionTestCase):

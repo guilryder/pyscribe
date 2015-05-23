@@ -22,6 +22,7 @@ class LatexBranch(execution.TextBranch):
 
 
 class Macros:
+  # pylint: disable=anomalous-backslash-in-string
 
   TextPercent = StaticAppendTextCallback('\%', public_name='text.percent')
   TextAmpersand = StaticAppendTextCallback('\&', public_name='text.ampersand')

@@ -32,6 +32,7 @@ class Main:
 
   def __LoadEnvironment(self):
     """Retrieves the environment: current directory, etc."""
+    # pylint: disable=attribute-defined-outside-init
     fs = self.__fs
     self.__lib_dir = fs.dirname(fs.normpath(__file__))
     self.__current_dir = fs.getcwd()
@@ -47,6 +48,7 @@ class Main:
       __options: The command-line options object.
       __logger: The logger to use.
     """
+    # pylint: disable=attribute-defined-outside-init
     def CheckDefine(unused_option, opt, value):
       (name, sep, text) = value.partition('=')
       if not sep:

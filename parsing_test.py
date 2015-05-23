@@ -4,7 +4,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-from log import *
 from parsing import *
 from testutils import *
 

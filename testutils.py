@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
+# pylint: disable=no-self-use
 
 __author__ = 'Guillaume Ryder'
 
@@ -9,7 +10,7 @@ import os
 import unittest
 
 from execution import Executor
-from log import *
+from log import FatalError, Filename, InternalError, Location, Logger
 from macros import macro, GetPublicMacros
 
 
@@ -136,6 +137,7 @@ class TestCase(unittest.TestCase):
 
   def GetFileSystem(self, inputs):
     class TestFileSystem(FakeFileSystem):
+      # pylint: disable=no-self-argument
       def __init__(fs):
         super(TestFileSystem, fs).__init__()
         fs.__output_writers = {}

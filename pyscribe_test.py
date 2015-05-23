@@ -38,6 +38,7 @@ class MainTest(TestCase):
                      {'/cur/output/output.txt': expected_output})
 
   def Execute(self, cmdline):
+    # pylint: disable=no-self-argument
     class FakeOptionParser(OptionParser):
       """Option parser that prints to self.std_output."""
       def exit(parser, status=0, msg='', **unused_kwargs):

@@ -6,11 +6,12 @@ __author__ = 'Guillaume Ryder'
 import imp
 
 from macros import *
-from parsing import *
+from parsing import CallNode
 from testutils import *
 
 
 class MacroTest(TestCase):
+  # pylint: disable=attribute-defined-outside-init
 
   def setUp(self):
     super(MacroTest, self).setUp()
@@ -93,7 +94,8 @@ class MacroTest(TestCase):
     self.__CheckMacroCall(MacroCallback, ['1'], ['T1', None, None])
     self.__CheckMacroCall(MacroCallback, [], [None, None, None])
     self.__CheckMacroCallFailure(MacroCallback, ['1', '2', '3', '4'],
-        '$name(one?,*two?,three?): arguments count mismatch: expected 0..3, got 4')
+        '$name(one?,*two?,three?): arguments count mismatch: ' +
+        'expected 0..3, got 4')
 
   def testAutoParser_optionalAndRequired(self):
     @macro(public_name='name', args_signature='*one,two,*three?')
@@ -182,7 +184,7 @@ def PrivateMacro():
 def PublicMacro2():
   pass
 """
-    exec(code, module.__dict__)
+    exec(code, module.__dict__)  # pylint: disable=exec-used
     self.assertDictEqual(GetPublicMacros(module),
                          dict(public1=module.PublicMacro1,
                               public2=module.PublicMacro2))

@@ -7,7 +7,7 @@ import inspect
 import itertools
 import re
 
-from log import *
+from log import Filename, Location
 from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 
@@ -131,11 +131,11 @@ class ParsingContext:
     self.filename = filename
     self.logger = logger
 
-  def Location(self, lineno):
+  def MakeLocation(self, lineno):
     """Builds a Location object for this context."""
     return Location(self.filename, lineno)
 
-  def FatalError(self, *args, **kwargs):
+  def MakeFatalError(self, *args, **kwargs):
     """
     Raises a fatal error.
 
@@ -383,7 +383,7 @@ class Lexer:
     if preproc_instr_callback:
       preproc_instr_callback()
     else:
-      self.context.FatalError(
+      self.context.MakeFatalError(
           self.__Location(),
           "unknown pre-processing instruction: '{name}'\n" +
           "known instructions: {known}",
@@ -413,9 +413,9 @@ class Lexer:
 
   def RuleMacroInvalid(self, value):
     r'\$(?:[^$]\S{,9}|\Z)'
-    self.context.FatalError(self.__Location(),
-                            "invalid macro name: '{name}'",
-                            name=value)
+    self.context.MakeFatalError(self.__Location(),
+                                "invalid macro name: '{name}'",
+                                name=value)
 
   # Special characters
 
@@ -509,7 +509,7 @@ class Parser:
 
     # Optimization: bing instance values to the local scope.
     context = self.__context
-    Location = context.Location
+    MakeLocation = context.MakeLocation
     Log = context.logger.Log
     tokens = self.__tokens
 
@@ -538,13 +538,13 @@ class Parser:
         if token_type == TOKEN_TEXT:
           # Text
           next(tokens)
-          nodes.append(TextNode(Location(token.lineno), token.value))
+          nodes.append(TextNode(MakeLocation(token.lineno), token.value))
 
         elif token_type == TOKEN_MACRO:
           # Macro call
           next(tokens)
           macro_name = token.value
-          macro_location = Location(token.lineno)
+          macro_location = MakeLocation(token.lineno)
 
           # Parse the arguments
           args = []
@@ -562,7 +562,7 @@ class Parser:
             # Expect a ']'.
             token = next(tokens)
             if not token:
-              raise Log(Location(arg_lineno),
+              raise Log(MakeLocation(arg_lineno),
                         "syntax error: macro argument should be closed")
             assert token.type == TOKEN_RBRACKET
 
@@ -571,13 +571,13 @@ class Parser:
         elif token_type == TOKEN_RBRACKET:
           # ']': do not consume the token, leave it to the parent macro call.
           if call_nest_count == 0:
-            raise Log(Location(token.lineno),
+            raise Log(MakeLocation(token.lineno),
                       "syntax error: no macro argument to close")
           break
 
         else:
           # Other: error
-          raise Log(Location(token.lineno), "syntax error: '{token.value}'",
+          raise Log(MakeLocation(token.lineno), "syntax error: '{token.value}'",
                     token=token)
       return nodes
 
@@ -630,9 +630,9 @@ def ParseFile(reader, filename, logger):
   try:
     input_text = reader.read()
     reader.close()
-  except Exception as e:
-    context.FatalError(
-        context.Location(1),
+  except Exception as e:  # pylint: disable=broad-except
+    context.MakeFatalError(
+        context.MakeLocation(1),
         'unable to read the input file: {filename}\n{error}'.format(
             filename=filename, error=e))
 

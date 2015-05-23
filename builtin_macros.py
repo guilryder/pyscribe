@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 import re
 
 from execution import ExecutionContext, TextBranch
-from log import *
+from log import InternalError
 from macros import *
 from parsing import CallNode, TextNode
 
@@ -432,6 +432,7 @@ def ArabicToRoman(number):
     raise InternalError('unsupported number for conversion to Roman: {number}',
                         number=number)
 
+  # pylint: disable=bad-whitespace
   conv_table = ((1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
                  (100, 'C'),  (90, 'XC'),  (50, 'L'),  (40, 'XL'),
                   (10, 'X'),   (9, 'IX'),   (5, 'V'),   (4, 'IV'),

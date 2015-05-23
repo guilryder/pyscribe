@@ -99,7 +99,7 @@ class TestsManager:
     for action in actions:
       action()
 
-  def GetProdAndTestModules(self, python_files):
+  def GetProdAndTestModules(self, python_files):  # pylint: disable=no-self-use
     """Divides the given Python files into production and test modules.
 
     Does not load the module, so that coverage information is not lost.
