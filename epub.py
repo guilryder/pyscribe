@@ -103,17 +103,17 @@ class XhtmlBranch(executor.Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XHTML_STUB = b"""\
-<?xml version="1.0" encoding="UTF-8"?>
+  __XML_HEADER = '<?xml version="1.0" encoding="%s"?>\n' % executor.ENCODING
+  __XHTML_STUB = bytes("""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type"
-          content="application/xhtml+xml; charset=utf-8"/>
+          content="application/xhtml+xml; charset={encoding}"/>
   </head>
 </html>
-"""
+""".format(encoding=executor.ENCODING), encoding='ascii')
 
   __AUTO_PARA_DELIMITER = re.compile(r'\n{2,}')
   __AUTO_PARA_TAG_DEFAULT = 'p'
@@ -489,11 +489,8 @@ class XhtmlBranch(executor.Branch):
     for elem in self.__root_elem.iter():
       self.__PostProcessElement(elem)
 
-    # TODO: find a way to not use an intermediate buffer
-    bytes_writer = io.BytesIO()
-    self.__tree.write(bytes_writer, encoding=executor.ENCODING,
-                      xml_declaration=True, pretty_print=False)
-    writer.write(bytes_writer.getvalue().decode(executor.ENCODING))
+    writer.write(self.__XML_HEADER)
+    writer.write(etree.tostring(self.__tree, encoding=str))
 
   def __Finalize(self):
     """

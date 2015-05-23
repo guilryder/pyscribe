@@ -12,7 +12,7 @@ from macros import *
 from parsing import CallNode, TextNode, ParseFile
 
 
-ENCODING = 'utf8'
+ENCODING = 'utf-8'
 DEFAULT_EXT = '.psc'
 
 MAX_NESTED_CALLS = 25

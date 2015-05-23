@@ -11,7 +11,7 @@ from testutils import *
 
 
 def ParseXml(xml_string):
-  return etree.fromstring(xml_string.encode('utf8')).getroottree()
+  return etree.fromstring(xml_string.encode('utf-8')).getroottree()
 
 def XmlToString(elem_or_tree):
   root_elem = elem_or_tree
@@ -24,16 +24,16 @@ def XmlToString(elem_or_tree):
       elem.tail = None
 
   # Convert the tree to an XML string.
-  return etree.tostring(elem_or_tree, pretty_print=True, encoding='unicode')
+  return etree.tostring(elem_or_tree, pretty_print=True, encoding=str)
 
 def CanonicalizeXml(xml_string):
   return XmlToString(ParseXml(xml_string))
 
 def MakeExpectedXmlString(expected_body):
-  return CanonicalizeXml(''.join((
-        '<?xml version="1.0" encoding="UTF-8"?>',
+  return ''.join((
+        '<?xml version="1.0" encoding="utf-8"?>\n',
         '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" ',
-            '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">',
+            '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n',
         '<html xmlns="http://www.w3.org/1999/xhtml">',
           '<head>',
             '<meta http-equiv="Content-Type" ',
@@ -43,7 +43,7 @@ def MakeExpectedXmlString(expected_body):
             expected_body,
           '</body>',
         '</html>'
-    )))
+    ))
 
 
 class AppendTextToXmlTest(TestCase):
@@ -118,13 +118,17 @@ class XhtmlBranchTest(BranchTestCase):
     super(XhtmlBranchTest, self).setUp()
     self.branch = XhtmlBranch(parent=None)
 
-  def assertRender(self, expected_xml_string):
-    with self.FakeOutputFile(encoding='utf8') as writer:
+  def assertRender(self, expected_xml_string, canonicalize_fn=CanonicalizeXml):
+    with self.FakeOutputFile() as writer:
       self.branch.writer = writer
       self.branch._Render(writer)
       self.assertTextEqual(
-          CanonicalizeXml(writer.getvalue()),
-          MakeExpectedXmlString(expected_xml_string))
+          canonicalize_fn(writer.getvalue()),
+          canonicalize_fn(MakeExpectedXmlString(expected_xml_string)))
+
+  def testRender_htmlBoilerplate(self):
+    self.branch.AppendText('test')
+    self.assertRender('<p>test</p>', canonicalize_fn=lambda text: text)
 
   def testRender_empty(self):
     self.assertRender('')
@@ -161,7 +165,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
 
   def assertExecutionOutput(self, actual, expected, msg):
     actual_tree = ParseXml(actual)
-    expected_text = MakeExpectedXmlString(expected)
+    expected_text = CanonicalizeXml(MakeExpectedXmlString(expected))
     actual_text = XmlToString(actual_tree)
 
     if expected_text != actual_text:  # pragma: no cover

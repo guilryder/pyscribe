@@ -130,7 +130,7 @@ class ParsingTest(TestCase):
     logger = FakeLogger()
 
     # Create a fake input file and parse it.
-    input_file = self.FakeInputFile(input_text, encoding='utf8', newline=None)
+    input_file = self.FakeInputFile(input_text, newline=None)
     try:
       nodes = ParseFile(input_file, filename, logger=logger)
     except FatalError:

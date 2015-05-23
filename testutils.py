@@ -127,11 +127,9 @@ class TestCase(unittest.TestCase):
         close = read
       return FakeErrorFile()
     else:
-      kwargs.pop('encoding', None)
       return io.StringIO(contents, **kwargs)
 
   def FakeOutputFile(self, **kwargs):
-    kwargs.pop('encoding', None)
     return io.StringIO(**kwargs)
 
   def GetFileSystem(self, inputs):
@@ -144,6 +142,7 @@ class TestCase(unittest.TestCase):
         return path in inputs
 
       def open(fs, filename, mode='rt', **kwargs):
+        assert kwargs.pop('encoding', None) == 'utf-8'
         if mode == 'rt':
           # Open an input file.
           if filename in inputs:
@@ -191,7 +190,7 @@ class ExecutionTestCase(TestCase):
 
   def CreateBranch(self, executor, branch_class, **kwargs):
     kwargs.setdefault('name', 'root')
-    writer = executor.fs.open(kwargs['name'], mode='wt')
+    writer = executor.fs.open(kwargs['name'], mode='wt', encoding='utf-8')
     branch = branch_class(
         parent=None, parent_context=executor.system_branch.context,
         writer=writer, **kwargs)
@@ -259,7 +258,7 @@ class ExecutionTestCase(TestCase):
     logger = FakeLogger()
     executor = Executor(output_dir='/output', logger=logger, fs=fs)
     executor.system_branch.writer = \
-        fs.open(executor.system_branch.name, 'wt')
+        fs.open(executor.system_branch.name, 'wt', encoding='utf-8')
     output_branch = self.GetExecutionBranch(executor)
     executor.current_branch = output_branch
     output_branch.context.AddMacros(self.additional_builtin_macros)
