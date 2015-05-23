@@ -47,7 +47,7 @@ class Main:
       __options: The command-line options object.
       __logger: The logger to use.
     """
-    def CheckDefine(option, opt, value):
+    def CheckDefine(unused_option, opt, value):
       (name, sep, text) = value.partition('=')
       if not sep:
         raise optparse.OptionValueError(

@@ -3,9 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
-from abc import ABCMeta, abstractmethod
 import re
-import sys
 
 from executor import ExecutionContext, TextBranch
 from log import *
@@ -38,7 +36,7 @@ class SpecialCharacters:
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents',
          text_compatible=True)
-  def TextPunctuationDouble(executor, call_node, contents):
+  def TextPunctuationDouble(executor, unused_call_node, contents):
     executor.AppendText(contents)
 
   @staticmethod
@@ -51,7 +49,7 @@ class SpecialCharacters:
 # Core
 
 @macro(public_name='empty', text_compatible=True)
-def Empty(executor, call_node):
+def Empty(unused_executor, unused_call_node):
   pass
 
 
@@ -88,7 +86,7 @@ __SIGNATURE_REGEX = re.compile(
     re.VERBOSE)
 
 @macro(public_name='macro.new', args_signature='signature,*body')
-def MacroNew(executor, call_node, signature, body):
+def MacroNew(executor, unused_call_node, signature, body):
   """
   Defines a new macro in the branch context.
 
@@ -104,7 +102,7 @@ def MacroNew(executor, call_node, signature, body):
 def ParseMacroSignature(signature):
   """
   Parses the given macro signature.
-  
+
   Accepted formats:
   - with arguments: 'name(arg1,...,argN)'
   - with no arguments: 'name' or 'name()'
@@ -175,7 +173,7 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
 
 
 @macro(public_name='macro.override', args_signature='signature,original,*body')
-def MacroOverride(executor, call_node, signature, original, body):
+def MacroOverride(executor, unused_call_node, signature, original, body):
   """
   Overrides the definition of an existing macro.
 
@@ -207,7 +205,7 @@ def MacroOverride(executor, call_node, signature, original, body):
 
 
 @macro(public_name='macro.wrap', args_signature='macro_name,*head,*tail')
-def MacroWrap(executor, call_node, macro_name, head, tail):
+def MacroWrap(executor, unused_call_node, macro_name, head, tail):
   """
   Wraps an existing non-builtin macro with head and tail contents.
 
@@ -281,7 +279,7 @@ BRANCH_TYPES = dict((branch_class.type_name, branch_class)
                     for branch_class in __BRANCH_CLASSES)
 
 @macro(public_name='branch.write', args_signature='branch_name,*contents')
-def BranchWrite(executor, call_node, branch_name, contents):
+def BranchWrite(executor, unused_call_node, branch_name, contents):
   """
   Writes contents into the given branch.
   """
@@ -342,7 +340,7 @@ def BranchCreateSub(executor, call_node, name_or_ref):
 
 
 @macro(public_name='branch.append', args_signature='branch_name')
-def BranchAppend(executor, call_node, branch_name):
+def BranchAppend(executor, unused_call_node, branch_name):
   """
   Appends a previously created sub-branch to the current branch.
 
@@ -352,7 +350,6 @@ def BranchAppend(executor, call_node, branch_name):
   Args:
     branch_name: The name of the branch to insert.
   """
-  current_branch = executor.current_branch
   sub_branch = __ParseBranchName(executor, branch_name)
   executor.current_branch.AppendSubBranch(sub_branch)
 
@@ -407,13 +404,13 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
 # Text operations
 
 @macro(public_name='case.lower', args_signature='text', text_compatible=True)
-def CaseLower(executor, call_node, text):
+def CaseLower(executor, unused_call_node, text):
   """Converts text to lowercase."""
   executor.AppendText(text.lower())
 
 
 @macro(public_name='case.upper', args_signature='text', text_compatible=True)
-def CaseUpper(executor, call_node, text):
+def CaseUpper(executor, unused_call_node, text):
   """Converts text to uppercase."""
   executor.AppendText(text.upper())
 
@@ -448,7 +445,7 @@ def ArabicToRoman(number):
 
 
 @macro(public_name='roman', args_signature='number', text_compatible=True)
-def Roman(executor, call_node, number):
+def Roman(executor, unused_call_node, number):
   """
   Prints the Roman representation of an Arabic number.
   """
@@ -468,7 +465,7 @@ def Roman(executor, call_node, number):
 @macro(public_name='if.def',
        args_signature='macro_name,*then_block,*else_block?',
        text_compatible=True)
-def IfDef(executor, call_node, macro_name, then_block, else_block):
+def IfDef(executor, unused_call_node, macro_name, then_block, else_block):
   if executor.LookupMacro(macro_name, text_compatible=False):
     executor.ExecuteNodes(then_block)
   elif else_block:
@@ -476,7 +473,7 @@ def IfDef(executor, call_node, macro_name, then_block, else_block):
 
 @macro(public_name='if.eq', args_signature='a,b,*then_block,*else_block?',
        text_compatible=True)
-def IfEq(executor, call_node, a, b, then_block, else_block):
+def IfEq(executor, unused_call_node, a, b, then_block, else_block):
   if a == b:
     executor.ExecuteNodes(then_block)
   elif else_block:
@@ -486,7 +483,7 @@ def IfEq(executor, call_node, a, b, then_block, else_block):
 # Counters
 
 @macro(public_name='counter.create', args_signature='counter_name')
-def CounterCreate(executor, call_node, counter_name):
+def CounterCreate(executor, unused_call_node, counter_name):
   """
   Creates a new counter initially set to zero.
 
@@ -499,18 +496,18 @@ def CounterCreate(executor, call_node, counter_name):
   value_holder = [0]
 
   @macro(text_compatible=True)
-  def ValueCallback(executor, call_node):
+  def ValueCallback(executor, unused_call_node):
     """Writes the value of the counter as an arabic number."""
     executor.AppendText(str(value_holder[0]))
 
   @macro(args_signature='*contents', text_compatible=True)
-  def IfPositiveCallback(executor, call_node, contents):
+  def IfPositiveCallback(executor, unused_call_node, contents):
     """Executes the contents if the counter is strictly positive (1 or more)."""
     if value_holder[0] > 0:
       executor.ExecuteNodes(contents)
 
   @macro(args_signature='value')
-  def SetCallback(executor, call_node, value):
+  def SetCallback(unused_executor, unused_call_node, value):
     """Sets the value of a counter to the given integer."""
     try:
       value_holder[0] = int(value)
@@ -518,7 +515,7 @@ def CounterCreate(executor, call_node, counter_name):
       raise InternalError('invalid integer value: {value}', value=value)
 
   @macro()
-  def IncrCallback(executor, call_node):
+  def IncrCallback(unused_executor, unused_call_node):
     """Increments the counter."""
     value_holder[0] += 1
 

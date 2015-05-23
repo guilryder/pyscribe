@@ -39,7 +39,7 @@ class MacroTest(TestCase):
     try:
       self.__MacroCall(macro_callback, args)
       self.fail('expected error: ' + expected_message)  # pragma: no cover
-    except FatalError as e:
+    except FatalError:
       self.assertFalse(self.called, 'expected macro callback not invoked')
       self.assertEqual(self.logger.GetOutput(), expected_message)
       self.logger.Clear()
@@ -65,7 +65,7 @@ class MacroTest(TestCase):
 
   def testAutoParser_noArgs(self):
     @macro(public_name='name', args_signature='')
-    def MacroCallback(executor, call_node):
+    def MacroCallback(unused_executor, unused_call_node):
       self.called = True
 
     self.__CheckMacroCall(MacroCallback, [])
@@ -74,7 +74,7 @@ class MacroTest(TestCase):
 
   def testAutoParser_allRequired(self):
     @macro(public_name='name', args_signature='one,*two,three')
-    def MacroCallback(executor, call_node, one, two, three):
+    def MacroCallback(unused_executor, unused_call_node, one, two, three):
       self.__CheckMacroCallback(one, two, three)
 
     self.__CheckMacroCall(MacroCallback, ['1', '2', '3'], ['T1', '2', 'T3'])
@@ -85,7 +85,7 @@ class MacroTest(TestCase):
 
   def testAutoParser_allOptional(self):
     @macro(public_name='name', args_signature='one?,*two?,three?')
-    def MacroCallback(executor, call_node, one, two, three):
+    def MacroCallback(unused_executor, unused_call_node, one, two, three):
       self.__CheckMacroCallback(one, two, three)
 
     self.__CheckMacroCall(MacroCallback, ['1', '2', '3'], ['T1', '2', 'T3'])
@@ -97,28 +97,31 @@ class MacroTest(TestCase):
 
   def testAutoParser_optionalAndRequired(self):
     @macro(public_name='name', args_signature='*one,two,*three?')
-    def MacroCallback(executor, call_node, one, two, three):
+    def MacroCallback(unused_executor, unused_call_node, one, two, three):
       self.__CheckMacroCallback(one, two, three)
 
     self.__CheckMacroCall(MacroCallback, ['1', '2', '3'], ['1', 'T2', '3'])
     self.__CheckMacroCall(MacroCallback, ['1', '2'], ['1', 'T2', None])
     self.__CheckMacroCallFailure(MacroCallback, ['1'],
-        '$name(*one,two,*three?): arguments count mismatch: expected 2..3, got 1')
+        '$name(*one,two,*three?): arguments count mismatch: ' +
+        'expected 2..3, got 1')
     self.__CheckMacroCallFailure(MacroCallback, [],
-        '$name(*one,two,*three?): arguments count mismatch: expected 2..3, got 0')
+        '$name(*one,two,*three?): arguments count mismatch: ' +
+        'expected 2..3, got 0')
     self.__CheckMacroCallFailure(MacroCallback, ['1', '2', '3', '4'],
-        '$name(*one,two,*three?): arguments count mismatch: expected 2..3, got 4')
+        '$name(*one,two,*three?): arguments count mismatch: ' +
+        'expected 2..3, got 4')
 
   def testAutoParser_requiredThenOptional(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one?,two?,three')
-      def MacroCallback():
+      def unused_MacroCallback():
         pass  # pragma: no cover
 
   def testAutoParser_requiredThenOptionalThenRequired(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one,two?,three')
-      def MacroCallback():
+      def unused_MacroCallback():
         pass  # pragma: no cover
 
 

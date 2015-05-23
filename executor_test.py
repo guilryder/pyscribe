@@ -3,10 +3,9 @@
 
 __author__ = 'Guillaume Ryder'
 
-import collections
-
 from builtin_macros import BRANCH_TYPES
 from executor import *
+from parsing import CallNode
 from testutils import *
 
 

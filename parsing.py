@@ -6,10 +6,9 @@ __author__ = 'Guillaume Ryder'
 import inspect
 import itertools
 import re
-import sys
 
-from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 from log import *
+from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 
 TOKEN_LBRACKET = 0  # value: ignored
@@ -28,8 +27,8 @@ class Token:
     value: (String) The contents of the token.
   """
 
-  def __init__(self, type, lineno, value):
-    self.type = type
+  def __init__(self, tok_type, lineno, value):
+    self.type = tok_type
     self.lineno = lineno
     self.value = value
 
@@ -235,7 +234,8 @@ class Lexer:
     """Returns the tokens iterator."""
     return self.__tokens
 
-  def __MergeTextTokensSameLine(self, tokens):
+  @staticmethod
+  def __MergeTextTokensSameLine(tokens):
     """
     Merges the consecutive text tokens that have the same line.
 
@@ -378,7 +378,8 @@ class Lexer:
   def RulePreProcessingInstruction(self, value):
     r'\$\$[a-zA-Z0-9._]*\n?'
     preproc_instr_name = value[2:].strip()
-    preproc_instr_callback = self.__preproc_instr_callbacks.get(preproc_instr_name)
+    preproc_instr_callback = \
+        self.__preproc_instr_callbacks.get(preproc_instr_name)
     if preproc_instr_callback:
       preproc_instr_callback()
     else:
@@ -466,11 +467,11 @@ class Lexer:
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
-  def RuleBacktick(self, value):
+  def RuleBacktick(self, unused_value):
     r"`"
     return self.__MacroToken('text.backtick')
 
-  def RuleApostrophe(self, value):
+  def RuleApostrophe(self, unused_value):
     r"'"
     return self.__MacroToken('text.apostrophe')
 

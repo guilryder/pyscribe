@@ -96,8 +96,9 @@ class InlineXmlElementTest(TestCase):
                '<root>before  after</root>')
 
   def testEmptyWithPrevious(self):
-    self.check('<root>first <prev>p</prev> before <inline></inline> after</root>',
-               '<root>first <prev>p</prev> before  after</root>')
+    self.check(
+        '<root>first <prev>p</prev> before <inline></inline> after</root>',
+        '<root>first <prev>p</prev> before  after</root>')
 
   def testOnlyText(self):
     self.check('<root>before <inline>inside</inline> after</root>',
@@ -633,8 +634,8 @@ class TagOpenCloseTest(EpubExecutionTestCase):
                 '$tag.open[div][block]',
                 '$tag.close[div]',
             '$tag.close[div]',
-        ), messages=['/root:2: $tag.open: impossible to open a non-inline tag ' +
-                     'inside an inline tag'])
+        ), messages=['/root:2: $tag.open: impossible to open ' +
+                     'a non-inline tag inside an inline tag'])
 
   def testTagClose_autoParaClose(self):
     self.assertExecution(
@@ -936,7 +937,8 @@ class TagClassAddTest(EpubExecutionTestCase):
   def testTargetNotFound(self):
     self.assertExecution(
         '$tag.class.add[<div>][first]',
-        messages=['/root:1: $tag.class.add: no element found for target: <div>'])
+        messages=['/root:1: $tag.class.add: ' +
+                  'no element found for target: <div>'])
 
   def testInvalidTarget(self):
     self.assertExecution(

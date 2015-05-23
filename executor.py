@@ -5,11 +5,10 @@ __author__ = 'Guillaume Ryder'
 from abc import ABCMeta, abstractmethod
 import io
 import os
-import sys
 
 from log import *
 from macros import *
-from parsing import CallNode, TextNode, ParseFile
+from parsing import TextNode, ParseFile
 
 
 ENCODING = 'utf-8'
@@ -149,12 +148,12 @@ class Branch(metaclass=ABCMeta):
     return '<%s: %s>' % (self.__class__.__name__, self.name)
 
   @abstractmethod
-  def AppendText(self, text):  # pragma: no cover
+  def AppendText(self, text):
     """Appends a block of text to the branch."""
-    pass
+    pass  # pragma: no cover
 
   @abstractmethod
-  def CreateSubBranch(self):  # pragma: no cover
+  def CreateSubBranch(self):
     """
     Creates a new sub-branch for this branch.
 
@@ -163,7 +162,7 @@ class Branch(metaclass=ABCMeta):
     Returns:
       (Branch) The new sub-branch, unattached.
     """
-    pass
+    pass  # pragma: no cover
 
   def AppendSubBranch(self, sub_branch):
     """
@@ -193,7 +192,7 @@ class Branch(metaclass=ABCMeta):
     sub_branch.attached = True
 
   @abstractmethod
-  def _AppendSubBranch(self, sub_branch):  # pragma: no cover
+  def _AppendSubBranch(self, sub_branch):
     """
     Appends an existing sub-branch to this branch.
 
@@ -202,7 +201,7 @@ class Branch(metaclass=ABCMeta):
     Args:
       sub_branch: (Branch) The sub-branch to insert.
     """
-    pass
+    pass  # pragma: no cover
 
   def IterBranches(self):
     """
@@ -228,7 +227,7 @@ class Branch(metaclass=ABCMeta):
       writer.flush()
 
   @abstractmethod
-  def _Render(self, writer):  # pragma: no cover
+  def _Render(self, writer):
     """
     Renders the branch and its sub-branches recursively.
 
@@ -236,7 +235,7 @@ class Branch(metaclass=ABCMeta):
       write: (stream) The stream to render the output text to.
         Must have a write() method.
     """
-    pass
+    pass  # pragma: no cover
 
 
 class TextBranch(Branch):

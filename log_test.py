@@ -3,6 +3,8 @@
 
 __author__ = 'Guillaume Ryder'
 
+from abc import abstractmethod
+
 from log import *
 from testutils import *
 
@@ -23,6 +25,10 @@ class FormatMessageTest(TestCase):
 
 
 class ExceptionTestCase(TestCase):
+
+  @abstractmethod
+  def exception(self):
+    pass  # pragma: no cover
 
   def testNoArgs(self):
     self.assertEqual(self.exception().message, 'unknown error')

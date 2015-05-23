@@ -40,7 +40,7 @@ class MainTest(TestCase):
   def Execute(self, cmdline):
     class FakeOptionParser(OptionParser):
       """Option parser that prints to self.std_output."""
-      def exit(parser, status=0, msg='', **kwargs):
+      def exit(parser, status=0, msg='', **unused_kwargs):
         self.std_output.write(msg)
         sys.exit(status)
 
@@ -48,7 +48,7 @@ class MainTest(TestCase):
         parser.exit(2, "error: %s\n" % msg)
 
       def print_help(parser, file=None, **kwargs):
-        OptionParser.print_help(parser, self.std_output , **kwargs)
+        OptionParser.print_help(parser, self.std_output, **kwargs)
 
     class TestLogger(log.Logger):
       def __init__(logger, *args, **kwargs):

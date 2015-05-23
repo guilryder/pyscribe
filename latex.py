@@ -4,7 +4,6 @@ __author__ = 'Guillaume Ryder'
 
 
 import executor
-from log import FatalError, InternalError, Location
 from macros import *
 
 

@@ -4,9 +4,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-import collections
-import os
-
 from builtin_macros import *
 from executor import *
 from testutils import *
@@ -710,14 +707,14 @@ class MacroCallTest(ExecutionTestCase):
 
   @staticmethod
   @macro(public_name='wrap', args_signature='*contents', text_compatible=True)
-  def WrapMacro(executor, call_node, contents):
+  def WrapMacro(executor, unused_call_node, contents):
     executor.AppendText('A')
     executor.ExecuteNodes(contents)
     executor.AppendText('B')
 
   @staticmethod
   @macro(public_name='AoneOrTwoB', args_signature='a,b?', text_compatible=True)
-  def TwoWrappedMacro(executor, call_node, a, b):
+  def TwoWrappedMacro(executor, unused_call_node, a, b):
     executor.AppendText(a)
     executor.AppendText('-')
     if b:
@@ -800,7 +797,8 @@ class BranchCreateTest(ExecutionTestCase):
   def testRoot_unknownType(self):
     self.assertExecution(
         '$branch.create.root[invalid][new][output]',
-        messages=['/root:1: $branch.create.root: unknown branch type: invalid;' +
+        messages=['/root:1: $branch.create.root: ' +
+                  'unknown branch type: invalid;' +
                   ' expected one of: latex, text, xhtml'])
 
   def testRoot_duplicateBranchName(self):

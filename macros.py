@@ -72,7 +72,7 @@ class macro:
       else:
         return executor.EvalText(arg)
 
-    def NodesArgParser(executor, arg):
+    def NodesArgParser(unused_executor, arg):
       return arg
 
     def ParseArgSignature(arg_signature):
@@ -186,7 +186,7 @@ def ExecuteCallback(nodes, call_context=None, **kwargs):
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, call_node):
+  def MacroCallback(executor, unused_call_node):
     executor.ExecuteInCallContext(nodes, call_context=call_context)
   return MacroCallback
 
@@ -199,7 +199,7 @@ def AppendTextCallback(text, **kwargs):
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, call_node):
+  def MacroCallback(executor, unused_call_node):
     executor.AppendText(text)
   return MacroCallback
 

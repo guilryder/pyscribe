@@ -4,12 +4,11 @@
 __author__ = 'Guillaume Ryder'
 
 from abc import ABCMeta, abstractmethod
-import io
 from lxml import etree
 import re
 
 import executor
-from log import FatalError, InternalError, Location
+from log import InternalError
 from macros import *
 
 
@@ -186,7 +185,7 @@ class XhtmlBranch(executor.Branch):
         typography and typography.context.macros or {}
 
   typography = property(GetTypography, SetTypography,
-                        doc = '(Typography) The typography rules.')
+                        doc='(Typography) The typography rules.')
 
   def AppendText(self, text):
     paras = self.__AUTO_PARA_DELIMITER.split(text)
@@ -424,7 +423,7 @@ class XhtmlBranch(executor.Branch):
         and closed_elem.tail is None:
       closed_elem.tail = '\n'
 
-  def RegisterTargetAction(self, call_node, target, action):
+  def RegisterTargetAction(self, unused_call_node, target, action):
     """
     Executes an action against a target element.
 
@@ -516,7 +515,8 @@ class XhtmlBranch(executor.Branch):
         branch.__Finalize()
         self._InlineXmlElement(branch.__root_elem)
 
-  def __PostProcessElement(self, elem):
+  @staticmethod
+  def __PostProcessElement(elem):
     """
     Finalizes an element: strips spaces, applies typography rules.
     """
@@ -653,7 +653,7 @@ class FrenchTypography(Typography):
     text = sign
 
     text += NBSP.join(
-        reversed([before_decimal[max(0,group_end-3):group_end]
+        reversed([before_decimal[max(0, group_end-3):group_end]
                   for group_end in range(len(before_decimal), 0, -3)]))
 
     if decimal_sep:
@@ -669,14 +669,14 @@ class FrenchTypography(Typography):
 
   @staticmethod
   @macro(public_name='text.guillemet.open')
-  def RuleGuillemetOpen(executor, call_node):
+  def RuleGuillemetOpen(executor, unused_call_node):
     branch = executor.current_branch
     branch.AppendLineText('«')
     branch.AppendNonBreakingSpace()
 
   @staticmethod
   @macro(public_name='text.guillemet.close')
-  def RuleGuillemetClose(executor, call_node):
+  def RuleGuillemetClose(executor, unused_call_node):
     branch = executor.current_branch
     if branch.inline_tail_chr:
       branch.AppendNonBreakingSpace()
@@ -684,7 +684,7 @@ class FrenchTypography(Typography):
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents')
-  def RulePunctuationDouble(executor, call_node, contents):
+  def RulePunctuationDouble(executor, unused_call_node, contents):
     if not contents:
       return
     branch = executor.current_branch
@@ -707,7 +707,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='par')
-  def Par(executor, call_node):
+  def Par(executor, unused_call_node):
     """Tries to close/open a new automatic paragraph."""
     branch = executor.current_branch
     branch.AutoParaTryClose()
@@ -742,7 +742,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.close', args_signature='tag')
-  def TagClose(executor, call_node, tag):
+  def TagClose(executor, unused_call_node, tag):
     """
     Closes the current XML tag.
 
@@ -803,7 +803,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='typo.name', text_compatible=True)
-  def TypoName(executor, call_node):
+  def TypoName(executor, unused_call_node):
     """Prints the name of the current typography."""
     executor.AppendText(executor.current_branch.typography.name)
 
@@ -839,7 +839,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='typo.newline')
-  def TypoNewline(executor, call_node):
+  def TypoNewline(executor, unused_call_node):
     """
     Prepares the typography engine for a new line.
 

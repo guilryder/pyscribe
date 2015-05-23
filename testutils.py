@@ -8,10 +8,12 @@ import io
 import os
 import unittest
 
-from executor import Branch, Executor
+from executor import Executor
 from log import *
 from macros import macro, GetPublicMacros
-import tests  # for unittest hooks
+
+
+__import__('tests')  # for unittest hooks
 
 
 def loc(display_path, lineno, dir_path='/cur'):
@@ -77,14 +79,14 @@ class FakeFileSystem:
   def join(self, path1, *paths):
     return self.__unixpath(os.path.join(path1, *paths))
 
-  def lexists(self, path):  # pragma: no cover
-    raise NotImplementedError()
+  def lexists(self, path):
+    raise NotImplementedError()  # pragma: no cover
 
   def normpath(self, path):
     return self.__unixpath(os.path.normpath(path))
 
-  def open(self, *args, **kwargs):  # pragma: no cover
-    raise NotImplementedError()
+  def open(self, *args, **kwargs):
+    raise NotImplementedError()  # pragma: no cover
 
   splitext = staticmethod(os.path.splitext)
 
@@ -176,12 +178,12 @@ class ExecutionTestCase(TestCase):
 
   @staticmethod
   @macro(public_name='identity', args_signature='*contents')
-  def IdentityMacro(executor, call_node, contents):
+  def IdentityMacro(executor, unused_call_node, contents):
     executor.ExecuteNodes(contents)
 
   @staticmethod
   @macro(public_name='eval.text', args_signature='text', text_compatible=True)
-  def EvalTextMacro(executor, call_node, text):
+  def EvalTextMacro(executor, unused_call_node, text):
     executor.AppendText(text)
 
   def setUp(self):

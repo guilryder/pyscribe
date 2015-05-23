@@ -157,8 +157,9 @@ class TestsManager:
     """Deletes compiled Python files and coverage reports."""
     files_to_delete = glob.glob('*.pyc')
     files_to_delete.extend(generated_files)
-    for file_to_delete in filter(os.path.exists, files_to_delete):
-      os.remove(file_to_delete)
+    for path in files_to_delete:
+      if os.path.exists(path):
+        os.remove(path)
     shutil.rmtree(self.COVERAGE_DIR, ignore_errors=True)
 
   def ShowCoverage(self):

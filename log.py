@@ -35,6 +35,7 @@ class BaseError(Exception):
   """
 
   def __init__(self, message=None, **kwargs):
+    super(BaseError, self).__init__()
     self.message = FormatMessage(message, **kwargs)
 
   def __str__(self):
@@ -126,8 +127,8 @@ class Logger:
                 'line {call_node.location.lineno}, in ${call_node.name}\n'),
   )
 
-  def __init__(self, format=FORMATS['simple'], output_file=None):
-    (self.__top_format, self.__stack_frame_format) = format
+  def __init__(self, fmt=FORMATS['simple'], output_file=None):
+    (self.__top_format, self.__stack_frame_format) = fmt
     self.__output_file = output_file or sys.stderr
 
   def Log(self, location, message, call_stack=(), **kwargs):

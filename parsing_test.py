@@ -4,8 +4,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-import itertools
-
 from log import *
 from parsing import *
 from testutils import *
