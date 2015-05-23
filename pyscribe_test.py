@@ -4,7 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 import io
-from optparse import OptionParser
+from argparse import ArgumentParser
 import shlex
 import sys
 
@@ -39,7 +39,7 @@ class MainTest(TestCase):
 
   def Execute(self, cmdline):
     # pylint: disable=no-self-argument
-    class FakeOptionParser(OptionParser):
+    class FakeArgumentParser(ArgumentParser):
       """Option parser that prints to self.std_output."""
       def exit(parser, status=0, msg='', **unused_kwargs):
         self.std_output.write(msg)
@@ -49,7 +49,7 @@ class MainTest(TestCase):
         parser.exit(2, "error: %s\n" % msg)
 
       def print_help(parser, file=None, **kwargs):
-        OptionParser.print_help(parser, self.std_output, **kwargs)
+        ArgumentParser.print_help(parser, self.std_output, **kwargs)
 
     class TestLogger(log.Logger):
       def __init__(logger, *args, **kwargs):
@@ -57,24 +57,26 @@ class MainTest(TestCase):
                                            **kwargs)
 
     args = shlex.split(cmdline)
-    Main(args, self.fs, FakeOptionParser, TestLogger).Run()
+    Main(args, self.fs, FakeArgumentParser, TestLogger).Run()
 
   def testNoArguments(self):
     with self.assertRaises(SystemExit):
       self.Execute('')
-    self.assertEqual(self.GetStdOutput(), 'error: expected one argument')
+    self.assertEqual(self.GetStdOutput(),
+                     'error: the following arguments are required: filename')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testTwoArguments(self):
     with self.assertRaises(SystemExit):
       self.Execute('first second')
-    self.assertEqual(self.GetStdOutput(), 'error: expected one argument')
+    self.assertEqual(self.GetStdOutput(),
+                     'error: unrecognized arguments: second')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testHelp(self):
     with self.assertRaises(SystemExit):
       self.Execute('--help')
-    self.assertIn('Usage', self.GetStdOutput())
+    self.assertIn('usage', self.GetStdOutput())
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testSimple(self):
@@ -121,7 +123,8 @@ class MainTest(TestCase):
   def testDefinesInvalidFormat(self):
     with self.assertRaises(SystemExit):
       self.Execute('defines.psc -d name')
-    self.assertIn('-d option expects format: name=text; got: name',
+    self.assertIn('-d/--define: invalid value, expected format: ' +
+                  'name=text; got: name',
                   self.GetStdOutput())
 
   def testOutputFormatOverwritesDefines(self):

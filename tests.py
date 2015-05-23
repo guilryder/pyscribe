@@ -6,9 +6,9 @@
 import sys
 sys.stderr = sys.stdout  # Hack to avoid interleaving problems.
 
+import argparse
 import coverage
 import glob
-import optparse
 import os
 import shutil
 import unittest
@@ -69,14 +69,14 @@ class TestsManager:
         self.GetProdAndTestModules(python_files)
 
   def Main(self):
-    parser = optparse.OptionParser(description="Runs the actions in the same "
-        "order they are specified.")
+    parser = argparse.ArgumentParser(
+        description="Runs the actions in the same order they are specified.")
 
     def AddAction(function, name, *args, **kwargs):
-      kwargs = dict(kwargs)
       kwargs.update(dict(action='append_const',
-          const=function, dest='actions'))
-      parser.add_option('--' + name, *args, **kwargs)
+                         const=function,
+                         dest='actions'))
+      parser.add_argument('--' + name, *args, **kwargs)
 
     AddAction(self.RunTests, 'test', '-t', help="run the tests")
     AddAction(self.RunTestsAndReportCoverage, 'coverage', '-c',
@@ -88,13 +88,10 @@ class TestsManager:
         help="shows coverage results in the default Internet browser")
     AddAction(self.Lint, 'lint', '-l',
         help="runs the linter against all source files")
-    (options, args) = parser.parse_args()
-
-    if args:
-      parser.error('unexpected argument: %s' % args[0])
+    args = parser.parse_args()
 
     default_actions = [self.RunTestsAndReportCoverage]
-    actions = options.actions or default_actions
+    actions = args.actions or default_actions
 
     for action in actions:
       action()
