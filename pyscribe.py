@@ -16,7 +16,7 @@ _USAGE = '%prog [options] input.psc'
 _DESCRIPTION = None
 
 
-class Main(object):
+class Main:
 
   def __init__(self, args, fs=FileSystem(), OptionParser=optparse.OptionParser,
                Logger=log.Logger):
@@ -87,7 +87,7 @@ class Main(object):
 
     # Output directory
     if not options.output_dir:
-      options.output_dir = self.__fs.join(self.__current_dir, u'output')
+      options.output_dir = self.__fs.join(self.__current_dir, 'output')
 
     # Logger
     self.__logger = self.__Logger(self.__Logger.FORMATS[options.logger_format])

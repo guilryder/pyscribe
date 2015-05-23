@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod
 import io
 import os
 import sys
-from StringIO import StringIO
 
 from log import *
 from macros import *
@@ -20,7 +19,7 @@ MAX_NESTED_CALLS = 25
 MAX_NESTED_INCLUDES = 25
 
 
-class ExecutionContext(object):
+class ExecutionContext:
   """
   Entry of an execution context stack.
 
@@ -72,7 +71,7 @@ class ExecutionContext(object):
     Args:
       macros: (string -> callable dict) The macros to add.
     """
-    for name, callback in macros.iteritems():
+    for name, callback in macros.items():
       self.AddMacro(name, callback)
 
   def LookupMacro(self, name, text_compatible):
@@ -100,7 +99,7 @@ class ExecutionContext(object):
     return None
 
 
-class Branch(object):
+class Branch(metaclass=ABCMeta):
   """
   Output branch: append-only stream of text nodes and sub-branches.
 
@@ -120,8 +119,6 @@ class Branch(object):
     writer: (stream) The output writer of the branch (root branch only).
       Must have a write() method.
   """
-
-  __metaclass__ = ABCMeta
 
   def __init__(self, parent, parent_context=None, name=None, writer=None):
     """
@@ -260,7 +257,7 @@ class TextBranch(Branch):
     super(TextBranch, self).__init__(*args, **kwargs)
     self.text_hook = lambda text: text
     self.__outputs = []
-    self.__text_accu = StringIO()
+    self.__text_accu = io.StringIO()
 
   def AppendText(self, text):
     text = self.text_hook(text)
@@ -284,13 +281,13 @@ class TextBranch(Branch):
   def _Render(self, writer):
     self.__FlushText()
     for output in self.__outputs:
-      if isinstance(output, basestring):
-        writer.write(unicode(output))
+      if isinstance(output, str):
+        writer.write(output)
       else:
         output._Render(writer)
 
 
-class FileSystem(object):
+class FileSystem:
   dirname = staticmethod(os.path.dirname)
   getcwd = staticmethod(os.getcwd)
   join = staticmethod(os.path.join)
@@ -300,7 +297,7 @@ class FileSystem(object):
   splitext = staticmethod(os.path.splitext)
 
 
-class Executor(object):
+class Executor:
   """
   Executes input files.
 
@@ -349,7 +346,7 @@ class Executor(object):
       constants: ((name, value) dict) The constants to add; values are strings.
     """
     context = self.system_branch.context
-    for name, value in constants.iteritems():
+    for name, value in constants.items():
       context.AddMacro(name, AppendTextCallback(value))
 
   def GetOutputWriter(self, filename):
@@ -415,7 +412,7 @@ class Executor(object):
           self.AppendText(node.text)
         else:
           self.CallMacro(node)
-      except InternalError, e:
+      except InternalError as e:
         self.FatalError(node.location, e)
 
   def ExecuteInCallContext(self, nodes, call_context):
@@ -475,14 +472,14 @@ class Executor(object):
     Throws:
       FatalError
     """
-    text_writer = StringIO()
-    old_text_writer = self.__current_text_writer
-    self.__current_text_writer = text_writer
-    try:
-      self.ExecuteNodes(nodes)
-    finally:
-      self.__current_text_writer = old_text_writer
-    return text_writer.getvalue()
+    with io.StringIO() as text_writer:
+      old_text_writer = self.__current_text_writer
+      self.__current_text_writer = text_writer
+      try:
+        self.ExecuteNodes(nodes)
+      finally:
+        self.__current_text_writer = old_text_writer
+      return text_writer.getvalue()
 
   def FatalError(self, location, message, call_frame_skip=0, **kwargs):
     """Logs and raises a fatal error."""
@@ -548,7 +545,7 @@ class Executor(object):
     self.__call_stack.append((call_node, callback))
     try:
       callback(self, call_node)
-    except InternalError, e:
+    except InternalError as e:
       self.MacroFatalError(call_node, e)
     finally:
       self.__call_stack.pop()

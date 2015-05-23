@@ -22,7 +22,7 @@ class LatexBranch(executor.TextBranch):
       self.context.AddMacros(GetPublicMacros(Macros))
 
 
-class Macros(object):
+class Macros:
 
   TextPercent = StaticAppendTextCallback('\%', public_name='text.percent')
   TextAmpersand = StaticAppendTextCallback('\&', public_name='text.ampersand')

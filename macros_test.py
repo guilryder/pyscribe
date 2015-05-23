@@ -34,12 +34,12 @@ class MacroTest(TestCase):
     self.assertTrue(self.called)
 
   def __CheckMacroCallFailure(self, macro_callback, args, expected_message):
-    expected_message = u'{location}: {message}'.format(
+    expected_message = '{location}: {message}'.format(
         location=test_location, message=expected_message)
     try:
       self.__MacroCall(macro_callback, args)
       self.fail('expected error: ' + expected_message)  # pragma: no cover
-    except FatalError, e:
+    except FatalError as e:
       self.assertFalse(self.called, 'expected macro callback not invoked')
       self.assertEqual(self.logger.GetOutput(), expected_message)
       self.logger.Clear()
@@ -140,7 +140,7 @@ class GetMacroSignatureTest(TestCase):
 
 class GetPublicMacrosTest(TestCase):
 
-  class TestClass(object):
+  class TestClass:
     @staticmethod
     @macro(public_name='public1')
     def PublicMacro1():
@@ -179,7 +179,7 @@ def PrivateMacro():
 def PublicMacro2():
   pass
 """
-    exec code in module.__dict__
+    exec(code, module.__dict__)
     self.assertDictEqual(GetPublicMacros(module),
                          dict(public1=module.PublicMacro1,
                               public2=module.PublicMacro2))
@@ -189,7 +189,7 @@ def PublicMacro2():
                          GetPublicMacros(self.TestClass))
 
   def testDuplicatePublicName(self):
-    class TestClassDuplicate(object):
+    class TestClassDuplicate:
       @staticmethod
       @macro(public_name='same')
       def Same1():

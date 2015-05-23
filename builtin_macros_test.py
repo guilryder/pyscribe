@@ -18,16 +18,16 @@ class SpecialCharsTest(ExecutionTestCase):
     self.assertExecution(
         special_chars,
         ' '.join((
-            u"% & _ $ $ # #",
-            u"a\xa0b",
-            u"no",
-            u"–c—",
-            u"d…",
-            u"«e»",
-            u"« f »",
-            u"`g'h' 'g`h`",
-            u"i ! j: k ; l?",
-            u"m!:;?",
+            "% & _ $ $ # #",
+            "a\xa0b",
+            "no",
+            "–c—",
+            "d…",
+            "«e»",
+            "« f »",
+            "`g'h' 'g`h`",
+            "i ! j: k ; l?",
+            "m!:;?",
         )))
 
   def testSoftHyphenAlias(self):
@@ -975,10 +975,10 @@ class BranchAppendTest(ExecutionTestCase):
 class CaseTest(ExecutionTestCase):
 
   def testLower(self):
-    self.assertExecution(u"$case.lower[Ôô! ça Ç'était]", u"ôô! ça ç'était")
+    self.assertExecution("$case.lower[Ôô! ça Ç'était]", "ôô! ça ç'était")
 
   def testUpper(self):
-    self.assertExecution(u"$case.upper[Ôô! ça Ç'était]", u"ÔÔ! ÇA Ç'ÉTAIT")
+    self.assertExecution("$case.upper[Ôô! ça Ç'était]", "ÔÔ! ÇA Ç'ÉTAIT")
 
 
 class ArabicToRomanTest(TestCase):
@@ -1011,7 +1011,7 @@ class ArabicToRomanTest(TestCase):
                           'ArabicToRoman mismatch for ' + str(arabic))
 
   def testAllValues(self):
-    for arabic in xrange(1, 4000):
+    for arabic in range(1, 4000):
       ArabicToRoman(arabic)
 
 

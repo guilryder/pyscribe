@@ -13,7 +13,7 @@ from log import FatalError, InternalError, Location
 from macros import *
 
 
-NBSP = u'\xa0'
+NBSP = '\xa0'
 
 # Groups:
 # 0: sign (possibly empty)
@@ -23,7 +23,7 @@ NBSP = u'\xa0'
 NUMBER_REGEXP = re.compile(r'^([-+]?)([0-9]*)(?:([.,])([0-9]+))?$')
 
 
-class TagLevel(object):
+class TagLevel:
   """
   Level of a tag, used automatically paragraphs on '\n\n'.
   """
@@ -86,7 +86,7 @@ class XhtmlBranch(executor.Branch):
       next created element.
   """
 
-  class ElementInfo(object):
+  class ElementInfo:
     """
     parent: (ElementInfo) The ElementInfo of the parent of the element.
     elem: (Element) The element.
@@ -601,9 +601,7 @@ class XhtmlBranch(executor.Branch):
     assert self._RemoveElementIfEmpty(elem)
 
 
-class Typography(object):
-
-  __metaclass__ = ABCMeta
+class Typography(metaclass=ABCMeta):
 
   macros_container = None
 
@@ -654,7 +652,7 @@ class FrenchTypography(Typography):
 
     # Use an en-dash as minus sign.
     if sign == '-':
-      sign = u'–'
+      sign = '–'
     text = sign
 
     text += NBSP.join(
@@ -669,14 +667,14 @@ class FrenchTypography(Typography):
 
     return text
 
-  TextBacktick = StaticAppendTextCallback(u"‘", public_name='text.backtick')
-  TextApostrophe = StaticAppendTextCallback(u"’", public_name='text.apostrophe')
+  TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
+  TextApostrophe = StaticAppendTextCallback("’", public_name='text.apostrophe')
 
   @staticmethod
   @macro(public_name='text.guillemet.open')
   def RuleGuillemetOpen(executor, call_node):
     branch = executor.current_branch
-    branch.AppendLineText(u'«')
+    branch.AppendLineText('«')
     branch.AppendNonBreakingSpace()
 
   @staticmethod
@@ -685,7 +683,7 @@ class FrenchTypography(Typography):
     branch = executor.current_branch
     if branch.inline_tail_chr:
       branch.AppendNonBreakingSpace()
-    branch.AppendLineText(u'»')
+    branch.AppendLineText('»')
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents')
@@ -694,7 +692,7 @@ class FrenchTypography(Typography):
       return
     branch = executor.current_branch
     tail_chr = branch.inline_tail_chr
-    if tail_chr not in (u'…', '.'):
+    if tail_chr not in ('…', '.'):
       branch.AppendNonBreakingSpace()
     branch.AppendLineText(contents)
 
@@ -704,7 +702,7 @@ TYPOGRAPHIES = \
          for typography_type in (NeutralTypography, FrenchTypography))
 
 
-class Macros(object):
+class Macros:
 
   __AUTO_PARA_LEVEL_REGEXP = \
       re.compile(r'\Ablock,autopara=(?P<auto_para_tag>.+)\Z')

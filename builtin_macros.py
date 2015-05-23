@@ -15,24 +15,24 @@ from parsing import CallNode, TextNode
 
 # Special characters
 
-class SpecialCharacters(object):
+class SpecialCharacters:
 
   TextPercent = StaticAppendTextCallback('%', public_name='text.percent')
   TextAmpersand = StaticAppendTextCallback('&', public_name='text.ampersand')
   TextUnderscore = StaticAppendTextCallback('_', public_name='text.underscore')
   TextDollar = StaticAppendTextCallback('$', public_name='text.dollar')
   TextHash = StaticAppendTextCallback('#', public_name='text.hash')
-  TextNbsp = StaticAppendTextCallback(u'\xa0', public_name='text.nbsp')
+  TextNbsp = StaticAppendTextCallback('\xa0', public_name='text.nbsp')
   TextSoftHyphen = StaticAppendTextCallback('', public_name='text.softhyphen')
-  TextDashEn = StaticAppendTextCallback(u'–', public_name='text.dash.en')
-  TextDashEm = StaticAppendTextCallback(u'—', public_name='text.dash.em')
-  TextEllipsis = StaticAppendTextCallback(u'…', public_name='text.ellipsis')
+  TextDashEn = StaticAppendTextCallback('–', public_name='text.dash.en')
+  TextDashEm = StaticAppendTextCallback('—', public_name='text.dash.em')
+  TextEllipsis = StaticAppendTextCallback('…', public_name='text.ellipsis')
   TextGuillemetOpen = \
-      StaticAppendTextCallback(u'«', public_name='text.guillemet.open')
+      StaticAppendTextCallback('«', public_name='text.guillemet.open')
   TextGuillemetClose = \
-      StaticAppendTextCallback(u'»', public_name='text.guillemet.close')
-  TextBacktick = StaticAppendTextCallback(u"`", public_name='text.backtick')
-  TextApostrophe = StaticAppendTextCallback(u"'", public_name='text.apostrophe')
+      StaticAppendTextCallback('»', public_name='text.guillemet.close')
+  TextBacktick = StaticAppendTextCallback("`", public_name='text.backtick')
+  TextApostrophe = StaticAppendTextCallback("'", public_name='text.apostrophe')
   Newline = StaticAppendTextCallback('\n', public_name='newline')
 
   @staticmethod
@@ -67,10 +67,10 @@ def Include(executor, call_node, path):
   """
   try:
     executor.ExecuteFile(path, cur_dir=call_node.location.filename.dir_path)
-  except IOError, e:
+  except IOError as e:
     raise InternalError('unable to include "{path}": {reason}',
                        path=path, reason=e.strerror)
-  except InternalError, e:
+  except InternalError as e:
     raise InternalError('unable to include "{path}": {reason}',
                         path=path, reason=e)
 
@@ -528,7 +528,7 @@ def CounterCreate(executor, call_node, counter_name):
       '.set': SetCallback,
       '.incr': IncrCallback,
   }
-  for name_suffix, callback in macros.iteritems():
+  for name_suffix, callback in macros.items():
     macro_name = '{counter_name}{suffix}'.format(counter_name=counter_name,
                                                   suffix=name_suffix)
     executor.current_branch.context.AddMacro(macro_name, callback)

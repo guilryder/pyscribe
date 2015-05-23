@@ -87,36 +87,36 @@ class PeekableIteratorTest(TestCase):
   def testEmpty(self):
     it = PeekableIterator([])
     self.assertIs(it.peek(), None)
-    self.assertIs(it.next(), None)
+    self.assertIs(next(it), None)
     self.assertIs(it.peek(), None)
-    self.assertIs(it.next(), None)
+    self.assertIs(next(it), None)
 
   def testOneElement_peekFirst(self):
     elem1 = '1'
     it = PeekableIterator([elem1])
     self.assertIs(it.peek(), elem1)
-    self.assertIs(it.next(), elem1)
+    self.assertIs(next(it), elem1)
     self.assertIs(it.peek(), None)
-    self.assertIs(it.next(), None)
+    self.assertIs(next(it), None)
 
   def testOneElement_nextFirst(self):
     elem1 = '1'
     it = PeekableIterator([elem1])
-    self.assertIs(it.next(), elem1)
+    self.assertIs(next(it), elem1)
     self.assertIs(it.peek(), None)
-    self.assertIs(it.next(), None)
+    self.assertIs(next(it), None)
     self.assertIs(it.peek(), None)
 
   def testThreeElements(self):
     elem1, elem2, elem3 = '1', '2', '3'
     it = PeekableIterator([elem1, elem2, elem3])
     self.assertIs(it.peek(), elem1)
-    self.assertIs(it.next(), elem1)
-    self.assertIs(it.next(), elem2)
+    self.assertIs(next(it), elem1)
+    self.assertIs(next(it), elem2)
     self.assertIs(it.peek(), elem3)
-    self.assertIs(it.next(), elem3)
+    self.assertIs(next(it), elem3)
     self.assertIs(it.peek(), None)
-    self.assertIs(it.next(), None)
+    self.assertIs(next(it), None)
 
 
 class ParsingTest(TestCase):
@@ -144,7 +144,7 @@ class ParsingTest(TestCase):
       self.assertFalse(actual_fatal_error,
                        'unexpected fatal error; messages: {0}'.format(
                           logger.GetOutput()))
-      if isinstance(output, basestring):
+      if isinstance(output, str):
         self.assertEqualExt(FormatNodes(nodes), output, 'nodes text mismatch')
       else:
         self.assertEqualExt(nodes, output, 'nodes mismatch',
@@ -168,11 +168,11 @@ class ParsingTest(TestCase):
     self.assertParsing('text', "'text'")
 
   def testUnicode(self):
-    self.assertParsing(test_unicode, repr(test_unicode)[1:])
+    self.assertParsing(test_unicode, repr(test_unicode))
 
   def testStrips(self):
-    self.assertParsing(u' \t\n\r\f\v\xa0text\xa0 \t\n\r\f\v',
-                       r"'\xa0text\xa0'")
+    self.assertParsing(' \t\n\r\f\v\xa0text\xa0 \t\n\r\f\v',
+                       r"'text'")
 
   def testTrailingEscapeDropped(self):
     self.assertParsing('test^', "'test'")
@@ -203,8 +203,8 @@ class ParsingTest(TestCase):
                        r"'before$after^\n''^ next'")
 
   def testEscapeSpecialCharacters(self):
-    self.assertParsing(u"^% ^& ^~ ^-- ^-^-- ^... ^« ^» ^<< ^>> ^' ^!^:^;^?",
-                       u'"% & ~ -- --- ... \\xab \\xbb << >> \' !:;?"')
+    self.assertParsing("^% ^& ^~ ^-- ^-^-- ^... ^« ^» ^<< ^>> ^' ^!^:^;^?",
+                       '"% & ~ -- --- ... \xab \xbb << >> \' !:;?"')
 
   def testBackslashNoEscape(self):
     self.assertParsing('text\\', r"'text\\'")
@@ -398,15 +398,15 @@ class ParsingTest(TestCase):
 
   def testGuillemetsCharacter(self):
     self.assertParsing(
-        u'before«in»after',
+        'before«in»after',
         "'before'$text.guillemet.open'in'$text.guillemet.close'after'")
     self.assertParsing(
-        u'before « in » after',
+        'before « in » after',
         "'before '$text.guillemet.open' in '$text.guillemet.close' after'")
 
   def testManyGuillemetCharacters(self):
     self.assertParsing(
-        u'before««in»»after',
+        'before««in»»after',
         ''.join((
             "'before'",
             "$text.guillemet.open$text.guillemet.open",

@@ -17,10 +17,10 @@ class TextBranchTest(BranchTestCase):
     self.branch = TextBranch(parent=None, name='dummy')
 
   def assertRender(self, expected):
-    writer = self.FakeOutputFile()
-    self.branch.writer = writer
-    self.branch.Render()
-    self.assertEqual(writer.getvalue(), expected)
+    with self.FakeOutputFile() as writer:
+      self.branch.writer = writer
+      self.branch.Render()
+      self.assertEqual(writer.getvalue(), expected)
 
   def testRepr(self):
     self.assertEqual(repr(self.branch), '<TextBranch: dummy>')
@@ -227,7 +227,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     # Collect all macros available in the branch.
     macros = []
     while context:
-      macros.extend(context.macros.itervalues())
+      macros.extend(context.macros.values())
       context = context.parent
     self.assertGreater(len(macros), 10)
 

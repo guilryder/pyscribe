@@ -3,9 +3,9 @@
 
 __author__ = 'Guillaume Ryder'
 
+import io
 from optparse import OptionParser
 import shlex
-from StringIO import StringIO
 import sys
 
 import log
@@ -17,7 +17,7 @@ class MainTest(TestCase):
 
   def setUp(self):
     super(MainTest, self).setUp()
-    self.std_output = StringIO()
+    self.std_output = io.StringIO()
     def Output(contents):
       return ('$branch.create.root[text][root][output.txt]' +
               '$branch.write[root][' + contents + ']')

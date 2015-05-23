@@ -20,7 +20,7 @@ def FormatMessage(message, **kwargs):
   if not message:
     return 'unknown error'
   if kwargs:
-    message = unicode(message).format(**kwargs)
+    message = message.format(**kwargs)
   elif isinstance(message, InternalError):
     message = message.message
   return message
@@ -62,7 +62,7 @@ class InternalError(BaseError):
   pass
 
 
-class Filename(object):
+class Filename:
   """
   Name and path of a file.
 
@@ -88,7 +88,7 @@ class Filename(object):
         self.dir_path == other.dir_path
 
 
-class Location(object):
+class Location:
   """
   Location of a token in a source file.
 
@@ -112,18 +112,18 @@ class Location(object):
         self.lineno == other.lineno
 
 
-class Logger(object):
+class Logger:
   """
   Logs warnings and error messages.
   """
 
   FORMATS = dict(
-    simple=(u'{location}: {message}\n',
-            u'  {call_node.location}: ${call_node.name}\n'),
-    python=(u'  File "{location.filename}", line {location.lineno}\n' +
-                u'    {message}\n',
-            u'  File "{call_node.location.filename}", ' +
-                u'line {call_node.location.lineno}, in ${call_node.name}\n'),
+    simple=('{location}: {message}\n',
+            '  {call_node.location}: ${call_node.name}\n'),
+    python=('  File "{location.filename}", line {location.lineno}\n' +
+                '    {message}\n',
+            '  File "{call_node.location.filename}", ' +
+                'line {call_node.location.lineno}, in ${call_node.name}\n'),
   )
 
   def __init__(self, format=FORMATS['simple'], output_file=None):

@@ -15,7 +15,7 @@ VALID_MACRO_NAME_PATTERN = \
 VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
 
-class macro(object):
+class macro:
   """Decorator for macro callbacks."""
 
   def __init__(self, public_name=None, args_signature='',
@@ -126,7 +126,7 @@ class macro(object):
       standard_callback = ArgsParsingWrapper
 
     # Save the @macro attributes in the callback.
-    for name, value in self.__attributes.iteritems():
+    for name, value in self.__attributes.items():
       setattr(standard_callback, name, value)
     return standard_callback
 

@@ -53,7 +53,7 @@ ignored_files = [
   ]
 
 
-class TestsManager(object):
+class TestsManager:
 
   # The directory to write coverage files into.
   COVERAGE_DIR = 'cov'

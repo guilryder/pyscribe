@@ -28,17 +28,17 @@ class LatexEndToEndTest(ExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         special_chars,
-        u' '.join((
-            u"\\% \\& \\_ $ \\$ # \\#",
-            u"a~b",
-            u"n\\-o",
-            u"--c---",
-            u"d…",
-            u"«e»",
-            u"« f »",
-            u"`g'h' 'g`h`",
-            u"i ! j: k ; l?",
-            u"m!:;?",
+        ' '.join((
+            "\\% \\& \\_ $ \\$ # \\#",
+            "a~b",
+            "n\\-o",
+            "--c---",
+            "d…",
+            "«e»",
+            "« f »",
+            "`g'h' 'g`h`",
+            "i ! j: k ; l?",
+            "m!:;?",
         )))
 
 

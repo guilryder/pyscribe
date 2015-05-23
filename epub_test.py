@@ -141,7 +141,7 @@ class XhtmlBranchTest(BranchTestCase):
 
   def testRender_unicode(self):
     self.branch.AppendText(test_unicode)
-    self.assertRender(u'<p>{0}</p>'.format(test_unicode))
+    self.assertRender('<p>{0}</p>'.format(test_unicode))
 
   def testRender_mix(self):
     self.PrepareMix(self.branch)
@@ -170,7 +170,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
       actual_body = actual_tree.find('//{' + namespace + '}body')
       if actual_body is not None:
         body_expected_tree = ParseXml(
-            u'<body xmlns="{namespace}">{xml}</body>'.format(
+            '<body xmlns="{namespace}">{xml}</body>'.format(
                 namespace=namespace, xml=expected))
         def FormatBody(node_or_tree):
           lines = XmlToString(node_or_tree).split('\n')
@@ -247,50 +247,50 @@ class NeutralTypographyTest(EpubExecutionTestCase):
                      NeutralTypography.FormatNumber('+12345678'))
 
   def testTypoNumber(self):
-    self.assertExecution(u'before $typo.number[-12345678] after',
-                         u'<p>before -12345678 after</p>')
+    self.assertExecution('before $typo.number[-12345678] after',
+                         '<p>before -12345678 after</p>')
 
   def testAllSpecialChars(self):
     self.assertExecution(
         special_chars,
-        u'<p>{0}</p>'.format(' '.join((
-            u"% &amp; _ $ $ # #",
-            u"a\xa0b",
-            u"no",
-            u"–c—",
-            u"d…",
-            u"«e»",
-            u"« f »",
-            u"`g'h' 'g`h`",
-            u"i ! j: k ; l?",
-            u"m!:;?",
+        '<p>{0}</p>'.format(' '.join((
+            "% &amp; _ $ $ # #",
+            "a\xa0b",
+            "no",
+            "–c—",
+            "d…",
+            "«e»",
+            "« f »",
+            "`g'h' 'g`h`",
+            "i ! j: k ; l?",
+            "m!:;?",
         ))))
 
   def testPunctuationDouble_keepsSpaces(self):
     self.assertExecution(
         'one ! two : three ; four ? five , six .',
-        u'<p>one ! two : three ; four ? five , six .</p>')
+        '<p>one ! two : three ; four ? five , six .</p>')
 
   def testPunctuationDouble_doesNotInsertSpaces(self):
     self.assertExecution(
         'one! two: three; four? five, six.',
-        u'<p>one! two: three; four? five, six.</p>')
+        '<p>one! two: three; four? five, six.</p>')
 
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
-                         u'<p>what !?;: wtf:;?!</p>')
+                         '<p>what !?;: wtf:;?!</p>')
 
   def testGuillemets_keepsSpaces(self):
-    self.assertExecution(u'one « two » three',
-                         u'<p>one « two » three</p>')
+    self.assertExecution('one « two » three',
+                         '<p>one « two » three</p>')
 
   def testGuillemets_doesNotInsertSpaces(self):
-    self.assertExecution(u'one «two» three',
-                         u'<p>one «two» three</p>')
+    self.assertExecution('one «two» three',
+                         '<p>one «two» three</p>')
 
   def testBackticksApostrophes(self):
-    self.assertExecution(u"`one' 'two` `' ' `",
-                         u"<p>`one' 'two` `' ' `</p>")
+    self.assertExecution("`one' 'two` `' ' `",
+                         "<p>`one' 'two` `' ' `</p>")
 
 
 class FrenchTypographyTest(EpubExecutionTestCase):
@@ -299,68 +299,68 @@ class FrenchTypographyTest(EpubExecutionTestCase):
     return '$typo.set[french]' + text
 
   def testFormatNumber_zero(self):
-    self.assertEqual(FrenchTypography.FormatNumber('0'), u'0')
+    self.assertEqual(FrenchTypography.FormatNumber('0'), '0')
 
   def testFormatNumber_short(self):
-    self.assertEqual(FrenchTypography.FormatNumber('123'), u'123')
+    self.assertEqual(FrenchTypography.FormatNumber('123'), '123')
 
   def testFormatNumber_long(self):
     self.assertEqual(FrenchTypography.FormatNumber('12345678'),
-                     u'12\xa0345\xa0678')
+                     '12\xa0345\xa0678')
     self.assertEqual(FrenchTypography.FormatNumber('123456'),
-                     u'123\xa0456')
+                     '123\xa0456')
 
   def testFormatNumber_negative(self):
     self.assertEqual(FrenchTypography.FormatNumber('-1234,5678'),
-                     u'\u20131\xa0234,567\xa08')
+                     '\u20131\xa0234,567\xa08')
 
   def testFormatNumber_positive(self):
     self.assertEqual(FrenchTypography.FormatNumber('+1234.5678'),
-                     u'+1\xa0234.567\xa08')
+                     '+1\xa0234.567\xa08')
 
   def testFormatNumber_decimalShort(self):
-    self.assertEqual(FrenchTypography.FormatNumber('3.5'), u'3.5')
+    self.assertEqual(FrenchTypography.FormatNumber('3.5'), '3.5')
 
   def testFormatNumber_decimalLong(self):
     self.assertEqual(FrenchTypography.FormatNumber('3.567890'),
-                     u'3.567\xa0890')
+                     '3.567\xa0890')
     self.assertEqual(FrenchTypography.FormatNumber('3,5678901'),
-                     u'3,567\xa0890\xa01')
+                     '3,567\xa0890\xa01')
 
   def testFormatNumber_decimalOnly(self):
-    self.assertEqual(FrenchTypography.FormatNumber('.5'), u'.5')
-    self.assertEqual(FrenchTypography.FormatNumber(',123'), u',123')
-    self.assertEqual(FrenchTypography.FormatNumber('-.5'), u'\u2013.5')
+    self.assertEqual(FrenchTypography.FormatNumber('.5'), '.5')
+    self.assertEqual(FrenchTypography.FormatNumber(',123'), ',123')
+    self.assertEqual(FrenchTypography.FormatNumber('-.5'), '\u2013.5')
 
   def testTypoNumber(self):
-    self.assertExecution(u'before $typo.number[-12345678] after',
-                         u'<p>before \u201312&#160;345&#160;678 after</p>')
+    self.assertExecution('before $typo.number[-12345678] after',
+                         '<p>before \u201312&#160;345&#160;678 after</p>')
 
   def testAllSpecialChars(self):
     self.assertExecution(
         special_chars,
-        u'<p>{0}</p>'.format(' '.join((
-            u"% &amp; _ $ $ # #",
-            u"a\xa0b",
-            u"no",
-            u"–c—",
-            u"d…",
-            u"«\xa0e\xa0»",
-            u"«\xa0f\xa0»",
-            u"‘g’h’ ’g‘h‘",
-            u"i\xa0! j\xa0: k\xa0; l\xa0?",
-            u"m\xa0!:;?",
+        '<p>{0}</p>'.format(' '.join((
+            "% &amp; _ $ $ # #",
+            "a\xa0b",
+            "no",
+            "–c—",
+            "d…",
+            "«\xa0e\xa0»",
+            "«\xa0f\xa0»",
+            "‘g’h’ ’g‘h‘",
+            "i\xa0! j\xa0: k\xa0; l\xa0?",
+            "m\xa0!:;?",
         ))))
 
   def testPunctuationDouble_convertsSpaces(self):
     self.assertExecution(
         'one ! two : three ; four ? five , six .',
-        u'<p>one&#160;! two&#160;: three&#160;; four&#160;? five , six .</p>')
+        '<p>one&#160;! two&#160;: three&#160;; four&#160;? five , six .</p>')
 
   def testPunctuationDouble_insertsSpaces(self):
     self.assertExecution(
         'one! two: three; four? five, six.',
-        u'<p>one&#160;! two&#160;: three&#160;; four&#160;? five, six.</p>')
+        '<p>one&#160;! two&#160;: three&#160;; four&#160;? five, six.</p>')
 
   def testPunctuationDouble_insertsSpacesAfterInlineTag(self):
     self.assertExecution(
@@ -371,10 +371,10 @@ class FrenchTypographyTest(EpubExecutionTestCase):
             '$tag.open[span][inline]four$tag.close[span]? ',
         ), (
             '<p>',
-                u'<span>one</span>&#160;! ',
-                u'<span>two</span>&#160;: ',
-                u'<span>three</span>&#160;; ',
-                u'<span>four</span>&#160;?',
+                '<span>one</span>&#160;! ',
+                '<span>two</span>&#160;: ',
+                '<span>three</span>&#160;; ',
+                '<span>four</span>&#160;?',
             '</p>',
         ))
 
@@ -396,16 +396,16 @@ class FrenchTypographyTest(EpubExecutionTestCase):
   def testPunctuationDouble_convertsSpaceAfterEllipsis(self):
     self.assertExecution(
         'Err... ? Ah... ! Yes..... : here',
-        u'<p>Err…&#160;? Ah…&#160;! Yes.....&#160;: here</p>')
+        '<p>Err…&#160;? Ah…&#160;! Yes.....&#160;: here</p>')
 
   def testPunctuationDouble_insertsNoSpaceAfterEllipsis(self):
     self.assertExecution(
         'Err...? Ah...! Yes.....: here',
-        u'<p>Err…? Ah…! Yes.....: here</p>')
+        '<p>Err…? Ah…! Yes.....: here</p>')
 
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
-                         u'<p>what&#160;!?;: wtf&#160;:;?!</p>')
+                         '<p>what&#160;!?;: wtf&#160;:;?!</p>')
 
   def testPunctuationDouble_cornerCases(self):
     self.assertExecution(
@@ -415,32 +415,32 @@ class FrenchTypographyTest(EpubExecutionTestCase):
             'C', '$text.punctuation.double[^ ]',
             'D',
         ),
-        u'<p>ABC\xa0D</p>')
+        '<p>ABC\xa0D</p>')
 
   def testGuillemets_convertsSpaces(self):
-    self.assertExecution(u'one « two » three',
-                         u'<p>one «&#160;two&#160;» three</p>')
+    self.assertExecution('one « two » three',
+                         '<p>one «&#160;two&#160;» three</p>')
 
   def testGuillemets_insertsSpaces(self):
-    self.assertExecution(u'one «two» three',
-                         u'<p>one «&#160;two&#160;» three</p>')
+    self.assertExecution('one «two» three',
+                         '<p>one «&#160;two&#160;» three</p>')
 
   def testGuillemets_insertsSpacesAroundInlineTag(self):
     self.assertExecution(
-        u'one «$tag.open[span][inline]two$tag.close[span]» three',
-        u'<p>one «&#160;<span>two</span>&#160;» three</p>')
+        'one «$tag.open[span][inline]two$tag.close[span]» three',
+        '<p>one «&#160;<span>two</span>&#160;» three</p>')
 
   def testGuillemets_insertsSpacesAroundBlockTag(self):
     self.assertExecution(
-        u'one «$tag.open[div][block]two$tag.close[div]» three',
-        u'<p>one «</p><div>two</div><p>» three</p>')
+        'one «$tag.open[div][block]two$tag.close[div]» three',
+        '<p>one «</p><div>two</div><p>» three</p>')
 
   def testBackticksApostrophes(self):
-    self.assertExecution(u"`one' 'two` `' ' `",
-                         u"<p>‘one’ ’two‘ ‘’ ’ ‘</p>")
+    self.assertExecution("`one' 'two` `' ' `",
+                         "<p>‘one’ ’two‘ ‘’ ’ ‘</p>")
 
   def testTypoNewline(self):
-    self.assertExecution("<<$typo.newline>>", u'<p>«»</p>')
+    self.assertExecution("<<$typo.newline>>", '<p>«»</p>')
 
 
 class SimpleMacrosTest(EpubExecutionTestCase):
@@ -472,7 +472,7 @@ class SimpleMacrosTest(EpubExecutionTestCase):
             '$typo.set[french]',
             'c?',
         ),
-        u'<p>a\xa0?b?c\xa0?</p>')
+        '<p>a\xa0?b?c\xa0?</p>')
 
   def testTypoName_default(self):
     self.assertExecution('$typo.name', '<p>neutral</p>')
@@ -498,9 +498,9 @@ class SimpleMacrosTest(EpubExecutionTestCase):
             '$branch.write[one][$branch.append[two]]',
             '$branch.write[two][two $typo.name?]',
         ), (
-            u'<p>root french\xa0?</p>',
-            u'<p>one french\xa0?</p>',
-            u'<p>two neutral?</p>',
+            '<p>root french\xa0?</p>',
+            '<p>one french\xa0?</p>',
+            '<p>two neutral?</p>',
         ))
 
   def testTypoNumber_invalid(self):
@@ -512,7 +512,7 @@ class SimpleMacrosTest(EpubExecutionTestCase):
         messages=['/root:1: $typo.number: invalid integer: 1.2,3'])
     self.assertExecution(
         '$typo.number[--3]',
-        messages=[u'/root:1: $typo.number: invalid integer: \u20133'])
+        messages=['/root:1: $typo.number: invalid integer: \u20133'])
 
 
 class TagOpenCloseTest(EpubExecutionTestCase):

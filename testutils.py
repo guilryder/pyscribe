@@ -18,7 +18,7 @@ def loc(display_path, lineno, dir_path='/cur'):
   return Location(Filename(display_path, dir_path), lineno)
 
 test_location = loc('file.txt', 42)
-test_unicode = u'Îñţérñåţîöñåļîžåţîöñ'
+test_unicode = 'Îñţérñåţîöñåļîžåţîöñ'
 special_chars = ' '.join((
     "% & _ ^$ $text.dollar ^# $text.hash",
     "a~b",
@@ -42,8 +42,8 @@ class FakeLogger(Logger):
   """
 
   FORMAT = (
-      u'{location!r}: {message}\n',
-      u'  {call_node.location!r}: ${call_node.name}\n')
+      '{location!r}: {message}\n',
+      '  {call_node.location!r}: ${call_node.name}\n')
 
   def __init__(self):
     self.output_file = io.StringIO()
@@ -61,7 +61,7 @@ class FakeLogger(Logger):
     self.output_file.truncate()
 
 
-class FakeFileSystem(object):
+class FakeFileSystem:
 
   __cwd = '/cur'
 
@@ -121,14 +121,14 @@ class TestCase(unittest.TestCase):
         If None, the file raises IOError on all reads.
     """
     if contents is None:
-      class FakeErrorFile(object):
+      class FakeErrorFile:
         def read(self):
           raise IOError('Fake error')
         close = read
       return FakeErrorFile()
     else:
       kwargs.pop('encoding', None)
-      return io.StringIO(unicode(contents), **kwargs)
+      return io.StringIO(contents, **kwargs)
 
   def FakeOutputFile(self, **kwargs):
     kwargs.pop('encoding', None)
@@ -162,7 +162,7 @@ class TestCase(unittest.TestCase):
 
       def GetOutputs(fs, strip_output=True):
         outputs = {}
-        for output_filename, output_writer in fs.__output_writers.iteritems():
+        for output_filename, output_writer in fs.__output_writers.items():
           output = output_writer.getvalue()
           output_writer.close()
           if strip_output:
@@ -203,7 +203,7 @@ class ExecutionTestCase(TestCase):
 
   def PrepareInputOutput(self, text_or_iter, separator):
     if isinstance(text_or_iter, collections.Iterable) and \
-        not isinstance(text_or_iter, basestring):
+        not isinstance(text_or_iter, str):
       return separator.join(text_or_iter)
     else:
       return text_or_iter
@@ -248,11 +248,11 @@ class ExecutionTestCase(TestCase):
       input_separator = '\n'
     else:
       input_separator = ''
-    inputs = dict(
-        (filename, self.InputHook(
+    inputs = {
+        filename: self.InputHook(
             self.PrepareInputOutput(text_or_iter,
-                                    separator=input_separator)))
-        for filename, text_or_iter in inputs.iteritems())
+                                    separator=input_separator))
+        for filename, text_or_iter in inputs.items()}
 
     fs = self.GetFileSystem(inputs)
 
@@ -269,7 +269,7 @@ class ExecutionTestCase(TestCase):
       expected_outputs = {output_branch.name: expected_outputs}
     expected_outputs = dict(
         (branch_name, self.PrepareInputOutput(text_or_iter, separator=''))
-        for branch_name, text_or_iter in expected_outputs.iteritems())
+        for branch_name, text_or_iter in expected_outputs.items())
 
     # Execute the input, render the output branches.
     try:
@@ -283,7 +283,7 @@ class ExecutionTestCase(TestCase):
     if not actual_fatal_error:
       try:
         executor.RenderBranches()
-      except InternalError, e:
+      except InternalError as e:
         actual_fatal_error = True
         logger.Log(loc('<unknown>', -1, dir_path='/'), e)
       actual_outputs = fs.GetOutputs(strip_output)
