@@ -4,7 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 from builtin_macros import BRANCH_TYPES
-from executor import *
+from execution import *
 from parsing import CallNode
 from testutils import *
 

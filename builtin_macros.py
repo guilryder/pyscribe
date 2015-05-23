@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import re
 
-from executor import ExecutionContext, TextBranch
+from execution import ExecutionContext, TextBranch
 from log import *
 from macros import *
 from parsing import CallNode, TextNode

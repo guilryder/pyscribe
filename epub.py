@@ -7,7 +7,7 @@ from abc import ABCMeta, abstractmethod
 from lxml import etree
 import re
 
-import executor
+import execution
 from log import InternalError
 from macros import *
 
@@ -57,7 +57,7 @@ TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True)
 TagLevel.INLINE = TagLevel('inline', is_inline=True)
 
 
-class XhtmlBranch(executor.Branch):
+class XhtmlBranch(execution.Branch):
   """
   Branch for plain-text.
 
@@ -102,7 +102,7 @@ class XhtmlBranch(executor.Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XML_HEADER = '<?xml version="1.0" encoding="%s"?>\n' % executor.ENCODING
+  __XML_HEADER = '<?xml version="1.0" encoding="%s"?>\n' % execution.ENCODING
   __XHTML_STUB = bytes("""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -112,7 +112,7 @@ class XhtmlBranch(executor.Branch):
           content="application/xhtml+xml; charset={encoding}"/>
   </head>
 </html>
-""".format(encoding=executor.ENCODING), encoding='ascii')
+""".format(encoding=execution.ENCODING), encoding='ascii')
 
   __AUTO_PARA_DELIMITER = re.compile(r'\n{2,}')
   __AUTO_PARA_TAG_DEFAULT = 'p'
@@ -129,9 +129,9 @@ class XhtmlBranch(executor.Branch):
     context = self.context
     if not parent:
       context.AddMacros(GetPublicMacros(Macros))
-      context = executor.ExecutionContext(parent=context)
+      context = execution.ExecutionContext(parent=context)
     self.__typography_context = context
-    context = executor.ExecutionContext(parent=context)
+    context = execution.ExecutionContext(parent=context)
     self.context = context
 
     # Set a typography for root branches.
@@ -607,7 +607,7 @@ class Typography(metaclass=ABCMeta):
     assert self.name
     if self.macros_container is None:
       self.macros_container = self
-    self.context = executor.ExecutionContext(parent=None)
+    self.context = execution.ExecutionContext(parent=None)
     self.context.AddMacros(GetPublicMacros(self.macros_container))
 
   @abstractmethod

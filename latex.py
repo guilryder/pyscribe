@@ -3,11 +3,11 @@
 __author__ = 'Guillaume Ryder'
 
 
-import executor
+import execution
 from macros import *
 
 
-class LatexBranch(executor.TextBranch):
+class LatexBranch(execution.TextBranch):
   """
   Branch for LaTeX-code.
   """

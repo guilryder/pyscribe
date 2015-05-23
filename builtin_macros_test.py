@@ -5,7 +5,7 @@
 __author__ = 'Guillaume Ryder'
 
 from builtin_macros import *
-from executor import *
+from execution import *
 from testutils import *
 
 

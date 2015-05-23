@@ -4,11 +4,11 @@
 __author__ = 'Guillaume Ryder'
 
 from copy import copy
+import optparse
 import os
 import sys
-import optparse
 
-from executor import Executor, FileSystem
+from execution import Executor, FileSystem
 import log
 
 

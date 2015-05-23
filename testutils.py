@@ -8,7 +8,7 @@ import io
 import os
 import unittest
 
-from executor import Executor
+from execution import Executor
 from log import *
 from macros import macro, GetPublicMacros
 
