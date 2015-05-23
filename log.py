@@ -2,8 +2,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-import sys
-
 
 def FormatMessage(message, **kwargs):
   """
@@ -127,13 +125,14 @@ class Logger:
                 'line {call_node.location.lineno}, in ${call_node.name}\n'),
   )
 
-  def __init__(self, fmt=FORMATS['simple'], output_file=None):
+  def __init__(self, *, fmt, err_file, info_file):
     (self.__top_format, self.__stack_frame_format) = fmt
-    self.__output_file = output_file or sys.stderr
+    self.__err_file = err_file
+    self.__info_file = info_file
 
-  def Log(self, location, message, call_stack=(), **kwargs):
+  def LogLocation(self, location, message, call_stack=(), **kwargs):
     """
-    Prints an error message.
+    Prints an error message for the given location.
 
     Args:
       location: (Location) The location of the error.
@@ -142,9 +141,19 @@ class Logger:
       call_stack: (CallNode list) The macro call stack.
       **kwargs: (dict) The formatting parameters to apply to the message.
     """
-    self.__output_file.write(self.__top_format.format(
+    self.__err_file.write(self.__top_format.format(
         location=location, message=FormatMessage(message, **kwargs)))
     for call_node in call_stack:
-      self.__output_file.write(self.__stack_frame_format.format(
+      self.__err_file.write(self.__stack_frame_format.format(
           call_node=call_node))
     return FatalError()
+
+  def LogInfo(self, message):
+    """
+    Prints a log entry to stderr if --quiet is not set.
+
+    Args:
+      message: (string) The message to log.
+    """
+    if self.__info_file:
+      print(message, file=self.__info_file, flush=True)

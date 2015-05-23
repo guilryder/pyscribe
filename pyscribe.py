@@ -13,11 +13,10 @@ import log
 class Main:
 
   def __init__(self, input_args, fs=FileSystem(),
-               ArgumentParser=argparse.ArgumentParser, Logger=log.Logger):
+               ArgumentParser=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__fs = fs
     self.__ArgumentParser = ArgumentParser
-    self.__Logger = Logger
 
   def Run(self):
     self.__LoadEnvironment()
@@ -58,7 +57,7 @@ class Main:
     parser.add_argument('--error_format', metavar='FORMAT',
                         dest='logger_format',
                         default='simple',
-                        choices=sorted(self.__Logger.FORMATS),
+                        choices=sorted(log.Logger.FORMATS),
                         help='error reporting format, used to set the ' +
                              '$output.format variable; default: %(default)s')
     parser.add_argument('-f', '--format', metavar='FORMAT',
@@ -68,6 +67,11 @@ class Main:
     parser.add_argument('-o', '--output', metavar='DIR',
                         dest='output_dir',
                         help='output directory')
+    parser.add_argument('-q', '--quiet',
+                        dest='info_file',
+                        action='store_const', const=None,
+                        default=self.__fs.stdout,
+                        help='do not print informational messages')
     parser.add_argument('input_filename', metavar='filename',
                         help='root *.psc file to execute')
     args = parser.parse_args(self.__input_args)
@@ -77,7 +81,9 @@ class Main:
       args.output_dir = self.__fs.join(self.__current_dir, 'output')
 
     # Logger
-    self.__logger = self.__Logger(self.__Logger.FORMATS[args.logger_format])
+    self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.logger_format],
+                               err_file=self.__fs.stderr,
+                               info_file=args.info_file)
 
     # Constants
     self.__constants = constants = dict(args.defines)

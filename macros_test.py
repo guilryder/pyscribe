@@ -42,8 +42,7 @@ class MacroTest(TestCase):
       self.fail('expected error: ' + expected_message)  # pragma: no cover
     except FatalError:
       self.assertFalse(self.called, 'expected macro callback not invoked')
-      self.assertEqual(self.logger.GetOutput(), expected_message)
-      self.logger.Clear()
+      self.assertEqual(self.logger.ConsumeStdErr(), expected_message)
 
   def testDefault(self):
     @macro()

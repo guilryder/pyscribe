@@ -87,30 +87,52 @@ class LoggerTest(TestCase):
 
   def setUp(self):
     super(LoggerTest, self).setUp()
-    self.output_file = self.FakeOutputFile()
+    self.err_file = self.FakeOutputFile()
+    self.info_file = self.FakeOutputFile()
 
-  def assertOutput(self, expected_lines):
-    self.assertEqual(self.output_file.getvalue(),
-                     '\n'.join(expected_lines + ['']))
-    self.output_file.close()
+  def __CreateLogger(self, **kwargs):
+    # pylint: disable=missing-kwoa
+    kwargs.setdefault('fmt', Logger.FORMATS['simple'])
+    kwargs.setdefault('err_file', self.err_file)
+    kwargs.setdefault('info_file', self.info_file)
+    return Logger(**kwargs)
 
-  def testLog_simpleFormat(self):
-    logger = Logger(Logger.FORMATS['simple'], self.output_file)
-    logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
-    logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
-    self.assertOutput(['file.txt:42: one', 'other.txt:27: two'])
+  def assertOutputs(self, err=(), info=()):
+    for file, expected_lines in ((self.err_file, err), (self.info_file, info)):
+      self.assertEqual(file.getvalue(),
+                       '\n'.join(list(expected_lines) + ['']))
+      file.close()
 
-  def testLog_pythonFormat(self):
-    logger = Logger(Logger.FORMATS['python'], self.output_file)
-    logger.Log(Location(Filename('file.txt', '/'), 42), 'one')
-    logger.Log(Location(Filename('other.txt', '/'), 27), 'two')
-    self.assertOutput(['  File "file.txt", line 42\n    one',
-                       '  File "other.txt", line 27\n    two'])
+  def testLogLocation_simpleFormat(self):
+    logger = self.__CreateLogger(fmt=Logger.FORMATS['simple'])
+    logger.LogLocation(Location(Filename('file.txt', '/'), 42), 'one')
+    logger.LogLocation(Location(Filename('other.txt', '/'), 27), 'two')
+    self.assertOutputs(err=['file.txt:42: one', 'other.txt:27: two'])
 
-  def testLog_someArgs(self):
-    logger = Logger(Logger.FORMATS['simple'], self.output_file)
-    logger.Log(test_location, 'arg={arg}; {number}', arg='value', number=42)
-    self.assertOutput(['file.txt:42: arg=value; 42'])
+  def testLogLocation_pythonFormat(self):
+    logger = self.__CreateLogger(fmt=Logger.FORMATS['python'])
+    logger.LogLocation(Location(Filename('file.txt', '/'), 42), 'one')
+    logger.LogLocation(Location(Filename('other.txt', '/'), 27), 'two')
+    self.assertOutputs(err=['  File "file.txt", line 42\n    one',
+                            '  File "other.txt", line 27\n    two'])
+
+  def testLogLocation_someArgs(self):
+    logger = self.__CreateLogger(fmt=Logger.FORMATS['simple'])
+    logger.LogLocation(test_location, 'arg={arg}; {number}',
+                       arg='value', number=42)
+    self.assertOutputs(err=['file.txt:42: arg=value; 42'])
+
+  def testLogInfo_enabled(self):
+    logger = self.__CreateLogger()
+    logger.LogInfo('one')
+    logger.LogInfo('two')
+    self.assertOutputs(info=['one', 'two'])
+
+  def testLogInfo_disabled(self):
+    logger = self.__CreateLogger(info_file=None)
+    logger.LogInfo('one')
+    logger.LogInfo('two')
+    self.assertOutputs(info=[])
 
 
 if __name__ == '__main__':

@@ -5,6 +5,7 @@ __author__ = 'Guillaume Ryder'
 from abc import ABCMeta, abstractmethod
 import io
 import os
+import sys
 
 from log import Filename, FormatMessage, InternalError
 from macros import *
@@ -289,6 +290,8 @@ class TextBranch(Branch):
 
 
 class FileSystem:
+  stdout = sys.stdout
+  stderr = sys.stderr
   dirname = staticmethod(os.path.dirname)
   getcwd = staticmethod(os.getcwd)
   join = staticmethod(os.path.join)
@@ -364,6 +367,8 @@ class Executor:
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
                           filename=filename)
+    self.__logger.LogInfo(
+        'Opening output file: {filename}'.format(filename=abs_filename))
     return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
 
   def ExecuteFile(self, path, cur_dir):
@@ -488,7 +493,7 @@ class Executor:
     if call_frame_skip > 0:
       call_stack = call_stack[:-call_frame_skip]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    raise self.__logger.Log(location, message, call_stack, **kwargs)
+    raise self.__logger.LogLocation(location, message, call_stack, **kwargs)
 
   def MacroFatalError(self, call_node, message, **kwargs):
     """Logs and raises a macro fatal error."""

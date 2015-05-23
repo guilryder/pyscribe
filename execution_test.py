@@ -106,7 +106,7 @@ class ExecutorTest(TestCase):
   def assertCheckArgumentCountFailure(self, expected_error, *args, **kwargs):
     with self.assertRaises(FatalError):
       self.CheckArgumentCount(*args, **kwargs)
-    self.assertEqual(self.logger.GetOutput(),
+    self.assertEqual(self.logger.ConsumeStdErr(),
                      'file.txt:42: $name: ' + expected_error)
 
   def testCheckArgumentCount_minAndMax(self):
@@ -146,7 +146,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     self.assertExecution('$identity[$branch.type]', 'text')
 
   def testEmpty(self):
-    self.assertExecution('', '')
+    self.assertExecution('', '', expected_infos=[])
 
   def testUnicode(self):
     self.assertExecution(test_unicode, test_unicode)
@@ -154,7 +154,8 @@ class ExecutorEndToEndTest(ExecutionTestCase):
   def testSyntaxError(self):
     self.assertExecution(
         '$identity[',
-        messages=['/root:1: syntax error: macro argument should be closed'])
+        messages=['/root:1: syntax error: macro argument should be closed'],
+        expected_infos=[])
 
   def testMacroNotFoundError(self):
     self.assertExecution(
@@ -218,7 +219,8 @@ class ExecutorEndToEndTest(ExecutionTestCase):
               '$branch.create.root[%s][new][newoutput]' % branch_type_name,
               '$branch.write[new][test]',
           ),
-          {})
+          {},
+          expected_infos=['Opening output file: /output/newoutput'])
       self.__VerifyBranchType(branch_type_name,
                               executor.branches.get('new').context)
 

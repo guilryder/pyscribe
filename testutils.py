@@ -49,22 +49,27 @@ class FakeLogger(Logger):
       '  {call_node.location!r}: ${call_node.name}\n')
 
   def __init__(self):
-    self.output_file = io.StringIO()
-    super(FakeLogger, self).__init__(self.FORMAT, self.output_file)
+    self.err_file = io.StringIO()
+    self.info_messages = []
+    super(FakeLogger, self).__init__(fmt=self.FORMAT,
+                                     err_file=self.err_file,
+                                     info_file=None)
 
-  def GetOutput(self):
-    """Returns the text logged so far, then clears it."""
-    output = self.output_file.getvalue().strip()
-    self.Clear()
+  def ConsumeStdErr(self):
+    """Returns the errors logged so far, then clears them."""
+    output = self.err_file.getvalue().strip()
+    self.err_file.seek(0)
+    self.err_file.truncate()
     return output
 
-  def Clear(self):
-    """Clears the log cache."""
-    self.output_file.seek(0)
-    self.output_file.truncate()
+  def LogInfo(self, message):
+    self.info_messages.append(message)
 
 
 class FakeFileSystem:
+
+  stdout = None
+  stderr = None
 
   __cwd = '/cur'
 
@@ -217,8 +222,8 @@ class ExecutionTestCase(TestCase):
   def assertExecutionOutput(self, actual, expected, msg):
     self.assertEqualExt(actual, expected, msg)
 
-  def assertExecution(self, inputs, expected_outputs=None, messages=(),
-                      fatal_error=None, strip_output=True):
+  def assertExecution(self, inputs, expected_outputs=None, *, messages=(),
+                      fatal_error=None, strip_output=True, expected_infos=None):
     """
     Args:
       inputs: (input|(string, input) dict) The input files.
@@ -237,6 +242,8 @@ class ExecutionTestCase(TestCase):
         Automatically set to True if messages is not None.
       strip_output: (bool) Whether to strip the output text of outer spaces
         before comparison.
+      expected_infos: (string list|None) If set, the expected messages logged
+        via Logger.LogInfo().
     Returns: (Executor) The executor created to do the verification.
     """
 
@@ -288,7 +295,7 @@ class ExecutionTestCase(TestCase):
         executor.RenderBranches()
       except InternalError as e:
         actual_fatal_error = True
-        logger.Log(loc('<unknown>', -1, dir_path='/'), e)
+        logger.LogLocation(loc('<unknown>', -1, dir_path='/'), e)
       actual_outputs = fs.GetOutputs(strip_output)
 
     # Verify the output.
@@ -297,7 +304,7 @@ class ExecutionTestCase(TestCase):
     else:
       self.assertFalse(actual_fatal_error,
                        'unexpected fatal error; messages: {0}'.format(
-                           logger.GetOutput()))
+                           logger.ConsumeStdErr()))
       expected_filenames = set(expected_outputs.keys())
       actual_filenames = set(actual_outputs.keys())
       self.assertTrue(
@@ -311,8 +318,11 @@ class ExecutionTestCase(TestCase):
                                    'output mismatch for: ' + filename)
 
     # Verify the log messages.
-    self.assertEqualExt(logger.GetOutput(), '\n'.join(messages),
-                        'messages mismatch')
+    self.assertEqualExt(logger.ConsumeStdErr(), '\n'.join(messages),
+                        'error messages mismatch')
+    if expected_infos is not None:
+      self.assertEqual(logger.info_messages, expected_infos,
+                       'info messages mismatch')
     return executor
 
 

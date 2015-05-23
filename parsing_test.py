@@ -140,7 +140,7 @@ class ParsingTest(TestCase):
     else:
       self.assertFalse(actual_fatal_error,
                        'unexpected fatal error; messages: {0}'.format(
-                          logger.GetOutput()))
+                          logger.ConsumeStdErr()))
       if isinstance(output, str):
         self.assertEqualExt(FormatNodes(nodes), output, 'nodes text mismatch')
       else:
@@ -148,7 +148,7 @@ class ParsingTest(TestCase):
                             fmt=ReprNodes)
 
     # Verify the log messages.
-    self.assertEqualExt(logger.GetOutput(), '\n'.join(messages),
+    self.assertEqualExt(logger.ConsumeStdErr(), '\n'.join(messages),
                         'messages mismatch')
 
   def testReadError(self):

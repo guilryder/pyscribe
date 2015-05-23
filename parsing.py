@@ -139,9 +139,9 @@ class ParsingContext:
     """
     Raises a fatal error.
 
-    See Logger.Log() for parameters.
+    See Logger.LogLocation() for parameters.
     """
-    raise self.logger.Log(*args, **kwargs)
+    raise self.logger.LogLocation(*args, **kwargs)
 
 
 class RegexpParser:
@@ -510,7 +510,7 @@ class Parser:
     # Optimization: bing instance values to the local scope.
     context = self.__context
     MakeLocation = context.MakeLocation
-    Log = context.logger.Log
+    LogLocation = context.logger.LogLocation
     tokens = self.__tokens
 
     def ParseNodes(call_nest_count):
@@ -562,8 +562,8 @@ class Parser:
             # Expect a ']'.
             token = next(tokens)
             if not token:
-              raise Log(MakeLocation(arg_lineno),
-                        "syntax error: macro argument should be closed")
+              raise LogLocation(MakeLocation(arg_lineno),
+                                "syntax error: macro argument should be closed")
             assert token.type == TOKEN_RBRACKET
 
           nodes.append(CallNode(macro_location, macro_name, args))
@@ -571,14 +571,14 @@ class Parser:
         elif token_type == TOKEN_RBRACKET:
           # ']': do not consume the token, leave it to the parent macro call.
           if call_nest_count == 0:
-            raise Log(MakeLocation(token.lineno),
-                      "syntax error: no macro argument to close")
+            raise LogLocation(MakeLocation(token.lineno),
+                              "syntax error: no macro argument to close")
           break
 
         else:
           # Other: error
-          raise Log(MakeLocation(token.lineno), "syntax error: '{token.value}'",
-                    token=token)
+          raise LogLocation(MakeLocation(token.lineno),
+                            "syntax error: '{token.value}'", token=token)
       return nodes
 
     return ParseNodes(0)
