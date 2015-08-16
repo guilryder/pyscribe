@@ -15,7 +15,7 @@ from parsing import TextNode, ParseFile
 ENCODING = 'utf-8'
 DEFAULT_EXT = '.psc'
 
-MAX_NESTED_CALLS = 25
+MAX_NESTED_CALLS = 100
 MAX_NESTED_INCLUDES = 25
 
 

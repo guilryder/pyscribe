@@ -171,15 +171,29 @@ class ExecutorEndToEndTest(ExecutionTestCase):
         messages=['/root:1: macro not found: $dummy.macro',
                   '  /root:2: $main'])
 
-  def testMaxNestedCalls(self):
+  def testMaxNestedCalls_limitReached(self):
     self.assertExecution(
         (
             '$macro.new[recurse][x$recurse]',
             '$recurse',
         ),
         messages=['/root:1: $recurse: too many nested macro calls'] +
-                 ['  /root:1: $recurse'] * 24 +
+                 ['  /root:1: $recurse'] * (MAX_NESTED_CALLS - 1) +
                  ['  /root:2: $recurse'])
+
+  def testMaxNestedCalls_limitNotReached(self):
+    expected_loop_iterations = MAX_NESTED_CALLS//2 - 1
+    self.assertExecution(
+        (
+            '$counter.create[i]',
+            '$macro.new[loop][',
+              '$i ',
+              '$i.incr',
+              '$if.eq[$i][%d][][$loop]' % expected_loop_iterations,
+            ']',
+            '$loop',
+        ),
+        ' '.join(map(str, range(expected_loop_iterations))))
 
   def testTextCompatible_simpleText(self):
     self.assertExecution('$eval.text[test]', 'test')
