@@ -223,7 +223,8 @@ class ExecutionTestCase(TestCase):
     self.assertEqualExt(actual, expected, msg)
 
   def assertExecution(self, inputs, expected_outputs=None, *, messages=(),
-                      fatal_error=None, strip_output=True, expected_infos=None):
+                      fatal_error=None, strip_output=True, expected_infos=None,
+                      input_separator=None):
     """
     Args:
       inputs: (input|(string, input) dict) The input files.
@@ -244,6 +245,8 @@ class ExecutionTestCase(TestCase):
         before comparison.
       expected_infos: (string list|None) If set, the expected messages logged
         via Logger.LogInfo().
+      input_separator: (string|None) The separator to join sequences of input
+        strings; default: '', except'\n' if fatal_error is true.
     Returns: (Executor) The executor created to do the verification.
     """
 
@@ -254,10 +257,8 @@ class ExecutionTestCase(TestCase):
     # Create the input dictionary.
     if not isinstance(inputs, collections.Mapping):
       inputs = {'/root': inputs}
-    if fatal_error:
-      input_separator = '\n'
-    else:
-      input_separator = ''
+    if input_separator is None:
+      input_separator = fatal_error and '\n' or ''
     inputs = {
         filename: self.InputHook(
             self.PrepareInputOutput(text_or_iter,

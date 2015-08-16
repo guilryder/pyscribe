@@ -208,13 +208,14 @@ class GlobalExecutionTest(EpubExecutionTestCase):
             '<p>three</p>',
         ))
 
-  def testPara_removingEmptyElemWithAttributes(self):
+  def testPara_emptyOnlyAttributes_fails(self):
     self.assertExecution(
         (
-            'before\n',
+            'before\n\n',
             '$tag.class.add[current][test]\n\n',
             'after',
         ),
+        input_separator='',
         messages=['/root:3: removing an empty element with attributes: ' +
                   '<p class="test"/>'])
 
@@ -541,7 +542,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             '</p>',
         ))
 
-  def testNested(self):
+  def testNested_regularText(self):
     self.assertExecution(
         (
             'before ',
@@ -556,6 +557,20 @@ class TagOpenCloseTest(EpubExecutionTestCase):
         ),
         '<p>before <span>one <span>nested</span> two</span> after</p>')
 
+  def testNested_noSpaces(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[span][inline]one$tag.close[span]',
+              '$tag.open[div][block]two$tag.close[div]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+              '<span>one</span>',
+              '<div>two</div>',
+            '</div>',
+        ))
+
   def testParaAndContainerNoParasInside(self):
     self.assertExecution(
         '$tag.open[h1][para]inside$tag.close[h1]',
@@ -564,13 +579,14 @@ class TagOpenCloseTest(EpubExecutionTestCase):
   def testParaWithParasInside(self):
     self.assertExecution(
         (
-            '$tag.open[h1][para]',
-                'inside'
-                '1\n',
-                'inside 2\n',
-            '$tag.close[h1]',
+            '$tag.open[h1][para]\n',
+                'inside\n',
+                '1\n\n',
+                'inside 2\n\n',
+            '$tag.close[h1]\n',
         ),
-        messages=['/root:2: unable to open a new paragraph'])
+        input_separator='',
+        messages=['/root:3: unable to open a new paragraph'])
 
   def testParaSurroundedWithParas(self):
     self.assertExecution(
@@ -690,12 +706,14 @@ class TagOpenCloseTest(EpubExecutionTestCase):
   def testTagClose_removingEmptyElemWithAttributes(self):
     self.assertExecution(
         (
-            '$tag.open[div][block,autopara=p]',
-            'text\n',
-            '$tag.class.add[current][test]',
-            '$tag.close[div]',
-        ), messages=['/root:5: $tag.close: removing an empty element ' +
-                     'with attributes: <p class="test"/>'])
+            '$tag.open[div][block,autopara=p]\n',
+            'text\n\n',
+            '$tag.class.add[current][test]\n',
+            '$tag.close[div]\n',
+        ),
+        input_separator='',
+        messages=['/root:5: $tag.close: removing an empty element ' +
+                  'with attributes: <p class="test"/>'])
 
 
 class TagAttrSetTest(EpubExecutionTestCase):
@@ -713,6 +731,26 @@ class TagAttrSetTest(EpubExecutionTestCase):
         ),
         '<div><div name="value">before after</div></div>')
 
+  def testCurrent(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                'before ',
+                '$tag.attr.set[current][name][value]',
+                'after',
+            '$tag.close[div]',
+        ),
+        '<div name="value">before after</div>')
+
+  def testEmptyTag(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.attr.set[current][name][value]',
+            '$tag.close[div]',
+        ),
+        '<div name="value"/>')
+
   def testOverwrite(self):
     self.assertExecution(
         (
@@ -727,10 +765,12 @@ class TagAttrSetTest(EpubExecutionTestCase):
   def testBlankAttributeName(self):
     self.assertExecution(
         (
-            '$tag.open[span][inline]',
-                '$tag.attr.set[<span>][ \n \n ][value]',
-            '$tag.close[span]',
-        ), messages=['/root:2: $tag.attr.set: attribute name cannot be empty'])
+            '$tag.open[span][inline]\n',
+                '$tag.attr.set[<span>][ \n \n ][value]\n',
+            '$tag.close[span]\n',
+        ),
+        input_separator='',
+        messages=['/root:2: $tag.attr.set: attribute name cannot be empty'])
 
   def testBlankValue(self):
     self.assertExecution(
