@@ -81,8 +81,6 @@ class XhtmlBranch(execution.Branch):
       chunk of non-whitespace text. Expected to be ' ' or NBSP.
       If empty, whitespaces are appended as is.
       If not empty, whitespaces are skipped.
-    __elem_callbacks: (Element -> void function) The callbacks to invoke on the
-      next created element.
   """
 
   class ElementInfo:
@@ -166,7 +164,6 @@ class XhtmlBranch(execution.Branch):
     self.__text_accu = []
     self.__line_tail = ''
     self.__text_sep = ''
-    self.__elem_callbacks = []
 
     self.AutoParaTryOpen()
 
@@ -529,12 +526,14 @@ class XhtmlBranch(execution.Branch):
       elem.text = (elem.text or '').strip() or None
 
   @staticmethod
-  def _RemoveElementIfEmpty(elem):
+  def _RemoveElementIfEmpty(elem, ignore_attribs=False):
     """
     Removes an element if it is empty: no text, no children.
 
     Args:
       elem: (Element) The element to remove.
+      ignore_attribs: (bool) Whether to remove the element even if it has
+        attributes; fails if False and the element has attributes.
 
     Returns:
       (bool) Whether the element was empty and has been removed.
@@ -542,7 +541,7 @@ class XhtmlBranch(execution.Branch):
     if (elem.text and elem.text.strip()) or len(elem):
       return False
     elem.getparent().remove(elem)
-    if elem.attrib:
+    if not ignore_attribs and elem.attrib:
       elem.text = None
       raise InternalError(
           'removing an empty element with attributes: {elem}',
