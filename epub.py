@@ -21,6 +21,11 @@ NBSP = '\xa0'
 # 3: digits after the decinal separator (optional)
 NUMBER_REGEXP = re.compile(r'^([-+]?)([0-9]*)(?:([.,])([0-9]+))?$')
 
+# Name and value of the element attribute that marks its element for deletion
+# if the element is empty: no text, no children.
+DELETE_IF_EMPTY_ATTR_NAME = '__delete_if_empty'
+DELETE_IF_EMPTY_ATTR_VALUE = '1'
+
 
 class TagLevel:
   """
@@ -414,7 +419,8 @@ class XhtmlBranch(execution.Branch):
     self.__current_elem = new_elem
 
     # If requested, discard the element if it's empty.
-    if discard_if_empty and self._RemoveElementIfEmpty(closed_elem):
+    if discard_if_empty and self._RemoveElementIfEmpty(closed_elem,
+                                                       preserve_tail=False):
       closed_elem = None
 
     if not current_elem_info.level.is_inline and closed_elem is not None \
@@ -483,8 +489,7 @@ class XhtmlBranch(execution.Branch):
     # Post-process all elements under the root.
     # Do not process <head>.
     # TODO: test <head> exclusion
-    for elem in self.__root_elem.iter():
-      self.__PostProcessElement(elem)
+    self.__PostProcessElementsRecurse(self.__root_elem)
 
     writer.write(self.__XML_HEADER)
     writer.write(etree.tostring(self.__tree, encoding=str))
@@ -513,11 +518,18 @@ class XhtmlBranch(execution.Branch):
         branch.__Finalize()
         self._InlineXmlElement(branch.__root_elem)
 
-  @staticmethod
-  def __PostProcessElement(elem):
+  @classmethod
+  def __PostProcessElementsRecurse(cls, elem):
     """
-    Finalizes an element: strips spaces, applies typography rules.
+    Finalizes an element: strips spaces, processes "delete if empty".
+
+    Recurses in children.
     """
+    # Recurse.
+    for child_elem in list(elem):
+      cls.__PostProcessElementsRecurse(child_elem)
+
+    # Strip spaces.
     if len(elem):
       elem.text = (elem.text or '').lstrip() or None
       tail_elem = elem[-1]
@@ -525,23 +537,43 @@ class XhtmlBranch(execution.Branch):
     else:
       elem.text = (elem.text or '').strip() or None
 
-  @staticmethod
-  def _RemoveElementIfEmpty(elem, ignore_attribs=False):
+    # Process the "delete if empty" attribute.
+    if elem.attrib.pop(DELETE_IF_EMPTY_ATTR_NAME, None) == \
+        DELETE_IF_EMPTY_ATTR_VALUE:
+      cls._RemoveElementIfEmpty(elem, preserve_tail=True, ignore_attribs=True)
+
+  @classmethod
+  def _RemoveElementIfEmpty(cls, elem,
+                            preserve_tail, ignore_attribs=False):
     """
     Removes an element if it is empty: no text, no children.
 
     Args:
       elem: (Element) The element to remove.
+      preserve_tail: (bool) Whether to preserve element tail, if any, by
+        appending it to the before element.
       ignore_attribs: (bool) Whether to remove the element even if it has
-        attributes; fails if False and the element has attributes.
+        attributes; fails if false and the element has attributes.
 
     Returns:
       (bool) Whether the element was empty and has been removed.
     """
     if (elem.text and elem.text.strip()) or len(elem):
       return False
-    elem.getparent().remove(elem)
-    if not ignore_attribs and elem.attrib:
+
+    # Append the placeholder tail to the before element,
+    # then delete the element.
+    parent_elem = elem.getparent()
+    if preserve_tail:
+      cls._AppendTextToXml(cls.__NormalizeText(elem.tail),
+                           tail_elem=elem.getprevious(),
+                           text_elem=parent_elem)
+    parent_elem.remove(elem)
+
+    # Fail if the element has attributes.
+    if not ignore_attribs and elem.attrib and \
+        elem.attrib.get(DELETE_IF_EMPTY_ATTR_NAME, None) != \
+            DELETE_IF_EMPTY_ATTR_VALUE:
       elem.text = None
       raise InternalError(
           'removing an empty element with attributes: {elem}',
@@ -566,7 +598,12 @@ class XhtmlBranch(execution.Branch):
       else:
         text_elem.text = (text_elem.text or '') + text
 
-  def _InlineXmlElement(self, elem):
+  @staticmethod
+  def __NormalizeText(text):
+    return (text or '').strip() or None
+
+  @classmethod
+  def _InlineXmlElement(cls, elem):
     """
     Replaces an lxml Element with its contents.
 
@@ -581,21 +618,21 @@ class XhtmlBranch(execution.Branch):
 
     # Append the head text of the branch to the before element
     # (previous element if any, else parent element).
-    self._AppendTextToXml(elem.text, tail_elem=previous_elem,
-                                     text_elem=parent_elem)
+    cls._AppendTextToXml(elem.text, tail_elem=previous_elem,
+                                    text_elem=parent_elem)
 
     # Append the placeholder tail to the last child or the before element.
     if len(elem):
       previous_elem = elem[-1]
-    self._AppendTextToXml(elem.tail, tail_elem=previous_elem,
-                                     text_elem=parent_elem)
+    cls._AppendTextToXml(elem.tail, tail_elem=previous_elem,
+                                    text_elem=parent_elem)
 
     # Replace the placeholder element with its children.
     for child in elem:
       elem.addprevious(child)
     del elem[:]
     elem.text = elem.tail = None
-    assert self._RemoveElementIfEmpty(elem)
+    assert cls._RemoveElementIfEmpty(elem, preserve_tail=False)
 
 
 class Typography(metaclass=ABCMeta):
@@ -757,6 +794,22 @@ class Macros:
     executor.current_branch.CloseTag(tag)
 
   @staticmethod
+  @macro(public_name='tag.delete.ifempty', args_signature='target')
+  def TagDeleteIfEmpty(executor, call_node, target):
+    """
+    Delete the specified element if it is empty: no text, no children.
+
+    Ignores attributes.
+
+    The check and possible deletion happen at rendering time, not immediately.
+
+    Args:
+      target: The element to configure.
+    """
+    Macros.__TagAttrSet(executor, call_node, target,
+                        DELETE_IF_EMPTY_ATTR_NAME, DELETE_IF_EMPTY_ATTR_VALUE)
+
+  @staticmethod
   @macro(public_name='tag.attr.set', args_signature='target,attr_name,value')
   def TagAttrSet(executor, call_node, target, attr_name, value):
     """
@@ -767,6 +820,10 @@ class Macros:
       attr_name: The name of the attribute.
       value: The value of the attribute.
     """
+    Macros.__TagAttrSet(executor, call_node, target, attr_name, value)
+
+  @staticmethod
+  def __TagAttrSet(executor, call_node, target, attr_name, value):
     if not attr_name.strip():
       executor.MacroFatalError(call_node, 'attribute name cannot be empty')
 

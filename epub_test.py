@@ -219,6 +219,18 @@ class GlobalExecutionTest(EpubExecutionTestCase):
         messages=['/root:3: removing an empty element with attributes: ' +
                   '<p class="test"/>'])
 
+  def testPara_emptyOnlyAttributes_deleteIfEmpty(self):
+    self.assertExecution(
+        (
+            'before\n\n',
+            '$tag.delete.ifempty[current]$tag.class.add[current][test]\n\n',
+            'after',
+        ),
+        (
+            '<p>before</p>',
+            '<p>after</p>',
+        ))
+
   def testAutoParaCloseAtEnd(self):
     self.assertExecution('test', '<p>test</p>')
 
@@ -714,6 +726,244 @@ class TagOpenCloseTest(EpubExecutionTestCase):
         input_separator='',
         messages=['/root:5: $tag.close: removing an empty element ' +
                   'with attributes: <p class="test"/>'])
+
+
+class TagDeleteIfEmptyTest(EpubExecutionTestCase):
+
+  def testCompletelyEmpty(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+            '$tag.close[div]',
+        ),
+        '')
+
+  def testNotEmpty_beforeAndAfterText(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              'before',
+              '$tag.delete.ifempty[current]',
+              ' after',
+            '$tag.close[div]',
+        ),
+        '<div>before after</div>')
+
+  def testNotEmpty_beforeText(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              'before',
+              '$tag.delete.ifempty[current]',
+            '$tag.close[div]',
+        ),
+        '<div>before</div>')
+
+  def testNotEmpty_beforeChild(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[span][inline]before$tag.close[span]',
+              '$tag.delete.ifempty[current]',
+            '$tag.close[div]',
+        ),
+        '<div><span>before</span></div>')
+
+  def testNotEmpty_afterText(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+              '^after',
+            '$tag.close[div]',
+        ),
+        '<div>after</div>')
+
+  def testNotEmpty_afterChild(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+              '$tag.open[span][inline]after$tag.close[span]',
+            '$tag.close[div]',
+        ),
+        '<div><span>after</span></div>')
+
+  def testKeepsTextBefore(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              'before',
+              '$tag.open[span][inline]',
+                  '$tag.delete.ifempty[current]',
+              '$tag.close[span]',
+            '$tag.close[div]',
+        ),
+        '<div>before</div>')
+
+  def testKeepsTextAfter(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[span][inline]',
+                  '$tag.delete.ifempty[current]',
+              '$tag.close[span]',
+              'after',
+            '$tag.close[div]',
+        ),
+        '<div>after</div>')
+
+  def testIgnoresAttributes(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+              '$tag.attr.set[current][name][value]',
+            '$tag.close[div]',
+        ),
+        '')
+
+  def testIgnoresSpaces(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+              '  \n   \n   ',
+            '$tag.close[div]',
+        ),
+        '')
+
+  def testWithRegularText(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.delete.ifempty[current]',
+              'inside',
+            '$tag.close[div]',
+        ),
+        '<div>inside</div>')
+
+  def testWithChildren(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[pre][block]',
+                '$tag.open[br][inline]$tag.close[br]',
+                '$tag.delete.ifempty[current]',
+                '$tag.open[br][inline]$tag.close[br]',
+              '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre>',
+                    '<br/>',
+                    '<br/>',
+                '</pre>',
+            '</div>',
+        ))
+
+  def testTarget_named(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+               '$tag.open[span][inline]',
+                   '$tag.delete.ifempty[<div>]',
+               '$tag.close[span]',
+            '$tag.close[div]',
+        ),
+        '<div><span/></div>')
+
+  def testTarget_para(self):
+    self.assertExecution(
+        (
+            '$tag.open[p][para]',
+               '$tag.open[span][inline]',
+                   '$tag.delete.ifempty[para]',
+               '$tag.close[span]',
+            '$tag.close[p]',
+        ),
+        '<p><span/></p>')
+
+  def testOnlyChild(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[div][block]',
+                '$tag.delete.ifempty[current]',
+              '$tag.close[div]',
+            '$tag.close[div]',
+        ),
+        '<div></div>')
+
+  def testNested(self):
+    del_if_empty = '$tag.delete.ifempty[current]'
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.open[h1][block]' + del_if_empty + '$tag.close[h1]',
+              '$tag.open[h2][block]',
+                del_if_empty,
+                '$tag.open[span][inline]' + del_if_empty + '$tag.close[span]',
+              '$tag.close[h2]',
+              '$tag.open[h3][block]' + del_if_empty + '$tag.close[h3]',
+            '$tag.close[div]',
+        ),
+        '<div></div>')
+
+  def testComplexTree(self):
+    del_if_empty = '$tag.delete.ifempty[current]'
+    self.assertExecution(
+        (
+            '$tag.open[x][block]',
+              '$tag.open[x1][block]' + del_if_empty + '$tag.close[x1]',
+              '$tag.open[x2][block]',
+                '$tag.open[x21][block]' + del_if_empty + '$tag.close[x21]',
+                'before',
+                '$tag.open[x22][block]' + del_if_empty + '$tag.close[x22]',
+              '$tag.close[x2]',
+              '$tag.open[x3][block]' + del_if_empty + '$tag.close[x3]',
+              '$tag.open[x4][block]',
+                '$tag.open[x41][block]' + del_if_empty + '$tag.close[x41]',
+                'after',
+                '$tag.open[x42][block]' + del_if_empty + '$tag.close[x42]',
+              '$tag.close[x4]',
+              '$tag.open[x5][block]' + del_if_empty + '$tag.close[x5]',
+            '$tag.close[x]',
+        ), (
+            '<x>',
+              '<x2>before</x2>',
+              '<x4>after</x4>',
+            '</x>',
+        ))
+
+  def testWithAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block,autopara=span]',
+            'one\n\n',
+            'two',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<span>one</span>',
+                '<span>two</span>',
+            '</div>',
+        ))
+
+  def testWithSubBranch(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block,autopara=span]',
+            'one\n\n',
+            'two',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<span>one</span>',
+                '<span>two</span>',
+            '</div>',
+        ))
 
 
 class TagAttrSetTest(EpubExecutionTestCase):
