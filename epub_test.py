@@ -885,6 +885,49 @@ class TagDeleteIfEmptyTest(EpubExecutionTestCase):
         ),
         '<p><span/></p>')
 
+  def testTarget_nonauto(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block,autopara=p]',
+               '$tag.delete.ifempty[nonauto]',
+            '$tag.close[div]',
+        ),
+        '')
+
+  def testTarget_auto(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block,autopara=p]',
+              '$tag.delete.ifempty[auto]',
+            '$tag.close[div]',
+        ),
+        '<div></div>')
+
+  def testTarget_parent_completelyEmpty(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.delete.ifempty[parent]',
+                    '$tag.delete.ifempty[current]',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ),
+        '')
+
+  def testTarget_parent_parentNotEmpty(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.delete.ifempty[parent]',
+                    '$tag.delete.ifempty[current]',
+                '$tag.close[pre]',
+                'parent',
+            '$tag.close[div]',
+        ),
+        '<div>parent</div>')
+
   def testOnlyChild(self):
     self.assertExecution(
         (
@@ -1068,13 +1111,19 @@ class TagClassAddTest(EpubExecutionTestCase):
         (
             '$tag.open[div][block]',
                 '$tag.open[div][block]',
-                    'before ',
+                    'before',
                     '$tag.class.add[<div>][first]',
-                    'after',
+                    '$tag.open[div][block]after$tag.close[div]',
                 '$tag.close[div]',
             '$tag.close[div]',
-        ),
-        '<div><div class="first">before after</div></div>')
+        ), (
+            '<div>',
+                '<div class="first">',
+                    'before',
+                    '<div>after</div>',
+                '</div>',
+            '</div>',
+        ))
 
   def testTwice(self):
     self.assertExecution(
@@ -1086,8 +1135,11 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[<span>][second]',
                 'three',
             '$tag.close[span]',
-        ),
-        '<p><span class="first second">one two three</span></p>')
+        ), (
+            '<p>',
+                '<span class="first second">one two three</span>',
+            '</p>',
+        ))
 
   def testTwiceSame(self):
     self.assertExecution(
@@ -1097,8 +1149,11 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[<span>][same]',
                 'inside',
             '$tag.close[span]',
-        ),
-        '<p><span class="same">inside</span></p>')
+        ), (
+            '<p>',
+                '<span class="same">inside</span>',
+            '</p>',
+        ))
 
   def testMultipleClassesAtOnce(self):
     self.assertExecution(
@@ -1108,34 +1163,213 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[<span>][three\ntwo four]',
                 'inside',
             '$tag.close[span]',
-        ),
-        '<p><span class="one two three four">inside</span></p>')
+        ), (
+            '<p>',
+                '<span class="one two three four">inside</span>',
+            '</p>',
+        ))
 
-  def testTarget_current(self):
+  def testTarget_current_regular(self):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[div][block]',
+                '$tag.open[pre][block]',
                     'before ',
                     '$tag.class.add[current][first]',
                     'after',
-                '$tag.close[div]',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">before after</pre>',
+            '</div>',
+        ))
+
+  def testTarget_current_insideAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block,autopara=p]',
+                    '$tag.class.add[current][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre>',
+                    '<p class="first">inside</p>',
+                '</pre>',
+            '</div>',
+        ))
+
+  def testTarget_current_insideNoAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.class.add[current][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">inside</pre>',
+            '</div>',
+        ))
+
+  def testTarget_auto_regular(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    'before ',
+                    '$tag.class.add[auto][first]',
+                    'after',
+                '$tag.close[pre]',
             '$tag.close[div]',
         ),
-        '<div><div class="first">before after</div></div>')
+        messages=['/root:4: $tag.class.add: no element found for target: auto'])
+
+  def testTarget_auto_insideAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block,autopara=p]',
+                    '$tag.class.add[auto][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre>',
+                    '<p class="first">inside</p>',
+                '</pre>',
+            '</div>',
+        ))
+
+  def testTarget_auto_insideNoAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.class.add[auto][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ),
+        messages=['/root:3: $tag.class.add: no element found for target: auto'])
+
+  def testTarget_nonauto_regular(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    'before ',
+                    '$tag.class.add[nonauto][first]',
+                    'after',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">before after</pre>',
+            '</div>',
+        ))
+
+  def testTarget_nonauto_insideAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block,autopara=p]',
+                    '$tag.class.add[nonauto][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">',
+                    '<p>inside</p>',
+                '</pre>',
+            '</div>',
+        ))
+
+  def testTarget_nonauto_insideNoAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.class.add[nonauto][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">inside</pre>',
+            '</div>',
+        ))
+
+  def testTarget_parent_regular(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    'before ',
+                    '$tag.class.add[parent][first]',
+                    'after',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div class="first">',
+                '<pre>before after</pre>',
+            '</div>',
+        ))
+
+  def testTarget_parent_insideAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block,autopara=p]',
+                    '$tag.class.add[parent][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div>',
+                '<pre class="first">',
+                    '<p>inside</p>',
+                '</pre>',
+            '</div>',
+        ))
+
+  def testTarget_parent_insideNoAutoPara(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+                '$tag.open[pre][block]',
+                    '$tag.class.add[parent][first]',
+                    'inside',
+                '$tag.close[pre]',
+            '$tag.close[div]',
+        ), (
+            '<div class="first">',
+                '<pre>inside</pre>',
+            '</div>',
+        ))
 
   def testTarget_para(self):
     self.assertExecution(
         (
             '$tag.open[div][para]',
-                '$tag.open[span][inline]',
+                '$tag.open[pre][inline]',
                     'before ',
                     '$tag.class.add[para][first]',
                     'after',
-                '$tag.close[span]',
+                '$tag.close[pre]',
             '$tag.close[div]',
-        ),
-        '<div class="first"><span>before after</span></div>')
+        ), (
+            '<div class="first">',
+                '<pre>before after</pre>',
+            '</div>',
+        ))
 
   def testTarget_previousAfterOpeningTag(self):
     self.assertExecution(
@@ -1146,8 +1380,11 @@ class TagClassAddTest(EpubExecutionTestCase):
               '$tag.close[span]',
             '$tag.close[div]',
             '$tag.class.add[previous][test]',
-        ),
-        '<div class="test"><span>nested</span></div>')
+        ), (
+            '<div class="test">',
+                '<span>nested</span>',
+            '</div>',
+        ))
 
   def testTarget_previousAfterClosingTag(self):
     self.assertExecution(
@@ -1211,8 +1448,11 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[<span>][&"]',
                 'inside',
             '$tag.close[span]',
-        ),
-        '<p><span class="&amp;&quot;">inside</span></p>')
+        ), (
+            '<p>',
+                '<span class="&amp;&quot;">inside</span>',
+            '</p>',
+        ))
 
   def testBlankClassName(self):
     self.assertExecution(
@@ -1221,8 +1461,11 @@ class TagClassAddTest(EpubExecutionTestCase):
                 '$tag.class.add[<span>][ \n \n ]',
                 'inside',
             '$tag.close[span]',
-        ),
-        '<p><span>inside</span></p>')
+        ), (
+            '<p>',
+                '<span>inside</span>',
+            '</p>',
+        ))
 
   def testTargetNotFound(self):
     self.assertExecution(

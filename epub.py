@@ -34,8 +34,9 @@ class TagLevel:
 
   by_name = {}
 
-  def __init__(self, name, is_para=False, is_inline=False):
+  def __init__(self, name, is_para=False, is_auto=False, is_inline=False):
     self.is_para = is_para
+    self.is_auto = is_auto
     self.is_inline = is_inline
     if name is not None:
       assert name not in self.by_name
@@ -54,7 +55,7 @@ TagLevel.PARAGRAPH = TagLevel('para', is_para=True)
 # Paragraph element that can be closed automatically.
 # Can contain only inline tags.
 # Example: <p>, <div> sometimes.
-TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True)
+TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True, is_auto=True)
 
 # Inline-level element. Inside a block or a paragraph.
 # Can contain only inline tags.
@@ -442,8 +443,18 @@ class XhtmlBranch(execution.Branch):
       InternalError on error
     """
     if target == 'current':
-      # Current element.
+      # Current element, possibly automatically created.
       elem_info_predicate = lambda elem_info: True
+    elif target == 'auto':
+      # Current automatically created element, fails if none.
+      elem_info_predicate = lambda elem_info: elem_info.level.is_auto
+    elif target == 'nonauto':
+      # First non-automatically created ancestor element.
+      elem_info_predicate = lambda elem_info: not elem_info.level.is_auto
+    elif target == 'parent':
+      # Parent element.
+      elem_info_predicate = \
+          lambda elem_info: elem_info != self.__current_elem_info != elem_info
     elif target == 'previous':
       # Previous element.
       elem_info = self.__current_elem_info
