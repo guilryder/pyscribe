@@ -207,11 +207,11 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     self.assertExecution(
         (
             '$identity[',
-                '$eval.text[',
-                    'before ',
-                    '$identity[inside]',
-                    ' after',
-                ']',
+              '$eval.text[',
+                'before ',
+                '$identity[inside]',
+                ' after',
+              ']',
             ']',
         ),
         messages=['/root:4: $identity: text-incompatible macro call',

@@ -389,10 +389,10 @@ class FrenchTypographyTest(EpubExecutionTestCase):
             '$tag.open[span][inline]four$tag.close[span]? ',
         ), (
             '<p>',
-                '<span>one</span>&#160;! ',
-                '<span>two</span>&#160;: ',
-                '<span>three</span>&#160;; ',
-                '<span>four</span>&#160;?',
+              '<span>one</span>&#160;! ',
+              '<span>two</span>&#160;: ',
+              '<span>three</span>&#160;; ',
+              '<span>four</span>&#160;?',
             '</p>',
         ))
 
@@ -401,7 +401,7 @@ class FrenchTypographyTest(EpubExecutionTestCase):
         (
             '$tag.open[div][block]one$tag.close[div]! ',
             '$tag.open[div][block]two$tag.close[div]',
-                '$tag.open[div][block]:$tag.close[div]',
+              '$tag.open[div][block]:$tag.close[div]',
             '$tag.open[div][block]three$tag.close[div]; ',
             '$tag.open[div][block]four$tag.close[div]? ',
         ), (
@@ -548,9 +548,9 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             '$tag.open[span][inline]inside 2$tag.close[span] after',
         ), (
             '<p>',
-                'before <span>inside</span>',
-                ' between ',
-                '<span>inside 2</span> after',
+              'before <span>inside</span>',
+              ' between ',
+              '<span>inside 2</span> after',
             '</p>',
         ))
 
@@ -559,11 +559,11 @@ class TagOpenCloseTest(EpubExecutionTestCase):
         (
             'before ',
             '$tag.open[span][inline]',
-                'one ',
-                '$tag.open[span][inline]',
-                    'nested',
-                '$tag.close[span]',
-                ' two',
+              'one ',
+              '$tag.open[span][inline]',
+                'nested',
+              '$tag.close[span]',
+              ' two',
             '$tag.close[span]',
             ' after',
         ),
@@ -592,9 +592,9 @@ class TagOpenCloseTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[h1][para]\n',
-                'inside\n',
-                '1\n\n',
-                'inside 2\n\n',
+              'inside\n',
+              '1\n\n',
+              'inside 2\n\n',
             '$tag.close[h1]\n',
         ),
         input_separator='',
@@ -641,8 +641,8 @@ class TagOpenCloseTest(EpubExecutionTestCase):
             '$tag.close[div]',
         ), (
             '<div>',
-                '<span>one</span>',
-                '<span>two</span>',
+              '<span>one</span>',
+              '<span>two</span>',
             '</div>',
         ))
 
@@ -650,7 +650,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][invalid]',
-                'inside',
+              'inside',
             '$tag.close[span]',
         ), messages=['/root:1: $tag.open: unknown level: invalid; ' +
                      'expected one of: autopara, block, inline, para.'])
@@ -659,8 +659,8 @@ class TagOpenCloseTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.open[div][block]',
-                '$tag.close[div]',
+              '$tag.open[div][block]',
+              '$tag.close[div]',
             '$tag.close[div]',
         ), messages=['/root:2: $tag.open: impossible to open ' +
                      'a non-inline tag inside an inline tag'])
@@ -674,7 +674,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                'inside',
+              'inside',
             '$tag.close[div]',
         ), messages=['/root:3: $tag.close: ' +
                      'expected current tag to be <div>, got <span>'])
@@ -690,9 +690,9 @@ class TagOpenCloseTest(EpubExecutionTestCase):
         (
             'before',
             '$tag.open[div][para]',
-                'inside',
-                '$tag.open[span][inline]',
-                    'nested',
+              'inside',
+              '$tag.open[span][inline]',
+                'nested',
             '$tag.close[div]',
             'after',
         ), messages=['/root:6: $tag.close: ' +
@@ -701,13 +701,13 @@ class TagOpenCloseTest(EpubExecutionTestCase):
   def testTagClose_closeParaManually(self):
     self.assertExecution(
         (
-                'before',
+              'before',
             '$tag.close[p]',
             '$tag.open[div][block]',
-                'after',
+              'after',
             '$tag.close[div]',
             '$tag.open[div][block]',
-                'next',
+              'next',
             '$tag.close[div]',
         ), (
             '<p>before</p>',
@@ -989,8 +989,8 @@ class TagDeleteIfEmptyTest(EpubExecutionTestCase):
             '$tag.close[div]',
         ), (
             '<div>',
-                '<span>one</span>',
-                '<span>two</span>',
+              '<span>one</span>',
+              '<span>two</span>',
             '</div>',
         ))
 
@@ -1015,11 +1015,11 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[div][block]',
-                    'before ',
-                    '$tag.attr.set[<div>][name][value]',
-                    'after',
-                '$tag.close[div]',
+              '$tag.open[div][block]',
+                'before ',
+                '$tag.attr.set[<div>][name][value]',
+                'after',
+              '$tag.close[div]',
             '$tag.close[div]',
         ),
         '<div><div name="value">before after</div></div>')
@@ -1028,9 +1028,9 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                'before ',
-                '$tag.attr.set[current][name][value]',
-                'after',
+              'before ',
+              '$tag.attr.set[current][name][value]',
+              'after',
             '$tag.close[div]',
         ),
         '<div name="value">before after</div>')
@@ -1039,7 +1039,7 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.attr.set[current][name][value]',
+              '$tag.attr.set[current][name][value]',
             '$tag.close[div]',
         ),
         '<div name="value"/>')
@@ -1048,9 +1048,9 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.attr.set[<div>][name][first]',
-                'inside',
-                '$tag.attr.set[<div>][name][second]',
+              '$tag.attr.set[<div>][name][first]',
+              'inside',
+              '$tag.attr.set[<div>][name][second]',
             '$tag.close[div]',
         ),
         '<div name="second">inside</div>')
@@ -1059,7 +1059,7 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]\n',
-                '$tag.attr.set[<span>][ \n \n ][value]\n',
+              '$tag.attr.set[<span>][ \n \n ][value]\n',
             '$tag.close[span]\n',
         ),
         input_separator='',
@@ -1069,8 +1069,8 @@ class TagAttrSetTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.attr.set[<span>][name][]',
-                'inside',
+              '$tag.attr.set[<span>][name][]',
+              'inside',
             '$tag.close[span]',
         ),
         '<p><span name="">inside</span></p>')
@@ -1110,18 +1110,18 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[div][block]',
-                    'before',
-                    '$tag.class.add[<div>][first]',
-                    '$tag.open[div][block]after$tag.close[div]',
-                '$tag.close[div]',
+              '$tag.open[div][block]',
+                'before',
+                '$tag.class.add[<div>][first]',
+                '$tag.open[div][block]after$tag.close[div]',
+              '$tag.close[div]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<div class="first">',
-                    'before',
-                    '<div>after</div>',
-                '</div>',
+              '<div class="first">',
+                'before',
+                '<div>after</div>',
+              '</div>',
             '</div>',
         ))
 
@@ -1129,15 +1129,15 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                'one ',
-                '$tag.class.add[<span>][first]',
-                'two ',
-                '$tag.class.add[<span>][second]',
-                'three',
+              'one ',
+              '$tag.class.add[<span>][first]',
+              'two ',
+              '$tag.class.add[<span>][second]',
+              'three',
             '$tag.close[span]',
         ), (
             '<p>',
-                '<span class="first second">one two three</span>',
+              '<span class="first second">one two three</span>',
             '</p>',
         ))
 
@@ -1145,13 +1145,13 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.class.add[<span>][same]',
-                '$tag.class.add[<span>][same]',
-                'inside',
+              '$tag.class.add[<span>][same]',
+              '$tag.class.add[<span>][same]',
+              'inside',
             '$tag.close[span]',
         ), (
             '<p>',
-                '<span class="same">inside</span>',
+              '<span class="same">inside</span>',
             '</p>',
         ))
 
@@ -1159,13 +1159,13 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.class.add[<span>][  one two\n one \n ]',
-                '$tag.class.add[<span>][three\ntwo four]',
-                'inside',
+              '$tag.class.add[<span>][  one two\n one \n ]',
+              '$tag.class.add[<span>][three\ntwo four]',
+              'inside',
             '$tag.close[span]',
         ), (
             '<p>',
-                '<span class="one two three four">inside</span>',
+              '<span class="one two three four">inside</span>',
             '</p>',
         ))
 
@@ -1173,15 +1173,15 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    'before ',
-                    '$tag.class.add[current][first]',
-                    'after',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                'before ',
+                '$tag.class.add[current][first]',
+                'after',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">before after</pre>',
+              '<pre class="first">before after</pre>',
             '</div>',
         ))
 
@@ -1189,16 +1189,16 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block,autopara=p]',
-                    '$tag.class.add[current][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block,autopara=p]',
+                '$tag.class.add[current][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre>',
-                    '<p class="first">inside</p>',
-                '</pre>',
+              '<pre>',
+                '<p class="first">inside</p>',
+              '</pre>',
             '</div>',
         ))
 
@@ -1206,14 +1206,14 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    '$tag.class.add[current][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                '$tag.class.add[current][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">inside</pre>',
+              '<pre class="first">inside</pre>',
             '</div>',
         ))
 
@@ -1221,11 +1221,11 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    'before ',
-                    '$tag.class.add[auto][first]',
-                    'after',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                'before ',
+                '$tag.class.add[auto][first]',
+                'after',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ),
         messages=['/root:4: $tag.class.add: no element found for target: auto'])
@@ -1234,16 +1234,16 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block,autopara=p]',
-                    '$tag.class.add[auto][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block,autopara=p]',
+                '$tag.class.add[auto][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre>',
-                    '<p class="first">inside</p>',
-                '</pre>',
+              '<pre>',
+                '<p class="first">inside</p>',
+              '</pre>',
             '</div>',
         ))
 
@@ -1251,10 +1251,10 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    '$tag.class.add[auto][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                '$tag.class.add[auto][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ),
         messages=['/root:3: $tag.class.add: no element found for target: auto'])
@@ -1263,15 +1263,15 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    'before ',
-                    '$tag.class.add[nonauto][first]',
-                    'after',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                'before ',
+                '$tag.class.add[nonauto][first]',
+                'after',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">before after</pre>',
+              '<pre class="first">before after</pre>',
             '</div>',
         ))
 
@@ -1280,15 +1280,15 @@ class TagClassAddTest(EpubExecutionTestCase):
         (
             '$tag.open[div][block]',
                 '$tag.open[pre][block,autopara=p]',
-                    '$tag.class.add[nonauto][first]',
-                    'inside',
-                '$tag.close[pre]',
+                '$tag.class.add[nonauto][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">',
-                    '<p>inside</p>',
-                '</pre>',
+              '<pre class="first">',
+                '<p>inside</p>',
+              '</pre>',
             '</div>',
         ))
 
@@ -1296,14 +1296,14 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    '$tag.class.add[nonauto][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                '$tag.class.add[nonauto][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">inside</pre>',
+              '<pre class="first">inside</pre>',
             '</div>',
         ))
 
@@ -1311,15 +1311,15 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    'before ',
-                    '$tag.class.add[parent][first]',
-                    'after',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                'before ',
+                '$tag.class.add[parent][first]',
+                'after',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div class="first">',
-                '<pre>before after</pre>',
+              '<pre>before after</pre>',
             '</div>',
         ))
 
@@ -1327,16 +1327,16 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block,autopara=p]',
-                    '$tag.class.add[parent][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block,autopara=p]',
+                '$tag.class.add[parent][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div>',
-                '<pre class="first">',
-                    '<p>inside</p>',
-                '</pre>',
+              '<pre class="first">',
+                '<p>inside</p>',
+              '</pre>',
             '</div>',
         ))
 
@@ -1344,14 +1344,14 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.open[pre][block]',
-                    '$tag.class.add[parent][first]',
-                    'inside',
-                '$tag.close[pre]',
+              '$tag.open[pre][block]',
+                '$tag.class.add[parent][first]',
+                'inside',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div class="first">',
-                '<pre>inside</pre>',
+              '<pre>inside</pre>',
             '</div>',
         ))
 
@@ -1359,15 +1359,15 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][para]',
-                '$tag.open[pre][inline]',
-                    'before ',
-                    '$tag.class.add[para][first]',
-                    'after',
-                '$tag.close[pre]',
+              '$tag.open[pre][inline]',
+                'before ',
+                '$tag.class.add[para][first]',
+                'after',
+              '$tag.close[pre]',
             '$tag.close[div]',
         ), (
             '<div class="first">',
-                '<pre>before after</pre>',
+              '<pre>before after</pre>',
             '</div>',
         ))
 
@@ -1382,7 +1382,7 @@ class TagClassAddTest(EpubExecutionTestCase):
             '$tag.class.add[previous][test]',
         ), (
             '<div class="test">',
-                '<span>nested</span>',
+              '<span>nested</span>',
             '</div>',
         ))
 
@@ -1400,10 +1400,10 @@ class TagClassAddTest(EpubExecutionTestCase):
             '$tag.close[div]',
         ), (
             '<div class="test">',
-                '<span>nested</span>',
+              '<span>nested</span>',
             '</div>',
             '<div>',
-                'after',
+              'after',
             '</div>',
         ))
 
@@ -1411,24 +1411,24 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                'before',
-                '$tag.open[span][inline]',
-                    'inside',
-                '$tag.close[span]',
+              'before',
+              '$tag.open[span][inline]',
+                'inside',
+              '$tag.close[span]',
             '$tag.close[div]',
             '$tag.open[div][block]',
-                '$tag.open[span][inline]',
-                    '$tag.class.add[previous][test]',
-                    'after',
-                '$tag.close[span]',
+              '$tag.open[span][inline]',
+                '$tag.class.add[previous][test]',
+                'after',
+              '$tag.close[span]',
             '$tag.close[div]',
         ), (
             '<div class="test">',
-                'before',
-                '<span>inside</span>',
+              'before',
+              '<span>inside</span>',
             '</div>',
             '<div>',
-                '<span>after</span>',
+              '<span>after</span>',
             '</div>',
         ))
 
@@ -1436,7 +1436,7 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[div][block]',
-                '$tag.class.add[previous][test]',
+              '$tag.class.add[previous][test]',
             '$tag.close[div]',
         ),
         messages=['/root:2: $tag.class.add: no previous element exists'])
@@ -1445,12 +1445,12 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.class.add[<span>][&"]',
-                'inside',
+              '$tag.class.add[<span>][&"]',
+              'inside',
             '$tag.close[span]',
         ), (
             '<p>',
-                '<span class="&amp;&quot;">inside</span>',
+              '<span class="&amp;&quot;">inside</span>',
             '</p>',
         ))
 
@@ -1458,12 +1458,12 @@ class TagClassAddTest(EpubExecutionTestCase):
     self.assertExecution(
         (
             '$tag.open[span][inline]',
-                '$tag.class.add[<span>][ \n \n ]',
-                'inside',
+              '$tag.class.add[<span>][ \n \n ]',
+              'inside',
             '$tag.close[span]',
         ), (
             '<p>',
-                '<span>inside</span>',
+              '<span>inside</span>',
             '</p>',
         ))
 
