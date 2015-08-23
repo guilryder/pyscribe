@@ -158,6 +158,26 @@ class XhtmlBranchTest(BranchTestCase):
     self.branch.AppendText('test')
     self.assertRender('<p>test</p>')
 
+  def testAppendText_trimsSpaces(self):
+    self.branch.AppendText('   a   ')
+    self.branch.AppendText('  b  ')
+    self.branch.AppendText(' c ')
+    self.branch.AppendText('   d')
+    self.branch.AppendText('e   ')
+    self.branch.AppendText('f')
+    self.branch.AppendText(' ')
+    self.branch.AppendText('g ')
+    self.branch.AppendText(' ')
+    self.branch.AppendText('h')
+    self.assertRender('<p>a b c de f g h</p>')
+
+  def testAppendText_mergesSpacesIntoNbsp(self):
+    self.branch.AppendText('  a  ')
+    self.branch.AppendText('  \xa0  \xa0b \xa0 ')
+    self.branch.AppendText('\xa0c\xa0')
+    self.branch.AppendText('d  ')
+    self.assertRender('<p>a \xa0\xa0b\xa0\xa0c\xa0d</p>')
+
 
 class EpubExecutionTestCase(ExecutionTestCase):
 
@@ -244,6 +264,10 @@ class GlobalExecutionTest(EpubExecutionTestCase):
         '$tag.open[div][block] \n one two\n \n$tag.close[div]',
         '<div>one two</div>')
 
+  def testSpacesAroundMacroThenAnotherMacro(self):
+    self.assertExecution("a $empty b$text.dollar",
+                         "<p>a b$</p>")
+
 
 class NeutralTypographyTest(EpubExecutionTestCase):
 
@@ -307,8 +331,8 @@ class NeutralTypographyTest(EpubExecutionTestCase):
                          '<p>one «two» three</p>')
 
   def testBackticksApostrophes(self):
-    self.assertExecution("`one' 'two` `' ' `",
-                         "<p>`one' 'two` `' ' `</p>")
+    self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
+                         "<p>`one' 'two` th'ree fo`ur `' ' `</p>")
 
 
 class FrenchTypographyTest(EpubExecutionTestCase):
@@ -454,8 +478,8 @@ class FrenchTypographyTest(EpubExecutionTestCase):
         '<p>one «</p><div>two</div><p>» three</p>')
 
   def testBackticksApostrophes(self):
-    self.assertExecution("`one' 'two` `' ' `",
-                         "<p>‘one’ ’two‘ ‘’ ’ ‘</p>")
+    self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
+                         "<p>‘one’ ’two‘ th’ree fo‘ur ‘’ ’ ‘</p>")
 
   def testTypoNewline(self):
     self.assertExecution("<<$typo.newline>>", '<p>«»</p>')

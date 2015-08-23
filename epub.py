@@ -211,7 +211,7 @@ class XhtmlBranch(execution.Branch):
         self.AppendLineText(para)
 
   __NBSP_TRIM_REGEXP = re.compile(r' *' + NBSP + r' *')
-  __MULTIPLE_SPACES = re.compile(r' +')
+  __MULTIPLE_SPACES = re.compile(r' {2,}')
 
   def AppendLineText(self, text):
     """
@@ -231,15 +231,24 @@ class XhtmlBranch(execution.Branch):
       if text == ' ':
         return
       if text[0] == ' ':
+        # The text starts with a space:
+        # insert the separator if it not a space (i.e. NBSP),
+        # then skip the space of the text.
         if sep != ' ':
           text = sep + text[1:]
-      else:
-        if text[0] != sep:
-          text = sep + text
-        self.__text_sep = ''
+      elif text:
+        # The text does not start with a space: insert the separator.
+        text = sep + text
+
+    # At this point the separator has been consumed.
+
     if text[-1] == ' ':
+      # The text ends with a space: move it to a new separator.
       self.__text_sep = ' '
       text = text[:-1]
+    elif sep:
+      # No more separator.
+      self.__text_sep = ''
 
     if text:
       self.__text_accu.append(text)
@@ -275,9 +284,9 @@ class XhtmlBranch(execution.Branch):
     """
     text = self.__text_sep
     if text:
-      self.__text_sep = ''
       self.__text_accu.append(text)
       self.__line_tail = text
+      self.__text_sep = ''
 
   @property
   def inline_tail_chr(self):
