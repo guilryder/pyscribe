@@ -24,37 +24,38 @@ class FormatMessageTest(TestCase):
     self.assertEqual(FormatMessage('message {blah}', blah='arg'), 'message arg')
 
 
-class ExceptionTestCase(TestCase):
+class Helpers:
+  class ExceptionClassTestCase(TestCase):
 
-  @abstractmethod
-  def exception(self, *unused_args, **unused_kwargs):
-    pass  # pragma: no cover
+    @abstractmethod
+    def exception(self, *unused_args, **unused_kwargs):
+      pass  # pragma: no cover
 
-  def testNoArgs(self):
-    self.assertEqual(self.exception().message, 'unknown error')
+    def testNoArgs(self):
+      self.assertEqual(self.exception().message, 'unknown error')
 
-  def testEmptyMessage(self):
-    self.assertEqual(self.exception('').message, 'unknown error')
+    def testEmptyMessage(self):
+      self.assertEqual(self.exception('').message, 'unknown error')
 
-  def testMessageOnly(self):
-    self.assertEqual(self.exception('message {blah}').message,
-                     'message {blah}')
+    def testMessageOnly(self):
+      self.assertEqual(self.exception('message {blah}').message,
+                       'message {blah}')
 
-  def testMessageAndArgs(self):
-    self.assertEqual(self.exception('message {blah}', blah='arg').message,
-                     'message arg')
+    def testMessageAndArgs(self):
+      self.assertEqual(self.exception('message {blah}', blah='arg').message,
+                       'message arg')
 
-  def testStr(self):
-    self.assertEqual(str(self.exception('message {blah}', blah='arg')),
-                     'message arg')
+    def testStr(self):
+      self.assertEqual(str(self.exception('message {blah}', blah='arg')),
+                       'message arg')
 
 
-class FatalErrorTest(ExceptionTestCase):
+class FatalErrorTest(Helpers.ExceptionClassTestCase):
 
   exception = FatalError
 
 
-class InternalErrorTest(ExceptionTestCase):
+class InternalErrorTest(Helpers.ExceptionClassTestCase):
 
   exception = InternalError
 
