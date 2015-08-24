@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 
 from lxml import etree
 
-from epub import *
+from xhtml import *
 from testutils import *
 
 
@@ -179,7 +179,7 @@ class XhtmlBranchTest(BranchTestCase):
     self.assertRender('<p>a \xa0\xa0b\xa0\xa0c\xa0d</p>')
 
 
-class EpubExecutionTestCase(ExecutionTestCase):
+class XhtmlExecutionTestCase(ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):
     return self.CreateBranch(executor, XhtmlBranch)
@@ -211,7 +211,7 @@ class EpubExecutionTestCase(ExecutionTestCase):
     self.assertTextEqual(actual_text, expected_text, msg)
 
 
-class GlobalExecutionTest(EpubExecutionTestCase):
+class GlobalExecutionTest(XhtmlExecutionTestCase):
 
   def testBranchType(self):
     self.assertExecution('$identity[$branch.type]', '<p>xhtml</p>')
@@ -269,7 +269,7 @@ class GlobalExecutionTest(EpubExecutionTestCase):
                          "<p>a b$</p>")
 
 
-class NeutralTypographyTest(EpubExecutionTestCase):
+class NeutralTypographyTest(XhtmlExecutionTestCase):
 
   def InputHook(self, text):
     return '$typo.set[neutral]' + text
@@ -335,7 +335,7 @@ class NeutralTypographyTest(EpubExecutionTestCase):
                          "<p>`one' 'two` th'ree fo`ur `' ' `</p>")
 
 
-class FrenchTypographyTest(EpubExecutionTestCase):
+class FrenchTypographyTest(XhtmlExecutionTestCase):
 
   def InputHook(self, text):
     return '$typo.set[french]' + text
@@ -485,7 +485,7 @@ class FrenchTypographyTest(EpubExecutionTestCase):
     self.assertExecution("<<$typo.newline>>", '<p>«»</p>')
 
 
-class SimpleMacrosTest(EpubExecutionTestCase):
+class SimpleMacrosTest(XhtmlExecutionTestCase):
 
   def testPar_success(self):
     self.assertExecution('before$par^after', '<p>before</p><p>after</p>')
@@ -557,7 +557,7 @@ class SimpleMacrosTest(EpubExecutionTestCase):
         messages=['/root:1: $typo.number: invalid integer: \u20133'])
 
 
-class TagOpenCloseTest(EpubExecutionTestCase):
+class TagOpenCloseTest(XhtmlExecutionTestCase):
 
   def testOnce(self):
     self.assertExecution(
@@ -752,7 +752,7 @@ class TagOpenCloseTest(EpubExecutionTestCase):
                   'with attributes: <p class="test"/>'])
 
 
-class TagDeleteIfEmptyTest(EpubExecutionTestCase):
+class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
 
   def testCompletelyEmpty(self):
     self.assertExecution(
@@ -1033,7 +1033,7 @@ class TagDeleteIfEmptyTest(EpubExecutionTestCase):
         ))
 
 
-class TagAttrSetTest(EpubExecutionTestCase):
+class TagAttrSetTest(XhtmlExecutionTestCase):
 
   def testSimple(self):
     self.assertExecution(
@@ -1110,7 +1110,7 @@ class TagAttrSetTest(EpubExecutionTestCase):
         messages=['/root:1: $tag.attr.set: no element found for target: <div>'])
 
 
-class ParTest(EpubExecutionTestCase):
+class ParTest(XhtmlExecutionTestCase):
 
   def testCloseAndOpen(self):
     self.assertExecution(
@@ -1128,7 +1128,7 @@ class ParTest(EpubExecutionTestCase):
         messages=['/root:1: $par: unable to open a new paragraph'])
 
 
-class TagClassAddTest(EpubExecutionTestCase):
+class TagClassAddTest(XhtmlExecutionTestCase):
 
   def testOnce(self):
     self.assertExecution(

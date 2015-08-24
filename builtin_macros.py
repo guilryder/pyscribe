@@ -267,13 +267,13 @@ def _LookupNonBuiltinMacro(executor, macro_name, verb):
 
 # Branches
 
-import epub
 import latex
+import xhtml
 
 __BRANCH_CLASSES = (
     TextBranch,
-    epub.XhtmlBranch,
     latex.LatexBranch,
+    xhtml.XhtmlBranch,
 )
 BRANCH_TYPES = dict((branch_class.type_name, branch_class)
                     for branch_class in __BRANCH_CLASSES)
