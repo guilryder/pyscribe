@@ -4,46 +4,38 @@
 
 __author__ = 'Guillaume Ryder'
 
-from lxml import etree
+from xml import etree
 
 from xhtml import *
 from testutils import *
+
+
+_STUB_PREFIX = (
+    '<?xml version="1.0" encoding="utf-8"?>\n'
+    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
+        '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
+    '<html xmlns="http://www.w3.org/1999/xhtml">'
+      '<head>'
+        '<meta http-equiv="Content-Type" '
+              'content="application/xhtml+xml; charset=utf-8"/>'
+      '</head>'
+      '<body>'
+)
+
+_STUB_SUFFIX = (
+      '</body>'
+    '</html>'
+)
 
 
 def ParseXml(xml_string):
   return etree.fromstring(xml_string.encode('utf-8')).getroottree()
 
 def XmlToString(elem_or_tree):
-  root_elem = elem_or_tree
-  if hasattr(root_elem, 'getroot'):
-    root_elem = root_elem.getroot()
-
-  # Strip out '\n' tails from all nodes.
-  for elem in root_elem.iterdescendants():
-    if elem.tail == '\n':
-      elem.tail = None
-
-  # Convert the tree to an XML string.
-  return etree.tostring(elem_or_tree, pretty_print=True, encoding=str)
-
-def CanonicalizeXml(xml_string):
-  return XmlToString(ParseXml(xml_string))
+  return etree.tostring(elem_or_tree, encoding=str)
 
 def MakeExpectedXmlString(expected_body):
-  return ''.join((
-        '<?xml version="1.0" encoding="utf-8"?>\n',
-        '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" ',
-            '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n',
-        '<html xmlns="http://www.w3.org/1999/xhtml">',
-          '<head>',
-            '<meta http-equiv="Content-Type" ',
-                  'content="application/xhtml+xml; charset=utf-8"/>',
-          '</head>',
-          '<body>',
-            expected_body,
-          '</body>',
-        '</html>'
-    ))
+  return _STUB_PREFIX + expected_body + _STUB_SUFFIX
 
 
 class AppendTextToXmlTest(TestCase):
@@ -54,7 +46,7 @@ class AppendTextToXmlTest(TestCase):
     tree = ParseXml(initial_xml_string)
     XhtmlBranch._AppendTextToXml(text, tree.find('//tail'), tree.find('//text'))
     self.assertTextEqual(XmlToString(tree),
-                         CanonicalizeXml(expected_xml_string),
+                         expected_xml_string,
                          'output mismatch')
 
   def testNoText(self):
@@ -84,12 +76,11 @@ class InlineXmlElementTest(TestCase):
   def check(self, initial_xml_string, expected_xml_string):
     tree = ParseXml(initial_xml_string)
     XhtmlBranch(parent=None)._InlineXmlElement(tree.find('//inline'))
-    self.assertTextEqual(XmlToString(tree),
-                         CanonicalizeXml(expected_xml_string))
+    self.assertTextEqual(XmlToString(tree), expected_xml_string)
 
   def testEmptyAlone(self):
     self.check('<root><inline></inline></root>',
-               '<root></root>')
+               '<root/>')
 
   def testEmptyNoPrevious(self):
     self.check('<root>before <inline></inline> after</root>',
@@ -119,17 +110,17 @@ class XhtmlBranchTest(BranchTestCase):
     super(XhtmlBranchTest, self).setUp()
     self.branch = XhtmlBranch(parent=None)
 
-  def assertRender(self, expected_xml_string, canonicalize_fn=CanonicalizeXml):
+  def assertRender(self, expected_xml_string):
     with self.FakeOutputFile() as writer:
       self.branch.writer = writer
       self.branch._Render(writer)
       self.assertTextEqual(
-          canonicalize_fn(writer.getvalue()),
-          canonicalize_fn(MakeExpectedXmlString(expected_xml_string)))
+          writer.getvalue().replace('<body/>', '<body></body>'),
+          MakeExpectedXmlString(expected_xml_string))
 
   def testRender_htmlBoilerplate(self):
     self.branch.AppendText('test')
-    self.assertRender('<p>test</p>', canonicalize_fn=lambda text: text)
+    self.assertRender('<p>test</p>')
 
   def testRender_empty(self):
     self.assertRender('')
@@ -151,7 +142,14 @@ class XhtmlBranchTest(BranchTestCase):
   def testRender_mix(self):
     self.PrepareMix(self.branch)
     self.assertRender(
-        '<p>one</p><p>sub1</p><p>sub12</p><p>two</p><p>sub21</p><p>three</p>')
+        '\n'.join((
+            '<p>one</p>',
+            '<p>sub1</p>',
+            '<p>sub12</p>',
+            '<p>two</p>',
+            '<p>sub21</p>',
+            '<p>three</p>',
+        )))
 
   def testRender_unattachedBranch(self):
     self.branch.CreateSubBranch()
@@ -185,30 +183,14 @@ class XhtmlExecutionTestCase(ExecutionTestCase):
     return self.CreateBranch(executor, XhtmlBranch)
 
   def assertExecutionOutput(self, actual, expected, msg):
-    actual_tree = ParseXml(actual)
-    expected_text = CanonicalizeXml(MakeExpectedXmlString(expected))
-    actual_text = XmlToString(actual_tree)
+    actual = actual.replace('<body/>', '<body></body>')
 
-    if expected_text != actual_text:  # pragma: no cover
-      # Mismatch: try to narrow the error message to <body>.
-      namespace = 'http://www.w3.org/1999/xhtml'
-      actual_body = actual_tree.find('//{' + namespace + '}body')
-      if actual_body is not None:
-        body_expected_tree = ParseXml(
-            '<body xmlns="{namespace}">{xml}</body>'.format(
-                namespace=namespace, xml=expected))
-        def FormatBody(node_or_tree):
-          lines = XmlToString(node_or_tree).split('\n')
-          if len(lines) >= 3:
-            lines = lines[1:-1]
-          return '\n'.join(lines)
-        body_expected_text = FormatBody(body_expected_tree)
-        body_actual_text = FormatBody(actual_body)
-        if body_expected_text != body_actual_text:
-          # The <body> elements differ: we have a discrepancy to show.
-          (expected_text, actual_text) = (body_expected_text, body_actual_text)
+    # If possible, strip out the stub to clarify error messages.
+    if actual.startswith(_STUB_PREFIX) and actual.endswith(_STUB_SUFFIX):
+      self.assertTextEqual(actual[len(_STUB_PREFIX):-len(_STUB_SUFFIX)],
+                           expected, msg)
 
-    self.assertTextEqual(actual_text, expected_text, msg)
+    self.assertTextEqual(actual, MakeExpectedXmlString(expected), msg)
 
 
 class GlobalExecutionTest(XhtmlExecutionTestCase):
@@ -231,11 +213,10 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
   def testPara_emptyOnlyAttributes_fails(self):
     self.assertExecution(
         (
-            'before\n\n',
-            '$tag.class.add[current][test]\n\n',
-            'after',
+            'before\n\n'
+            '$tag.class.add[current][test]\n\n'
+            'after'
         ),
-        input_separator='',
         messages=['/root:3: removing an empty element with attributes: ' +
                   '<p class="test"/>'])
 
@@ -245,8 +226,7 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
             'before\n\n',
             '$tag.delete.ifempty[current]$tag.class.add[current][test]\n\n',
             'after',
-        ),
-        (
+        ), (
             '<p>before</p>',
             '<p>after</p>',
         ))
@@ -376,7 +356,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
 
   def testTypoNumber(self):
     self.assertExecution('before $typo.number[-12345678] after',
-                         '<p>before \u201312&#160;345&#160;678 after</p>')
+                         '<p>before \u201312\xa0345\xa0678 after</p>')
 
   def testAllSpecialChars(self):
     self.assertExecution(
@@ -397,12 +377,12 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
   def testPunctuationDouble_convertsSpaces(self):
     self.assertExecution(
         'one ! two : three ; four ? five , six .',
-        '<p>one&#160;! two&#160;: three&#160;; four&#160;? five , six .</p>')
+        '<p>one\xa0! two\xa0: three\xa0; four\xa0? five , six .</p>')
 
   def testPunctuationDouble_insertsSpaces(self):
     self.assertExecution(
         'one! two: three; four? five, six.',
-        '<p>one&#160;! two&#160;: three&#160;; four&#160;? five, six.</p>')
+        '<p>one\xa0! two\xa0: three\xa0; four\xa0? five, six.</p>')
 
   def testPunctuationDouble_insertsSpacesAfterInlineTag(self):
     self.assertExecution(
@@ -412,12 +392,12 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             '$tag.open[span][inline]three$tag.close[span]; ',
             '$tag.open[span][inline]four$tag.close[span]? ',
         ), (
-            '<p>',
-              '<span>one</span>&#160;! ',
-              '<span>two</span>&#160;: ',
-              '<span>three</span>&#160;; ',
-              '<span>four</span>&#160;?',
-            '</p>',
+            '<p>'
+              '<span>one</span>\xa0! '
+              '<span>two</span>\xa0: '
+              '<span>three</span>\xa0; '
+              '<span>four</span>\xa0?'
+            '</p>'
         ))
 
   def testPunctuationDouble_insertsSpacesAfterBlockTag(self):
@@ -429,16 +409,16 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             '$tag.open[div][block]three$tag.close[div]; ',
             '$tag.open[div][block]four$tag.close[div]? ',
         ), (
-            '<div>one</div><p>!</p>',
-            '<div>two</div><div>:</div>',
-            '<div>three</div><p>;</p>',
-            '<div>four</div><p>?</p>',
+            '<div>one</div>', '<p>!</p>',
+            '<div>two</div>', '<div>:</div>',
+            '<div>three</div>', '<p>;</p>',
+            '<div>four</div>', '<p>?</p>',
         ))
 
   def testPunctuationDouble_convertsSpaceAfterEllipsis(self):
     self.assertExecution(
         'Err... ? Ah... ! Yes..... : here',
-        '<p>Err…&#160;? Ah…&#160;! Yes.....&#160;: here</p>')
+        '<p>Err…\xa0? Ah…\xa0! Yes.....\xa0: here</p>')
 
   def testPunctuationDouble_insertsNoSpaceAfterEllipsis(self):
     self.assertExecution(
@@ -447,7 +427,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
 
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
-                         '<p>what&#160;!?;: wtf&#160;:;?!</p>')
+                         '<p>what\xa0!?;: wtf\xa0:;?!</p>')
 
   def testPunctuationDouble_cornerCases(self):
     self.assertExecution(
@@ -461,21 +441,25 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
 
   def testGuillemets_convertsSpaces(self):
     self.assertExecution('one « two » three',
-                         '<p>one «&#160;two&#160;» three</p>')
+                         '<p>one «\xa0two\xa0» three</p>')
 
   def testGuillemets_insertsSpaces(self):
     self.assertExecution('one «two» three',
-                         '<p>one «&#160;two&#160;» three</p>')
+                         '<p>one «\xa0two\xa0» three</p>')
 
   def testGuillemets_insertsSpacesAroundInlineTag(self):
     self.assertExecution(
         'one «$tag.open[span][inline]two$tag.close[span]» three',
-        '<p>one «&#160;<span>two</span>&#160;» three</p>')
+        '<p>one «\xa0<span>two</span>\xa0» three</p>')
 
   def testGuillemets_insertsSpacesAroundBlockTag(self):
     self.assertExecution(
-        'one «$tag.open[div][block]two$tag.close[div]» three',
-        '<p>one «</p><div>two</div><p>» three</p>')
+        'one «$tag.open[div][block] two $tag.close[div]» three',
+        (
+            '<p>one «</p>',
+            '<div>two</div>',
+            '<p>» three</p>',
+        ))
 
   def testBackticksApostrophes(self):
     self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
@@ -488,7 +472,12 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
 class SimpleMacrosTest(XhtmlExecutionTestCase):
 
   def testPar_success(self):
-    self.assertExecution('before$par^after', '<p>before</p><p>after</p>')
+    self.assertExecution(
+        'before$par^after',
+        (
+            '<p>before</p>',
+            '<p>after</p>',
+        ))
 
   def testPar_cannotOpen(self):
     self.assertExecution(
@@ -571,11 +560,11 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
             ' between ',
             '$tag.open[span][inline]inside 2$tag.close[span] after',
         ), (
-            '<p>',
-              'before <span>inside</span>',
-              ' between ',
-              '<span>inside 2</span> after',
-            '</p>',
+            '<p>'
+              'before <span>inside</span>'
+              ' between '
+              '<span>inside 2</span> after'
+            '</p>'
         ))
 
   def testNested_regularText(self):
@@ -601,10 +590,10 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
               '$tag.open[div][block]two$tag.close[div]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<span>one</span>',
-              '<div>two</div>',
-            '</div>',
+            '<div>'
+              '<span>one</span>'
+              '<div>two</div>'
+            '</div>'
         ))
 
   def testParaAndContainerNoParasInside(self):
@@ -615,13 +604,12 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
   def testParaWithParasInside(self):
     self.assertExecution(
         (
-            '$tag.open[h1][para]\n',
-              'inside\n',
-              '1\n\n',
-              'inside 2\n\n',
-            '$tag.close[h1]\n',
+            '$tag.open[h1][para]\n'
+              'inside\n'
+              '1\n\n'
+              'inside 2\n\n'
+            '$tag.close[h1]\n'
         ),
-        input_separator='',
         messages=['/root:3: unable to open a new paragraph'])
 
   def testParaSurroundedWithParas(self):
@@ -664,10 +652,8 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
             'two',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<span>one</span>',
-              '<span>two</span>',
-            '</div>',
+            '<div><span>one</span>',
+            '<span>two</span></div>',
         ))
 
   def testTagOpen_invalidLevel(self):
@@ -692,7 +678,10 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
   def testTagClose_autoParaClose(self):
     self.assertExecution(
         '$tag.open[div][block,autopara=p]inside$tag.close[div]after',
-        '<div><p>inside</p></div><p>after</p>')
+        (
+            '<div><p>inside</p></div>',
+            '<p>after</p>',
+        ))
 
   def testTagClose_tagNotFound(self):
     self.assertExecution(
@@ -742,12 +731,11 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
   def testTagClose_removingEmptyElemWithAttributes(self):
     self.assertExecution(
         (
-            '$tag.open[div][block,autopara=p]\n',
-            'text\n\n',
-            '$tag.class.add[current][test]\n',
-            '$tag.close[div]\n',
+            '$tag.open[div][block,autopara=p]\n'
+            'text\n\n'
+            '$tag.class.add[current][test]\n'
+            '$tag.close[div]\n'
         ),
-        input_separator='',
         messages=['/root:5: $tag.close: removing an empty element ' +
                   'with attributes: <p class="test"/>'])
 
@@ -879,12 +867,12 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-                '<pre>',
-                    '<br/>',
-                    '<br/>',
-                '</pre>',
-            '</div>',
+            '<div>'
+                '<pre>'
+                    '<br/>'
+                    '<br/>'
+                '</pre>'
+            '</div>'
         ))
 
   def testTarget_named(self):
@@ -925,7 +913,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.delete.ifempty[auto]',
             '$tag.close[div]',
         ),
-        '<div></div>')
+        '<div/>')
 
   def testTarget_parent_completelyEmpty(self):
     self.assertExecution(
@@ -961,7 +949,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.close[div]',
             '$tag.close[div]',
         ),
-        '<div></div>')
+        '<div/>')
 
   def testNested(self):
     del_if_empty = '$tag.delete.ifempty[current]'
@@ -976,7 +964,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.open[h3][block]' + del_if_empty + '$tag.close[h3]',
             '$tag.close[div]',
         ),
-        '<div></div>')
+        '<div/>')
 
   def testComplexTree(self):
     del_if_empty = '$tag.delete.ifempty[current]'
@@ -998,9 +986,9 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.open[x5][block]' + del_if_empty + '$tag.close[x5]',
             '$tag.close[x]',
         ), (
-            '<x>',
+            '<x>'
               '<x2>before</x2>',
-              '<x4>after</x4>',
+              '<x4>after</x4>'
             '</x>',
         ))
 
@@ -1012,10 +1000,10 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
             'two',
             '$tag.close[div]',
         ), (
-            '<div>',
+            '<div>'
               '<span>one</span>',
-              '<span>two</span>',
-            '</div>',
+              '<span>two</span>'
+            '</div>'
         ))
 
   def testWithSubBranch(self):
@@ -1026,10 +1014,10 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
             'two',
             '$tag.close[div]',
         ), (
-            '<div>',
+            '<div>'
                 '<span>one</span>',
-                '<span>two</span>',
-            '</div>',
+                '<span>two</span>'
+            '</div>'
         ))
 
 
@@ -1082,11 +1070,10 @@ class TagAttrSetTest(XhtmlExecutionTestCase):
   def testBlankAttributeName(self):
     self.assertExecution(
         (
-            '$tag.open[span][inline]\n',
-              '$tag.attr.set[<span>][ \n \n ][value]\n',
-            '$tag.close[span]\n',
+            '$tag.open[span][inline]\n'
+              '$tag.attr.set[<span>][ \n \n ][value]\n'
+            '$tag.close[span]\n'
         ),
-        input_separator='',
         messages=['/root:2: $tag.attr.set: attribute name cannot be empty'])
 
   def testBlankValue(self):
@@ -1115,12 +1102,19 @@ class ParTest(XhtmlExecutionTestCase):
   def testCloseAndOpen(self):
     self.assertExecution(
         'one\n\ntwo$par^three',
-        '<p>one</p><p>two</p><p>three</p>')
+        (
+            '<p>one</p>',
+            '<p>two</p>',
+            '<p>three</p>',
+        ))
 
   def testOpenOnly(self):
     self.assertExecution(
         '$par^one\n\n$par^two',
-        '<p>one</p><p>two</p>')
+        (
+            '<p>one</p>',
+            '<p>two</p>',
+        ))
 
   def testCannotOpen(self):
     self.assertExecution(
@@ -1141,12 +1135,12 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[div]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<div class="first">',
-                'before',
-                '<div>after</div>',
-              '</div>',
-            '</div>',
+            '<div>'
+              '<div class="first">'
+                'before'
+                '<div>after</div>'
+              '</div>'
+            '</div>'
         ))
 
   def testTwice(self):
@@ -1160,9 +1154,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'three',
             '$tag.close[span]',
         ), (
-            '<p>',
-              '<span class="first second">one two three</span>',
-            '</p>',
+            '<p>'
+              '<span class="first second">one two three</span>'
+            '</p>'
         ))
 
   def testTwiceSame(self):
@@ -1174,9 +1168,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'inside',
             '$tag.close[span]',
         ), (
-            '<p>',
-              '<span class="same">inside</span>',
-            '</p>',
+            '<p>'
+              '<span class="same">inside</span>'
+            '</p>'
         ))
 
   def testMultipleClassesAtOnce(self):
@@ -1188,9 +1182,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'inside',
             '$tag.close[span]',
         ), (
-            '<p>',
-              '<span class="one two three four">inside</span>',
-            '</p>',
+            '<p>'
+              '<span class="one two three four">inside</span>'
+            '</p>'
         ))
 
   def testTarget_current_regular(self):
@@ -1204,9 +1198,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">before after</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">before after</pre>'
+            '</div>'
         ))
 
   def testTarget_current_insideAutoPara(self):
@@ -1219,11 +1213,11 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre>',
-                '<p class="first">inside</p>',
-              '</pre>',
-            '</div>',
+            '<div>'
+              '<pre>'
+                '<p class="first">inside</p>'
+              '</pre>'
+            '</div>'
         ))
 
   def testTarget_current_insideNoAutoPara(self):
@@ -1236,9 +1230,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">inside</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">inside</pre>'
+            '</div>'
         ))
 
   def testTarget_auto_regular(self):
@@ -1264,11 +1258,11 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre>',
-                '<p class="first">inside</p>',
-              '</pre>',
-            '</div>',
+            '<div>'
+              '<pre>'
+                '<p class="first">inside</p>'
+              '</pre>'
+            '</div>'
         ))
 
   def testTarget_auto_insideNoAutoPara(self):
@@ -1294,9 +1288,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">before after</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">before after</pre>'
+            '</div>'
         ))
 
   def testTarget_nonauto_insideAutoPara(self):
@@ -1309,11 +1303,11 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">',
-                '<p>inside</p>',
-              '</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">'
+                '<p>inside</p>'
+              '</pre>'
+            '</div>'
         ))
 
   def testTarget_nonauto_insideNoAutoPara(self):
@@ -1326,9 +1320,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">inside</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">inside</pre>'
+            '</div>'
         ))
 
   def testTarget_parent_regular(self):
@@ -1342,9 +1336,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div class="first">',
-              '<pre>before after</pre>',
-            '</div>',
+            '<div class="first">'
+              '<pre>before after</pre>'
+            '</div>'
         ))
 
   def testTarget_parent_insideAutoPara(self):
@@ -1357,11 +1351,11 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div>',
-              '<pre class="first">',
-                '<p>inside</p>',
-              '</pre>',
-            '</div>',
+            '<div>'
+              '<pre class="first">'
+                '<p>inside</p>'
+              '</pre>'
+            '</div>'
         ))
 
   def testTarget_parent_insideNoAutoPara(self):
@@ -1374,9 +1368,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div class="first">',
-              '<pre>inside</pre>',
-            '</div>',
+            '<div class="first">'
+              '<pre>inside</pre>'
+            '</div>'
         ))
 
   def testTarget_para(self):
@@ -1390,9 +1384,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[pre]',
             '$tag.close[div]',
         ), (
-            '<div class="first">',
-              '<pre>before after</pre>',
-            '</div>',
+            '<div class="first">'
+              '<pre>before after</pre>'
+            '</div>'
         ))
 
   def testTarget_previousAfterOpeningTag(self):
@@ -1405,9 +1399,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
             '$tag.close[div]',
             '$tag.class.add[previous][test]',
         ), (
-            '<div class="test">',
-              '<span>nested</span>',
-            '</div>',
+            '<div class="test">'
+              '<span>nested</span>'
+            '</div>'
         ))
 
   def testTarget_previousAfterClosingTag(self):
@@ -1423,11 +1417,11 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'after',
             '$tag.close[div]',
         ), (
-            '<div class="test">',
-              '<span>nested</span>',
+            '<div class="test">'
+              '<span>nested</span>'
             '</div>',
-            '<div>',
-              'after',
+            '<div>'
+              'after'
             '</div>',
         ))
 
@@ -1447,12 +1441,12 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               '$tag.close[span]',
             '$tag.close[div]',
         ), (
-            '<div class="test">',
-              'before',
-              '<span>inside</span>',
+            '<div class="test">'
+              'before'
+              '<span>inside</span>'
             '</div>',
-            '<div>',
-              '<span>after</span>',
+            '<div>'
+              '<span>after</span>'
             '</div>',
         ))
 
@@ -1473,9 +1467,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'inside',
             '$tag.close[span]',
         ), (
-            '<p>',
-              '<span class="&amp;&quot;">inside</span>',
-            '</p>',
+            '<p>'
+              '<span class="&amp;&quot;">inside</span>'
+            '</p>'
         ))
 
   def testBlankClassName(self):
@@ -1486,9 +1480,9 @@ class TagClassAddTest(XhtmlExecutionTestCase):
               'inside',
             '$tag.close[span]',
         ), (
-            '<p>',
-              '<span>inside</span>',
-            '</p>',
+            '<p>'
+              '<span>inside</span>'
+            '</p>'
         ))
 
   def testTargetNotFound(self):

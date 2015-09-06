@@ -430,9 +430,9 @@ class MacroOverrideTest(ExecutionTestCase):
             '!$test[2]',
             '!$test[3]',
         ), (
-            '!original:1 ',
-            '!override1:2 original:2 ',
-            '!override2:3 override1:3 override1:3 original:3',
+            '!original:1 '
+            '!override1:2 original:2 '
+            '!override2:3 override1:3 override1:3 original:3'
         ))
 
   def testRecursiveCallsRedefined(self):
@@ -674,14 +674,14 @@ class MacroWrapTest(ExecutionTestCase):
             '$macro.wrap[listener][top2=$ref!][!Top2=$ref]',
             '$listener',
         ), (
-            'top2=topMODIF!',
-            'b=b!',
-            'top1=topMODIF!',
-            'a=a!',
-            'initial',
-            '!A=a',
-            '!Top1=topMODIF',
-            '!B=b!Top2=topMODIF',
+            'top2=topMODIF!'
+            'b=b!'
+            'top1=topMODIF!'
+            'a=a!'
+            'initial'
+            '!A=a'
+            '!Top1=topMODIF'
+            '!B=b!Top2=topMODIF'
         ))
 
   def testMacroInParentContext(self):
@@ -697,9 +697,9 @@ class MacroWrapTest(ExecutionTestCase):
             '$branch.append[sub]',
             '($test)',
         ), (
-            '(head!initial!tail)',
-            '(head!initial!tail)',
-            '(head!initial!tail)',
+            '(head!initial!tail)'
+            '(head!initial!tail)'
+            '(head!initial!tail)'
         ))
 
 
