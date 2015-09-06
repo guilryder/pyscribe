@@ -19,12 +19,29 @@ NBSP = '\xa0'
 # 1: digits before decimal separator (possibly empty)
 # 2: decimal separator (optional)
 # 3: digits after the decinal separator (optional)
-NUMBER_REGEXP = re.compile(r'^([-+]?)([0-9]*)(?:([.,])([0-9]+))?$')
+_NUMBER_REGEXP = re.compile(r'^([-+]?)([0-9]*)(?:([.,])([0-9]+))?$')
 
 # Name and value of the element attribute that marks its element for deletion
 # if the element is empty: no text, no children.
-DELETE_IF_EMPTY_ATTR_NAME = '__delete_if_empty'
-DELETE_IF_EMPTY_ATTR_VALUE = '1'
+_DELETE_IF_EMPTY_ATTR_NAME = '__delete_if_empty'
+_DELETE_IF_EMPTY_ATTR_VALUE = '1'
+
+# Tags that have no contents therefore render as <tag/>.
+# Source: http://www.w3.org/TR/html-markup/syntax.html#void-element
+_VOID_TAGS_TO_NONE = {
+  tag: None
+  for tag in 'area,base,br,col,command,embed,hr,img,input,keygen,link,meta,'
+             'param,source,track,wbr'.split(',')
+}
+
+
+def GetTagEmptyContents(tag_name):
+  """
+  Returns the text an empty element of the given tag should have.
+
+  Returns None or '' depending on the tag.
+  """
+  return _VOID_TAGS_TO_NONE.get(tag_name, '')
 
 
 class TagLevel:
@@ -101,6 +118,7 @@ class XhtmlBranch(execution.Branch):
     def __init__(self, parent, elem, level, auto_para_tag=None):
       if auto_para_tag:
         assert level == TagLevel.BLOCK
+        assert auto_para_tag not in _VOID_TAGS_TO_NONE
       self.parent = parent
       self.elem = elem
       self.level = level
@@ -555,11 +573,11 @@ class XhtmlBranch(execution.Branch):
       tail_elem = elem[-1]
       tail_elem.tail = (tail_elem.tail or '').rstrip() or None
     else:
-      elem.text = (elem.text or '').strip() or None
+      elem.text = (elem.text or '').strip() or GetTagEmptyContents(elem.tag)
 
     # Process the "delete if empty" attribute.
-    if elem.attrib.pop(DELETE_IF_EMPTY_ATTR_NAME, None) == \
-        DELETE_IF_EMPTY_ATTR_VALUE:
+    if elem.attrib.pop(_DELETE_IF_EMPTY_ATTR_NAME, None) == \
+        _DELETE_IF_EMPTY_ATTR_VALUE:
       cls._RemoveElementIfEmpty(elem, preserve_tail=True, ignore_attribs=True)
 
   @classmethod
@@ -585,16 +603,16 @@ class XhtmlBranch(execution.Branch):
     # then delete the element.
     parent_elem = elem.getparent()
     if preserve_tail:
-      cls._AppendTextToXml(cls.__NormalizeText(elem.tail),
+      cls._AppendTextToXml((elem.tail or '').strip() or None,
                            tail_elem=elem.getprevious(),
                            text_elem=parent_elem)
     parent_elem.remove(elem)
 
     # Fail if the element has attributes.
     if not ignore_attribs and elem.attrib and \
-        elem.attrib.get(DELETE_IF_EMPTY_ATTR_NAME, None) != \
-            DELETE_IF_EMPTY_ATTR_VALUE:
-      elem.text = None
+        elem.attrib.get(_DELETE_IF_EMPTY_ATTR_NAME, None) != \
+            _DELETE_IF_EMPTY_ATTR_VALUE:
+      elem.text = ''
       raise InternalError(
           'removing an empty element with attributes: {elem}',
           elem=etree.tostring(elem, encoding='unicode'))
@@ -617,10 +635,6 @@ class XhtmlBranch(execution.Branch):
         tail_elem.tail = (tail_elem.tail or '') + text
       else:
         text_elem.text = (text_elem.text or '') + text
-
-  @staticmethod
-  def __NormalizeText(text):
-    return (text or '').strip() or None
 
   @classmethod
   def _InlineXmlElement(cls, elem):
@@ -653,6 +667,10 @@ class XhtmlBranch(execution.Branch):
     del elem[:]
     elem.text = elem.tail = None
     assert cls._RemoveElementIfEmpty(elem, preserve_tail=False)
+
+    # Render the parent element as <tag></tag> instead of <tag/> if necessary.
+    if not parent_elem.text and not len(parent_elem):
+      parent_elem.text = GetTagEmptyContents(parent_elem.tag)
 
 
 class Typography(metaclass=ABCMeta):
@@ -702,7 +720,7 @@ class FrenchTypography(Typography):
   def FormatNumber(number):  # pylint: disable=arguments-differ
     # Separate thoushands with a non-breaking space.
     (sign, before_decimal, decimal_sep, after_decimal) = \
-        NUMBER_REGEXP.match(number).groups()
+        _NUMBER_REGEXP.match(number).groups()
 
     # Use an en-dash as minus sign.
     if sign == '-':
@@ -787,6 +805,10 @@ class Macros:
     if autoparablock_match:
       level = TagLevel.BLOCK
       auto_para_tag = autoparablock_match.group('auto_para_tag')
+      if auto_para_tag in _VOID_TAGS_TO_NONE:
+        executor.MacroFatalError(
+            call_node, 'cannot use void tag as autopara: <{tag}>',
+            tag=auto_para_tag)
     else:
       level = TagLevel.by_name.get(level_name)
       auto_para_tag = None
@@ -827,7 +849,7 @@ class Macros:
       target: The element to configure.
     """
     Macros.__TagAttrSet(executor, call_node, target,
-                        DELETE_IF_EMPTY_ATTR_NAME, DELETE_IF_EMPTY_ATTR_VALUE)
+                        _DELETE_IF_EMPTY_ATTR_NAME, _DELETE_IF_EMPTY_ATTR_VALUE)
 
   @staticmethod
   @macro(public_name='tag.attr.set', args_signature='target,attr_name,value')
@@ -908,7 +930,7 @@ class Macros:
     Formats a number according to the current typography rules.
     """
     # Reject invalid values.
-    if not NUMBER_REGEXP.match(number):
+    if not _NUMBER_REGEXP.match(number):
       executor.MacroFatalError(
           call_node, 'invalid integer: {number}', number=number)
     text = executor.current_branch.root.typography.FormatNumber(number)

@@ -80,7 +80,7 @@ class InlineXmlElementTest(TestCase):
 
   def testEmptyAlone(self):
     self.check('<root><inline></inline></root>',
-               '<root/>')
+               '<root></root>')
 
   def testEmptyNoPrevious(self):
     self.check('<root>before <inline></inline> after</root>',
@@ -114,9 +114,8 @@ class XhtmlBranchTest(BranchTestCase):
     with self.FakeOutputFile() as writer:
       self.branch.writer = writer
       self.branch._Render(writer)
-      self.assertTextEqual(
-          writer.getvalue().replace('<body/>', '<body></body>'),
-          MakeExpectedXmlString(expected_xml_string))
+      self.assertTextEqual(writer.getvalue(),
+                           MakeExpectedXmlString(expected_xml_string))
 
   def testRender_htmlBoilerplate(self):
     self.branch.AppendText('test')
@@ -218,7 +217,7 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
             'after'
         ),
         messages=['/root:3: removing an empty element with attributes: ' +
-                  '<p class="test"/>'])
+                  '<p class="test"></p>'])
 
   def testPara_emptyOnlyAttributes_deleteIfEmpty(self):
     self.assertExecution(
@@ -239,14 +238,45 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
         '$tag.open[div][block]test',
         messages=['<unknown>:-1: element not closed in branch "root": <div>'])
 
-  def testStripsInnerSpaces(self):
+  def testStripsInnerSpaces_textInside(self):
     self.assertExecution(
         '$tag.open[div][block] \n one two\n \n$tag.close[div]',
         '<div>one two</div>')
 
+  def testStripsInnerSpaces_noText(self):
+    self.assertExecution(
+        '$tag.open[div][block] \n ~ ~ \n $tag.close[div]',
+        '<div></div>')
+
   def testSpacesAroundMacroThenAnotherMacro(self):
     self.assertExecution("a $empty b$text.dollar",
                          "<p>a b$</p>")
+
+  def testEmptyTags_nonVoid(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]$tag.close[div]',
+            '$tag.open[span][block]$tag.close[span]',
+            '$tag.open[blockquote][block]$tag.close[blockquote]',
+            '$tag.open[i][block]$tag.close[i]',
+        ), (
+            '<div></div>',
+            '<span></span>',
+            '<blockquote></blockquote>',
+            '<i></i>',
+        ))
+
+  def testEmptyTags_void(self):
+    self.assertExecution(
+        (
+            '$tag.open[hr][block]$tag.close[hr]',
+            '$tag.open[br][block]$tag.close[br]',
+            '$tag.open[wbr][block]$tag.close[wbr]',
+        ), (
+            '<hr/>',
+            '<br/>',
+            '<wbr/>',
+        ))
 
 
 class NeutralTypographyTest(XhtmlExecutionTestCase):
@@ -656,6 +686,11 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
             '<span>two</span></div>',
         ))
 
+  def testTagOpen_voidAutoPara(self):
+    self.assertExecution(
+        '$tag.open[div][block,autopara=hr]',
+        messages=['/root:1: $tag.open: cannot use void tag as autopara: <hr>'])
+
   def testTagOpen_invalidLevel(self):
     self.assertExecution(
         (
@@ -737,7 +772,7 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
             '$tag.close[div]\n'
         ),
         messages=['/root:5: $tag.close: removing an empty element ' +
-                  'with attributes: <p class="test"/>'])
+                  'with attributes: <p class="test"></p>'])
 
 
 class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
@@ -884,7 +919,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
                '$tag.close[span]',
             '$tag.close[div]',
         ),
-        '<div><span/></div>')
+        '<div><span></span></div>')
 
   def testTarget_para(self):
     self.assertExecution(
@@ -895,7 +930,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
                '$tag.close[span]',
             '$tag.close[p]',
         ),
-        '<p><span/></p>')
+        '<p><span></span></p>')
 
   def testTarget_nonauto(self):
     self.assertExecution(
@@ -913,7 +948,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.delete.ifempty[auto]',
             '$tag.close[div]',
         ),
-        '<div/>')
+        '<div></div>')
 
   def testTarget_parent_completelyEmpty(self):
     self.assertExecution(
@@ -949,7 +984,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.close[div]',
             '$tag.close[div]',
         ),
-        '<div/>')
+        '<div></div>')
 
   def testNested(self):
     del_if_empty = '$tag.delete.ifempty[current]'
@@ -964,7 +999,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
               '$tag.open[h3][block]' + del_if_empty + '$tag.close[h3]',
             '$tag.close[div]',
         ),
-        '<div/>')
+        '<div></div>')
 
   def testComplexTree(self):
     del_if_empty = '$tag.delete.ifempty[current]'
@@ -1054,7 +1089,7 @@ class TagAttrSetTest(XhtmlExecutionTestCase):
               '$tag.attr.set[current][name][value]',
             '$tag.close[div]',
         ),
-        '<div name="value"/>')
+        '<div name="value"></div>')
 
   def testOverwrite(self):
     self.assertExecution(
