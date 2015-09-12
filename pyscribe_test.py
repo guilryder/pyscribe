@@ -121,7 +121,7 @@ class MainTest(TestCase):
 
   def testDefaultOutputFormat(self):
     self.Execute('format.psc')
-    self.assertOutput('Format:')
+    self.assertOutput('Format: ')
 
   def testCustomOutputFormat(self):
     self.Execute('format.psc --format xhtml')

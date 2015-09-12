@@ -193,7 +193,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             ']',
             '$loop',
         ),
-        ' '.join(map(str, range(expected_loop_iterations))))
+        ' '.join(map(str, range(expected_loop_iterations))) + ' ')
 
   def testTextCompatible_simpleText(self):
     self.assertExecution('$eval.text[test]', 'test')

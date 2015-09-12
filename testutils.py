@@ -168,13 +168,11 @@ class TestCase(unittest.TestCase):
         else:  # pragma: no cover
           assert False, 'Unsupported mode: ' + mode
 
-      def GetOutputs(fs, strip_output=True):
+      def GetOutputs(fs):
         outputs = {}
         for output_filename, output_writer in fs.__output_writers.items():
           output = output_writer.getvalue()
           output_writer.close()
-          if strip_output:
-            output = output.strip()
           outputs[output_filename] = output
         return outputs
 
@@ -223,7 +221,7 @@ class ExecutionTestCase(TestCase):
     self.assertEqualExt(actual, expected, msg)
 
   def assertExecution(self, inputs, expected_outputs=None, *, messages=(),
-                      fatal_error=None, strip_output=True, expected_infos=None):
+                      fatal_error=None, expected_infos=None):
     """
     Args:
       inputs: (input|(string, input) dict) The input files.
@@ -240,8 +238,6 @@ class ExecutionTestCase(TestCase):
       messages: (string list) The expected error messages.
       fatal_error: (bool) Whether a fatal error is expected.
         Automatically set to True if messages is not None.
-      strip_output: (bool) Whether to strip the output text of outer spaces
-        before comparison.
       expected_infos: (string list|None) If set, the expected messages logged
         via Logger.LogInfo().
     Returns: (Executor) The executor created to do the verification.
@@ -292,7 +288,7 @@ class ExecutionTestCase(TestCase):
       except InternalError as e:
         actual_fatal_error = True
         logger.LogLocation(loc('<unknown>', -1, dir_path='/'), e)
-      actual_outputs = fs.GetOutputs(strip_output)
+      actual_outputs = fs.GetOutputs()
 
     # Verify the output.
     if fatal_error:

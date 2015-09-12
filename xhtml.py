@@ -128,11 +128,11 @@ class XhtmlBranch(execution.Branch):
   __XHTML_STUB = bytes("""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type"
-          content="application/xhtml+xml; charset={encoding}"/>
-  </head>
+<html>
+<head>
+<meta http-equiv="Content-Type"
+      content="application/xhtml+xml; charset={encoding}"/>
+</head>
 </html>
 """.format(encoding=execution.ENCODING), encoding='ascii')
 
@@ -168,8 +168,6 @@ class XhtmlBranch(execution.Branch):
     else:
       # Root branch: start from the XHTML stub.
       self.__tree = etree.fromstring(self.__XHTML_STUB).getroottree()
-      for elem in self.__tree.getroot().iter():
-        elem.text = elem.tail = None
 
       # Add a <body> element, take it as root.
       self.__root_elem = etree.SubElement(self.__tree.getroot(), 'body')
@@ -177,8 +175,7 @@ class XhtmlBranch(execution.Branch):
       # Create a sub-branch for the <head>.
       # TODO: give unique name to <head>
       self.__head_branch = XhtmlBranch(parent=self, name='head')
-      self.__tree.find('//{http://www.w3.org/1999/xhtml}head') \
-          .append(self.__head_branch.__root_elem)
+      self.__tree.find('head').append(self.__head_branch.__root_elem)
       self.__head_branch.attached = True
 
     self.__current_elem = self.__root_elem
@@ -259,10 +256,10 @@ class XhtmlBranch(execution.Branch):
         text = sep + text
 
     # At this point the separator has been consumed.
-
-    if text[-1] == ' ':
+    last_char = text[-1]
+    if last_char in (' ', NBSP):
       # The text ends with a space: move it to a new separator.
-      self.__text_sep = ' '
+      self.__text_sep = last_char
       text = text[:-1]
     elif sep:
       # No more separator.
@@ -524,13 +521,18 @@ class XhtmlBranch(execution.Branch):
   def _Render(self, writer):
     self.__Finalize()
 
-    # Post-process all elements under the root.
-    # Do not process <head>.
-    # TODO: test <head> exclusion
-    self.__PostProcessElementsRecurse(self.__root_elem)
+    # Post-process all elements.
+    self.__PostProcessElementsRecurse(self.__tree.getroot())
+
+    # Insert line breaks in <body>.
+    body_elem = self.__root_elem
+    if not body_elem.text:
+      body_elem.text = '\n'
+    body_elem.tail = '\n'
 
     writer.write(self.__XML_HEADER)
     writer.write(etree.tostring(self.__tree, encoding=str))
+    writer.write('\n')
 
   def __Finalize(self):
     """
@@ -557,28 +559,38 @@ class XhtmlBranch(execution.Branch):
         self._InlineXmlElement(branch.__root_elem)
 
   @classmethod
-  def __PostProcessElementsRecurse(cls, elem):
+  def __PostProcessElementsRecurse(cls, elem, *, strip_spaces=False):
     """
     Finalizes an element: strips spaces, processes "delete if empty".
+
+    Strips spaces on <body> children only.
 
     Recurses in children.
     """
     # Recurse.
+    strip_spaces_child = strip_spaces or elem.tag == 'body'
     for child_elem in list(elem):
-      cls.__PostProcessElementsRecurse(child_elem)
+      cls.__PostProcessElementsRecurse(child_elem,
+                                       strip_spaces=strip_spaces_child)
 
     # Strip spaces.
-    if len(elem):
-      elem.text = (elem.text or '').lstrip() or None
-      tail_elem = elem[-1]
-      tail_elem.tail = (tail_elem.tail or '').rstrip() or None
-    else:
-      elem.text = (elem.text or '').strip() or GetTagEmptyContents(elem.tag)
+    if strip_spaces:
+      if len(elem):
+        elem.text = (elem.text or '').lstrip() or None
+        tail_elem = elem[-1]
+        tail_elem.tail = (tail_elem.tail or '').rstrip() or None
+      else:
+        elem.text = (elem.text or '').strip() or GetTagEmptyContents(elem.tag)
 
     # Process the "delete if empty" attribute.
     if elem.attrib.pop(_DELETE_IF_EMPTY_ATTR_NAME, None) == \
         _DELETE_IF_EMPTY_ATTR_VALUE:
       cls._RemoveElementIfEmpty(elem, preserve_tail=True, ignore_attribs=True)
+
+    # Comment out the contents of <style> tags to disable escaping.
+    if elem.tag == 'style' and elem.text:
+      elem.append(etree.Comment('\n{}\n'.format(elem.text)))
+      elem.text = None
 
   @classmethod
   def _RemoveElementIfEmpty(cls, elem,

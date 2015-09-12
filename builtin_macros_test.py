@@ -317,7 +317,7 @@ class MacroNewTest(ExecutionTestCase):
             '$outer[1]',
             '$inner[2]',
         ),
-        'Oarg1 IOnested I2')
+        'Oarg1 IOnested I2 ')
 
   def testDifferentNamesInNestedDefinitions(self):
     self.assertExecution(
@@ -331,7 +331,7 @@ class MacroNewTest(ExecutionTestCase):
             '$outer[1]',
             '$inner[2]',
         ),
-        'Oy1 IOnested I2')
+        'Oy1 IOnested I2 ')
 
   def testPartialMacros(self):
     self.assertExecution(
@@ -432,7 +432,7 @@ class MacroOverrideTest(ExecutionTestCase):
         ), (
             '!original:1 '
             '!override1:2 original:2 '
-            '!override2:3 override1:3 override1:3 original:3'
+            '!override2:3 override1:3 override1:3 original:3 '
         ))
 
   def testRecursiveCallsRedefined(self):
@@ -792,7 +792,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$branch.create.root[text][new][out]\n',
             '$branch.write[new][one\n\ntwo]\n',
         ),
-        {'system': '', '/output/out': 'one\n\ntwo'})
+        {'system': '\n', '/output/out': 'one\n\ntwo'})
 
   def testRoot_unknownType(self):
     self.assertExecution(
@@ -823,7 +823,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$branch.create.root[text][new][../output/below]\n',
             '$branch.write[new][test]\n',
         ),
-        {'system': '', '/output/below': 'test'})
+        {'system': '\n', '/output/below': 'test'})
 
   def testRoot_nameRef(self):
     self.assertExecution(
@@ -1080,7 +1080,7 @@ class CounterTest(ExecutionTestCase):
             '$counter.create[test]',
             ' - after: $test',
         ),
-        'before: 1 - after: 0')
+        ' before: 1 - after: 0')
 
   def testCreate_initiallyZero(self):
     self.assertExecution(

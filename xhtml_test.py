@@ -10,21 +10,26 @@ from xhtml import *
 from testutils import *
 
 
-_STUB_PREFIX = (
+_STUB_PREFIX1 = (
     '<?xml version="1.0" encoding="utf-8"?>\n'
     '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
         '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
-    '<html xmlns="http://www.w3.org/1999/xhtml">'
-      '<head>'
+    '<html>\n'
+      '<head>\n'
         '<meta http-equiv="Content-Type" '
-              'content="application/xhtml+xml; charset=utf-8"/>'
-      '</head>'
-      '<body>'
+              'content="application/xhtml+xml; charset=utf-8"/>\n'
 )
 
+_STUB_PREFIX2 = (
+      '</head>\n'
+      '<body>\n'
+)
+
+_STUB_PREFIX = _STUB_PREFIX1 + _STUB_PREFIX2
+
 _STUB_SUFFIX = (
-      '</body>'
-    '</html>'
+      '\n</body>\n'
+    '</html>\n'
 )
 
 
@@ -34,8 +39,11 @@ def ParseXml(xml_string):
 def XmlToString(elem_or_tree):
   return etree.tostring(elem_or_tree, encoding=str)
 
-def MakeExpectedXmlString(expected_body):
-  return _STUB_PREFIX + expected_body + _STUB_SUFFIX
+def MakeExpectedXmlString(expected_body, *,
+                          prefix=_STUB_PREFIX, suffix=_STUB_SUFFIX):
+  result = prefix + expected_body + suffix
+  result = result.replace('<body>\n\n</body>', '<body>\n</body>')
+  return result
 
 
 class AppendTextToXmlTest(TestCase):
@@ -172,24 +180,27 @@ class XhtmlBranchTest(BranchTestCase):
     self.branch.AppendText('  a  ')
     self.branch.AppendText('  \xa0  \xa0b \xa0 ')
     self.branch.AppendText('\xa0c\xa0')
-    self.branch.AppendText('d  ')
-    self.assertRender('<p>a \xa0\xa0b\xa0\xa0c\xa0d</p>')
+    self.branch.AppendText('d  \xa0')
+    self.branch.AppendText(' e')
+    self.assertRender('<p>a \xa0\xa0b\xa0\xa0c\xa0d\xa0e</p>')
 
 
 class XhtmlExecutionTestCase(ExecutionTestCase):
+
+  @classmethod
+  def MakeExpectedString(cls, text):
+    return MakeExpectedXmlString(text)
 
   def GetExecutionBranch(self, executor):
     return self.CreateBranch(executor, XhtmlBranch)
 
   def assertExecutionOutput(self, actual, expected, msg):
-    actual = actual.replace('<body/>', '<body></body>')
-
     # If possible, strip out the stub to clarify error messages.
     if actual.startswith(_STUB_PREFIX) and actual.endswith(_STUB_SUFFIX):
       self.assertTextEqual(actual[len(_STUB_PREFIX):-len(_STUB_SUFFIX)],
                            expected, msg)
 
-    self.assertTextEqual(actual, MakeExpectedXmlString(expected), msg)
+    self.assertTextEqual(actual, self.MakeExpectedString(expected), msg)
 
 
 class GlobalExecutionTest(XhtmlExecutionTestCase):
@@ -276,6 +287,44 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
             '<hr/>',
             '<br/>',
             '<wbr/>',
+        ))
+
+
+class StructureExecutionTest(XhtmlExecutionTestCase):
+
+  @classmethod
+  def MakeExpectedString(cls, text):
+    return MakeExpectedXmlString(text,
+                                 prefix=_STUB_PREFIX1, suffix=_STUB_SUFFIX)
+
+  def testHeadBranch(self):
+    self.assertExecution(
+        (
+            '$branch.write[head][',
+              '$tag.open[title][para]My Title$tag.close[title]',
+            ']',
+            'My body',
+        ), (
+            '<title>My Title</title>\n'
+        ) + _STUB_PREFIX2 + (
+            '<p>My body</p>'
+        ))
+
+  def testStyle_notEscaped(self):
+    self.assertExecution(
+        (
+            '$branch.write[head][',
+              '$tag.open[title][para]My & Title$tag.close[title]',
+              '$tag.open[style][para]h1 > div { "blah" }$tag.close[style]',
+            ']',
+            'My & body',
+        ), (
+            '<title>My &amp; Title</title>\n'
+            '<style><!--\n'
+            'h1 > div { "blah" }\n'
+            '--></style>\n'
+        ) + _STUB_PREFIX2 + (
+            '<p>My &amp; body</p>'
         ))
 
 
