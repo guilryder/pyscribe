@@ -34,6 +34,9 @@ _VOID_TAGS_TO_NONE = {
              'param,source,track,wbr'.split(',')
 }
 
+# Characters to strip around tag text contents.
+_STRIPPABLE = ' \r\n\t'
+
 
 def GetTagEmptyContents(tag_name):
   """
@@ -237,27 +240,30 @@ class XhtmlBranch(execution.Branch):
     Args:
       text: (string) The non-empty string to append. Must not contain any '\n'.
     """
-    assert text
     text = self.__NBSP_TRIM_REGEXP.sub(NBSP, text)
     text = self.__MULTIPLE_SPACES.sub(' ', text)
+    assert text
 
     sep = self.__text_sep
     if sep:
       if text == ' ':
+        # AppendText(' ') is a NOOP if there is a separator.
         return
       if text[0] == ' ':
         # The text starts with a space:
-        # insert the separator if it not a space (i.e. NBSP),
+        # insert the separator if it is not a space (i.e. NBSP),
         # then skip the space of the text.
         if sep != ' ':
           text = sep + text[1:]
-      elif text:
-        # The text does not start with a space: insert the separator.
+      elif text[0] != NBSP:
+        # The text does not start with whitespace: insert the separator.
         text = sep + text
+      # Separator dropped if the text starts with NBSP.
 
     # At this point the separator has been consumed.
+    # Compute the new separator.
     last_char = text[-1]
-    if last_char in (' ', NBSP):
+    if last_char == ' ':
       # The text ends with a space: move it to a new separator.
       self.__text_sep = last_char
       text = text[:-1]
@@ -265,6 +271,11 @@ class XhtmlBranch(execution.Branch):
       # No more separator.
       self.__text_sep = ''
 
+    # Drop space prefixes after whitespace.
+    if text.startswith(' ') and self.__line_tail.endswith(NBSP):
+      text = text[1:]
+
+    # Append the remaining text.
     if text:
       self.__text_accu.append(text)
       self.__line_tail = text
@@ -274,41 +285,28 @@ class XhtmlBranch(execution.Branch):
     Appends a line break to the current paragraph.
 
     Drops pending trailing spaces in the current line.
-    Cancels the effect of AppendNonBreakingSpace() if it has just been called.
+    Cancels the effect of RequireNonBreakingSpace() if it has just been called.
 
-    This method is a noop after InlineFlush().
+    This method is a noop after __InlineFlush().
     """
     self.__line_tail = self.__text_sep = ''
 
-  def AppendNonBreakingSpace(self):
+  def RequireNonBreakingSpace(self):
     """
-    Requests a non-breaking space to be added at the current position.
+    Requests a non-breaking space (NBSP) to be present.
 
-    The space will be added only if text is appended before the tag is closed or
-    a newline is appended.
+    Inserts a new NBSP only if:
+    * not at the beginning of a line
+    * not at the end of a line
+    * no NBSP is already present
     """
-    self.__text_sep = NBSP
+    tail = self.__line_tail
+    if tail and tail[-1] != NBSP:
+      self.__text_sep = NBSP
 
-  def InlineFlush(self):
-    """
-    Appends any pending whitespace to the DOM.
-
-    Should be called before opening an inline tag, so pending spaces
-    -- for instance those requested by AppendNonBreakingSpace() --
-    are inserted before the tag is opened.
-    """
-    text = self.__text_sep
-    if text:
-      self.__text_accu.append(text)
-      self.__line_tail = text
-      self.__text_sep = ''
-
-  @property
-  def inline_tail_chr(self):
-    """Returns whether the current tag has trailing whitespace or is empty."""
-    tail = self.__text_sep
-    if not tail:
-      tail = self.__line_tail
+  def GetTailChar(self):
+    """Returns the tail character of the current line."""
+    tail = self.__text_sep or self.__line_tail
     return tail and tail[-1] or None
 
   def AutoParaTryOpen(self, except_tag=None):
@@ -342,21 +340,24 @@ class XhtmlBranch(execution.Branch):
       return False
 
   def __FlushText(self):
-    """Flushes the text accumulator to the branch."""
+    """
+    Flushes the text accumulator to the branch.
+
+    Drops the pending separator, if any.
+    """
     text_accu = self.__text_accu
     if text_accu:
       text = ''.join(text_accu)
       del self.__text_accu[:]
-      self.__AppendTextNoBuffer(text)
-
-  def __AppendTextNoBuffer(self, text):
-    assert text
-    elem = self.__current_elem
-    if len(elem):
-      self._AppendTextToXml(text, tail_elem=elem[-1])
-    else:
-      self._AppendTextToXml(text, text_elem=elem)
-    self.__line_tail = text
+      elem = self.__current_elem
+      if len(elem):
+        # Append to the tail of the last child of the current element.
+        self._AppendTextToXml(text, tail_elem=elem[-1])
+      else:
+        # Append to the text of the current, childless element.
+        self._AppendTextToXml(text, text_elem=elem)
+      self.__line_tail = text
+    self.__text_sep = ''
 
   def OpenTag(self, tag, level, auto_para_tag=None):
     """
@@ -371,7 +372,11 @@ class XhtmlBranch(execution.Branch):
     """
     # Close the current paragraph if we are creating a new block or paragraph.
     if level.is_inline:
-      self.InlineFlush()
+      # Flush the separator.
+      sep = self.__text_sep
+      if sep and (sep != ' ' or not self.__line_tail.endswith(NBSP)):
+        self.__text_accu.append(sep)
+        self.__line_tail = sep
       self.__FlushText()
     else:
       self.__line_tail = ''
@@ -576,11 +581,12 @@ class XhtmlBranch(execution.Branch):
     # Strip spaces.
     if strip_spaces:
       if len(elem):
-        elem.text = (elem.text or '').lstrip() or None
+        elem.text = (elem.text or '').lstrip(_STRIPPABLE) or None
         tail_elem = elem[-1]
-        tail_elem.tail = (tail_elem.tail or '').rstrip() or None
+        tail_elem.tail = (tail_elem.tail or '').rstrip(_STRIPPABLE) or None
       else:
-        elem.text = (elem.text or '').strip() or GetTagEmptyContents(elem.tag)
+        elem.text = (elem.text or '').strip(_STRIPPABLE) or \
+            GetTagEmptyContents(elem.tag)
 
     # Process the "delete if empty" attribute.
     if elem.attrib.pop(_DELETE_IF_EMPTY_ATTR_NAME, None) == \
@@ -608,14 +614,14 @@ class XhtmlBranch(execution.Branch):
     Returns:
       (bool) Whether the element was empty and has been removed.
     """
-    if (elem.text and elem.text.strip()) or len(elem):
+    if (elem.text and elem.text.strip(_STRIPPABLE)) or len(elem):
       return False
 
     # Append the placeholder tail to the before element,
     # then delete the element.
     parent_elem = elem.getparent()
     if preserve_tail:
-      cls._AppendTextToXml((elem.tail or '').strip() or None,
+      cls._AppendTextToXml((elem.tail or '').strip(_STRIPPABLE) or None,
                            tail_elem=elem.getprevious(),
                            text_elem=parent_elem)
     parent_elem.remove(elem)
@@ -759,14 +765,13 @@ class FrenchTypography(Typography):
   def RuleGuillemetOpen(executor, unused_call_node):
     branch = executor.current_branch
     branch.AppendLineText('«')
-    branch.AppendNonBreakingSpace()
+    branch.RequireNonBreakingSpace()
 
   @staticmethod
   @macro(public_name='text.guillemet.close')
   def RuleGuillemetClose(executor, unused_call_node):
     branch = executor.current_branch
-    if branch.inline_tail_chr:
-      branch.AppendNonBreakingSpace()
+    branch.RequireNonBreakingSpace()
     branch.AppendLineText('»')
 
   @staticmethod
@@ -775,9 +780,8 @@ class FrenchTypography(Typography):
     if not contents:
       return
     branch = executor.current_branch
-    tail_chr = branch.inline_tail_chr
-    if tail_chr not in ('…', '.'):
-      branch.AppendNonBreakingSpace()
+    if branch.GetTailChar() not in ('…', '.'):
+      branch.RequireNonBreakingSpace()
     branch.AppendLineText(contents)
 
 

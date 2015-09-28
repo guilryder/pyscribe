@@ -181,8 +181,8 @@ class XhtmlBranchTest(BranchTestCase):
     self.branch.AppendText('  \xa0  \xa0b \xa0 ')
     self.branch.AppendText('\xa0c\xa0')
     self.branch.AppendText('d  \xa0')
-    self.branch.AppendText(' e')
-    self.assertRender('<p>a \xa0\xa0b\xa0\xa0c\xa0d\xa0e</p>')
+    self.branch.AppendText('  e')
+    self.assertRender('<p>a\xa0\xa0b\xa0\xa0c\xa0d\xa0e</p>')
 
 
 class XhtmlExecutionTestCase(ExecutionTestCase):
@@ -254,14 +254,31 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
         '$tag.open[div][block] \n one two\n \n$tag.close[div]',
         '<div>one two</div>')
 
-  def testStripsInnerSpaces_noText(self):
+  def testStripsInnerSpaces_whitespace(self):
     self.assertExecution(
-        '$tag.open[div][block] \n ~ ~ \n $tag.close[div]',
+        '$tag.open[div][block] \n  \n $tag.close[div]',
         '<div></div>')
+
+  def testStripsInnerSpaces_nbsp(self):
+    self.assertExecution(
+        '$tag.open[div][block] \n ~~ ~ \n $tag.close[div]',
+        '<div>\xa0\xa0\xa0</div>')
 
   def testSpacesAroundMacroThenAnotherMacro(self):
     self.assertExecution("a $empty b$text.dollar",
                          "<p>a b$</p>")
+
+  def testNbspThenSpaceThenOpenInlineTag(self):
+    self.assertExecution("a~ $tag.open[span][inline]inside$tag.close[span]",
+                         "<p>a\xa0<span>inside</span></p>")
+
+  def testNbspThenSpaceThenOpenBlockTag(self):
+    self.assertExecution("a~ $tag.open[div][block]inside$tag.close[div]",
+                         "<p>a\xa0</p>\n<div>inside</div>")
+
+  def testNbspThenCloseTagThenSpace(self):
+    self.assertExecution("$tag.open[span][inline]inside~$tag.close[span] test",
+                         "<p><span>inside\xa0</span>test</p>")
 
   def testEmptyTags_nonVoid(self):
     self.assertExecution(
@@ -381,6 +398,10 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
     self.assertExecution('what !?;: wtf:;?!',
                          '<p>what !?;: wtf:;?!</p>')
 
+  def testPunctuationDouble_afterNbsp(self):
+    self.assertExecution('dialog~!',
+                         '<p>dialog\xa0!</p>')
+
   def testGuillemets_keepsSpaces(self):
     self.assertExecution('one « two » three',
                          '<p>one « two » three</p>')
@@ -389,9 +410,28 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
     self.assertExecution('one «two» three',
                          '<p>one «two» three</p>')
 
+  def testGuillemets_aroundNbsp(self):
+    self.assertExecution('«~inside~»',
+                         '<p>«\xa0inside\xa0»</p>')
+
   def testBackticksApostrophes(self):
     self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
                          "<p>`one' 'two` th'ree fo`ur `' ' `</p>")
+
+  def testNbsp_inside(self):
+    self.assertExecution(
+        'a~~b  ~~  c~~  ~~d  ~~e~~  f',
+        '<p>a\xa0\xa0b\xa0\xa0c\xa0\xa0\xa0\xa0d\xa0\xa0e\xa0\xa0f</p>')
+
+  def testNbsp_prefix(self):
+    self.assertExecution(
+        '~~~a',
+        '<p>\xa0\xa0\xa0a</p>')
+
+  def testNbsp_suffix(self):
+    self.assertExecution(
+        'a~~~',
+        '<p>a\xa0\xa0\xa0</p>')
 
 
 class FrenchTypographyTest(XhtmlExecutionTestCase):
@@ -479,7 +519,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             '</p>'
         ))
 
-  def testPunctuationDouble_insertsSpacesAfterBlockTag(self):
+  def testPunctuationDouble_insertsNoSpacesAfterBlockTag(self):
     self.assertExecution(
         (
             '$tag.open[div][block]one$tag.close[div]! ',
@@ -507,6 +547,14 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
                          '<p>what\xa0!?;: wtf\xa0:;?!</p>')
+
+  def testPunctuationDouble_afterNbsp(self):
+    self.assertExecution('$macro.new[test][dialog~]$test?',
+                         '<p>dialog\xa0?</p>')
+
+  def testPunctuationDouble_afterNbspAndSpace(self):
+    self.assertExecution('$macro.new[test][dialog~]$test ?',
+                         '<p>dialog\xa0?</p>')
 
   def testPunctuationDouble_cornerCases(self):
     self.assertExecution(
@@ -540,12 +588,31 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             '<p>» three</p>',
         ))
 
+  def testGuillemets_aroundNbsp(self):
+    self.assertExecution('«~inside~»',
+                         '<p>«\xa0inside\xa0»</p>')
+
   def testBackticksApostrophes(self):
     self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
                          "<p>‘one’ ’two‘ th’ree fo‘ur ‘’ ’ ‘</p>")
 
   def testTypoNewline(self):
     self.assertExecution("<<$typo.newline>>", '<p>«»</p>')
+
+  def testNbsp_inside(self):
+    self.assertExecution(
+        'a~~b  ~~  c~~  ~~d  ~~e~~  f',
+        '<p>a\xa0\xa0b\xa0\xa0c\xa0\xa0\xa0\xa0d\xa0\xa0e\xa0\xa0f</p>')
+
+  def testNbsp_prefix(self):
+    self.assertExecution(
+        '~~~a',
+        '<p>\xa0\xa0\xa0a</p>')
+
+  def testNbsp_suffix(self):
+    self.assertExecution(
+        'a~~~',
+        '<p>a\xa0\xa0\xa0</p>')
 
 
 class SimpleMacrosTest(XhtmlExecutionTestCase):

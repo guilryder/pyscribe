@@ -117,6 +117,8 @@ class TestCase(unittest.TestCase):
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
     if not actual == expected:  #pragma: no cover
+      if '\xa0' in actual or '\xa0' in expected:
+        actual, expected = repr(actual), repr(expected)
       raise self.failureException(self.FailureMessage(
           'Actual:\n%s\nExpected:\n%s', msg, None, actual, expected))
 
