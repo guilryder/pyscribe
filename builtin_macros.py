@@ -21,7 +21,7 @@ class SpecialCharacters:
   TextDollar = StaticAppendTextCallback('$', public_name='text.dollar')
   TextHash = StaticAppendTextCallback('#', public_name='text.hash')
   TextNbsp = StaticAppendTextCallback('\xa0', public_name='text.nbsp')
-  TextSoftHyphen = StaticAppendTextCallback('', public_name='text.softhyphen')
+  TextSoftHyphen = StaticAppendTextCallback('­', public_name='text.softhyphen')
   TextDashEn = StaticAppendTextCallback('–', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback('—', public_name='text.dash.em')
   TextEllipsis = StaticAppendTextCallback('…', public_name='text.ellipsis')

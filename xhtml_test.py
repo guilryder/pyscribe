@@ -374,7 +374,7 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
         '<p>{0}</p>'.format(' '.join((
             "% &amp; _ $ $ # #",
             "a\xa0b",
-            "no",
+            "n\xado",
             "–c—",
             "d…",
             "«e»",
@@ -483,7 +483,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
         '<p>{0}</p>'.format(' '.join((
             "% &amp; _ $ $ # #",
             "a\xa0b",
-            "no",
+            "n\xado",
             "–c—",
             "d…",
             "«\xa0e\xa0»",

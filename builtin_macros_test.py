@@ -17,7 +17,7 @@ class SpecialCharsTest(ExecutionTestCase):
         ' '.join((
             "% & _ $ $ # #",
             "a\xa0b",
-            "no",
+            "n\xado",
             "–c—",
             "d…",
             "«e»",
