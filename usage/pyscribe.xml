@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Pyscribe" version="1.0" section="Markup" kateversion="2.3" extensions="*.psc;" mimetype="text/plain" casesensitive="1" author="Guillaume Ryder(guillaume@ryder.fr)" license="LGPL" >
+  <highlighting>
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="\^." attribute="Escaped" context="#stay"/>
+        <RegExpr String="\$\$[a-zA-Z0-9._]*" attribute="Preprocessor" context="#stay"/>
+        <RegExpr String="\$([\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])" attribute="Macro Call" context="#stay"/>
+        <DetectChar char="#" attribute="Comment" context="Comment"/>
+        <AnyChar String="[]{}" attribute="Delimiter" context="#stay"/>
+        <Detect2Chars char="&lt;" char1="&lt;" attribute="Symbol" context="#stay"/>
+        <Detect2Chars char="&gt;" char1="&gt;" attribute="Symbol" context="#stay"/>
+        <RegExpr String="-{2,3}" attribute="Symbol" context="#stay"/>
+        <AnyChar String="~" attribute="Symbol" context="#stay"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Escaped" defStyleNum="dsChar"/>
+      <itemData name="Symbol" defStyleNum="dsChar"/>
+      <itemData name="Delimiter" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Macro Call" defStyleNum="dsFunction"/>
+      <itemData name="Preprocessor" defStyleNum="dsOthers"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords weakDeliminator="." wordWrapDeliminator="[]{},"/>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>
