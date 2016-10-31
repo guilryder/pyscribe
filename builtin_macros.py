@@ -403,6 +403,13 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
 
 # Text operations
 
+def ParseArabic(number):
+  try:
+    return int(number)
+  except ValueError:
+    raise InternalError('invalid Arabic number: {number}', number=number)
+
+
 @macro(public_name='case.lower', args_signature='text', text_compatible=True)
 def CaseLower(executor, unused_call_node, text):
   """Converts text to lowercase."""
@@ -413,6 +420,25 @@ def CaseLower(executor, unused_call_node, text):
 def CaseUpper(executor, unused_call_node, text):
   """Converts text to uppercase."""
   executor.AppendText(text.upper())
+
+
+@macro(public_name='alpha.latin', args_signature='number', text_compatible=True)
+def AlphaLatin(executor, unused_call_node, number):
+  """
+  Prints the uppercase Latin alphabetical representation of an Arabic number.
+
+  Example: 1 -> A, 2 -> B.
+  """
+
+  # Validate the input.
+  arabic_num = ParseArabic(number)
+  if not 1 <= arabic_num <= 26:
+    raise InternalError(
+        'unsupported number for conversion to latin letter: {number}',
+        number=number)
+
+  # Convert the Arabic number to a letter.
+  executor.AppendText(chr(ord('A') + arabic_num - 1))
 
 
 def ArabicToRoman(number):
@@ -450,15 +476,7 @@ def Roman(executor, unused_call_node, number):
   """
   Prints the Roman representation of an Arabic number.
   """
-
-  # Parse the Arabic number. Reject invalid values.
-  try:
-    arabic_value = int(number)
-  except ValueError:
-    raise InternalError('invalid Arabic number: {number}', number=number)
-
-  # Convert the Arabic number to Roman.
-  executor.AppendText(ArabicToRoman(arabic_value))
+  executor.AppendText(ArabicToRoman(ParseArabic(number)))
 
 
 # Conditions

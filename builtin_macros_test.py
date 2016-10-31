@@ -979,6 +979,34 @@ class CaseTest(ExecutionTestCase):
     self.assertExecution("$case.upper[Ôô! ça Ç'était]", "ÔÔ! ÇA Ç'ÉTAIT")
 
 
+class AlphaLatinTest(ExecutionTestCase):
+
+  def testValidArabicNumber(self):
+    self.assertExecution('$alpha.latin[1] $alpha.latin[5] $alpha.latin[26]',
+                         'A E Z')
+
+  def testInvalidArabicNumber(self):
+    self.assertExecution(
+        '$alpha.latin[nan]',
+        messages=['/root:1: $alpha.latin: invalid Arabic number: nan'])
+
+  def test0(self):
+    self.assertExecution(
+        '$alpha.latin[0]',
+        messages=[
+            '/root:1: $alpha.latin: unsupported number for conversion to '
+            'latin letter: 0',
+        ])
+
+  def test27(self):
+    self.assertExecution(
+        '$alpha.latin[27]',
+        messages=[
+            '/root:1: $alpha.latin: unsupported number for conversion to '
+            'latin letter: 27',
+        ])
+
+
 class ArabicToRomanTest(TestCase):
 
   def testZeroUnsupported(self):
