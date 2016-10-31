@@ -53,6 +53,14 @@ def Empty(unused_executor, unused_call_node):
   pass
 
 
+@macro(public_name='log', args_signature='message', text_compatible=True)
+def Log(executor, unused_call_node, message):
+  """
+  Logs the given information message.
+  """
+  executor.logger.LogInfo(message)
+
+
 @macro(public_name='include', args_signature='path')
 def Include(executor, call_node, path):
   """

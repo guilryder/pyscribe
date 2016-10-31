@@ -311,7 +311,7 @@ class Executor:
 
   Fields:
     __output_dir: (string) The parent directory of all output files
-    __logger: (Logger) The logger used to print all error messages.
+    logger: (Logger) The logger used to print all error messages.
     fs: (FileSystem) The file system abstraction.
     system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (Branch list) All root branches, including the system branch.
@@ -326,7 +326,7 @@ class Executor:
 
   def __init__(self, output_dir, logger, fs=FileSystem()):
     self.__output_dir = fs.normpath(output_dir)
-    self.__logger = logger
+    self.logger = logger
     self.fs = fs
     self.system_branch = TextBranch(parent=None, name='system')
     self.branches = {}
@@ -367,7 +367,7 @@ class Executor:
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
                           filename=filename)
-    self.__logger.LogInfo(
+    self.logger.LogInfo(
         'Opening output file: {filename}'.format(filename=abs_filename))
     return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
 
@@ -392,7 +392,7 @@ class Executor:
 
     self.__include_stack.append(filename)
     try:
-      nodes = ParseFile(reader, filename, logger=self.__logger)
+      nodes = ParseFile(reader, filename, logger=self.logger)
       self.ExecuteNodes(nodes)
     finally:
       self.__include_stack.pop()
@@ -493,7 +493,7 @@ class Executor:
     if call_frame_skip > 0:
       call_stack = call_stack[:-call_frame_skip]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    raise self.__logger.LogLocation(location, message, call_stack, **kwargs)
+    raise self.logger.LogLocation(location, message, call_stack, **kwargs)
 
   def MacroFatalError(self, call_node, message, **kwargs):
     """Logs and raises a macro fatal error."""

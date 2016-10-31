@@ -48,6 +48,36 @@ class EmptyTest(ExecutionTestCase):
     self.assertExecution('$macro.new[name$empty][inside]$name', 'inside')
 
 
+class LogTest(ExecutionTestCase):
+
+  def testBasic(self):
+    self.assertExecution(
+        (
+            'before',
+            '$log[message!]',
+            'after',
+        ),
+        'beforeafter',
+        expected_infos=['message!'])
+
+  def testComplex(self):
+    self.assertExecution(
+        (
+            '$macro.new[message][macro definition]',
+            '$log[first]',
+            '$log[second $message]',
+            '$log[third]',
+        ),
+        '',
+        expected_infos=['first', 'second macro definition', 'third'])
+
+  def testNested(self):
+    self.assertExecution(
+        '$log[before $log[inside] after]',
+        '',
+        expected_infos=['inside', 'before  after'])
+
+
 class IncludeTest(ExecutionTestCase):
 
   def testNested(self):
