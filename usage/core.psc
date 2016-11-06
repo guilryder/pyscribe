@@ -182,16 +182,40 @@ $macro.new[root.open.xhtml][
   ]
 
   # Headers
-  $counter.create[header.level1.counter]
-  $counter.create[header.level2.counter]
-  $macro.new[header.level1.counter.child.reset][$header.level2.counter.set[0]]
-  $macro.new[header.level2.counter.child.reset][]
+
+  # Declares a single header level. Each level:
+  # * has a counter named header.levelN.counter
+  # * resets numbering of the following levels
+  # Requires $header.level.count to be set.
+  # $level: index of the level to declare
+  # $level.next: $level + 1
+  # $level.count: index of the last level
+  $macro.new[header.level.declare(level,level.next)][
+    $counter.create[header.level$level^.counter]
+    $macro.new[header.level$level^.counter.child.reset][
+      $if.eq[$level][$header.level.count][][
+        $macro.call[header.level$level.next^.counter.set][0]
+        $macro.call[header.level$level.next^.counter.child.reset]
+      ]
+    ]
+  ]
+  $macro.new[header.level.count][8]
+  $header.level.declare[1][2]
+  $header.level.declare[2][3]
+  $header.level.declare[3][4]
+  $header.level.declare[4][5]
+  $header.level.declare[5][6]
+  $header.level.declare[6][7]
+  $header.level.declare[7][8]
+  $header.level.declare[8][9]
+
   $macro.new[header.incr(level)][
     $macro.call[header.level$level^.counter.incr]
     $macro.call[header.level$level^.counter.child.reset]
   ]
   $macro.new[header.before(level)][
-    $footnotes.flush
+    $if.eq[$level][1][$footnotes.flush][]
+    $if.eq[$level][2][$footnotes.flush][]
   ]
   $macro.new[header(level,title)][
     $header.withtoc[$level][$title][$title]
