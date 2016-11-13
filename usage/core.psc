@@ -223,7 +223,7 @@ $macro.new[root.open.xhtml][
   $macro.new[header.withtoc(level,title.toc,title.doc)][
     $header.before[$level]
     $header.incr[$level]
-    $tag[h$level][para][$header.title.numbered[$level][$title.doc]]
+    $macro.call[header.render][$level][$title.toc][$header.title.numbered[$level][$title.doc]]
   ]
   $macro.new[header.title.numbered(level,title.doc)][
     $macro.call[header.level$level^.counter.fmt]~~~$title.doc
@@ -231,7 +231,10 @@ $macro.new[root.open.xhtml][
   $macro.new[header.nonumber(level,title)][
     $header.before[$level]
     $macro.call[header.level$level^.counter.child.reset]
-    $tag[h$level][para][$title]
+    $macro.call[header.render][$level][$title][$title]
+  ]
+  $macro.new[header.render(level,title.toc,title.doc)][
+    $tag[h$level][para][$title.doc]
   ]
 
   # Vertical spacing
