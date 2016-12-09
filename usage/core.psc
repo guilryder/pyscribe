@@ -255,17 +255,17 @@ $macro.new[root.open.xhtml][
   $macro.new[number(number)][$typo.number[$number]]
 
   # Paragraph formatting
-  $macro.new[para.css(css.class,contents)][
-    $tag[div][block,autopara=p][
+  $macro.new[para.css.custom(level,css.class,contents)][
+    $tag[div][$level][
       $tag.class.add[nonauto][$css.class]
       $contents
     ]
   ]
+  $macro.new[para.css(css.class,contents)][
+    $para.css.custom[block,autopara=p][$css.class][$contents]
+  ]
   $macro.new[para.block.css(css.class,contents)][
-    $tag[div][block][
-      $tag.class.add[nonauto][$css.class]
-      $contents
-    ]
+    $para.css.custom[block][$css.class][$contents]
   ]
   $macro.new[para.noindent][$tag.class.add[para][noindent]]
   $macro.new[para.nospace.before][$tag.class.add[para][nospace-before]]
@@ -280,10 +280,28 @@ $macro.new[root.open.xhtml][
   $counter.create[id.counter]
   $macro.new[id.new][$id.counter.incr]
   $macro.new[id.current(prefix)][$prefix$id.counter]
-  $macro.new[id.attr.set.custom(id)][$tag.attr.set[current][id][$id]]
+  $macro.new[id.attr.set.custom.element(id,element.target)][$tag.attr.set[$element.target][id][$id]]
+  $macro.new[id.attr.set.custom(id)][$id.attr.set.custom.element[$id][current]]
   $macro.new[id.href.set.custom(id)][$tag.attr.set[current][href][^#$id]]
   $macro.new[id.attr.set(prefix)][$id.attr.set.custom[$id.current[$prefix]]]
   $macro.new[id.href.set(prefix)][$id.href.set.custom[$id.current[$prefix]]]
+
+  # Named references.
+  $macro.new[reference.target(id,element.target)][
+    $id.attr.set.custom.element[ref-$id][$element.target]
+  ]
+  $macro.new[reference.target.inline(id,contents)][
+    $tag[span][inline][
+      $reference.target[$id][current]
+      $contents
+    ]
+  ]
+  $macro.new[reference.link(target.id,contents)][
+    $tag[a][inline][
+      $id.href.set.custom[ref-$target.id]
+      $contents
+    ]
+  ]
 
   # Footnotes
   # $footnotes.add[contents] - adds a new footnote
@@ -312,9 +330,10 @@ $macro.new[root.open.xhtml][
   # dest: prefix of the ID of the link target
   $macro.new[footnotes.counter.mark(source,dest)][
     $tag[a][inline][
-    $id.attr.set[$source]
-    $id.href.set[$dest]
-    ^[$footnotes.counter^]]
+      $id.attr.set[$source]
+      $id.href.set[$dest]
+      ^[$footnotes.counter^]
+    ]
   ]
 
   $macro.new[footnotes.add(contents)][
