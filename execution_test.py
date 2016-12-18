@@ -234,7 +234,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
               '$branch.write[new][test]',
           ),
           {},
-          expected_infos=['Opening output file: /output/newoutput'])
+          expected_infos=['Writing: /output/newoutput'])
       self.__VerifyBranchType(branch_type_name,
                               executor.branches.get('new').context)
 

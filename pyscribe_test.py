@@ -78,7 +78,7 @@ class MainTest(TestCase):
     self.Execute('input.psc')
     self.assertOutput('Hello, World!')
     self.assertEqual(self.GetStdFile('out'),
-                     'Opening output file: /cur/output/output.txt')
+                     'Writing: /cur/output/output.txt')
 
   def testSimple_autoExtension(self):
     self.Execute('input')
@@ -92,7 +92,7 @@ class MainTest(TestCase):
   def testCustomOutput(self):
     self.Execute('input.psc --output /custom')
     self.assertEqual(self.GetStdFile('out'),
-                     'Opening output file: /custom/output.txt')
+                     'Writing: /custom/output.txt')
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
                      {'/custom/output.txt': 'Hello, World!'})

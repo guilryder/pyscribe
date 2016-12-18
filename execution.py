@@ -368,7 +368,7 @@ class Executor:
                           "must be below the output directory",
                           filename=filename)
     self.logger.LogInfo(
-        'Opening output file: {filename}'.format(filename=abs_filename))
+        'Writing: {filename}'.format(filename=abs_filename))
     return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
 
   def ExecuteFile(self, path, cur_dir):
