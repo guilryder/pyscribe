@@ -9,7 +9,7 @@ import sys
 
 from log import Filename, FormatMessage, InternalError
 from macros import *
-from parsing import TextNode, ParseFile
+from parsing import ParseFile
 
 
 ENCODING = 'utf-8'
@@ -90,6 +90,9 @@ class ExecutionContext:
     Returns:
       (callable) The macro callback, None if no macro has been found.
     """
+    # Walk the stack of contexts. A cache does not improve peformance much
+    # because most macros are found near the top of the stack:
+    # 50% in top context, 20% in second context.
     context = self
     while context:
       callback = context.macros.get(name)
@@ -180,7 +183,7 @@ class Branch(metaclass=ABCMeta):
       InternalError if the sub-branch is already attached or has not been
         created by this branch.
     """
-    if sub_branch.parent != self:
+    if sub_branch.parent is not self:
       raise InternalError(
           "expected a sub-branch created by branch '{self_branch.name}'; " +
           "got one created by branch '{sub_branch.parent.name}'",
@@ -225,7 +228,7 @@ class Branch(metaclass=ABCMeta):
     Can be called on root branches only.
     """
     writer = self.writer
-    if writer:
+    if writer is not None:
       self._Render(writer)
       writer.flush()
 
@@ -320,7 +323,9 @@ class Executor:
     __current_text_writer: (None|writer) The writer to send text-only output to.
       If set, the executor is in text-only mode: executing text-incompatible
       macros fails. If None, the executor is in normal mode.
-    __call_stack: ((CallNode, callback) list) The current macro call stack.
+    __call_stack: ((CallNode, callback) list) The current macro call stack,
+      pre-allocated to MAX_NESTED_CALLS frames.
+    __call_stack_size: (int) The number of frames in __call_stack.
     __include_stack: (Filename list) The stack of included file names.
   """
 
@@ -334,7 +339,8 @@ class Executor:
     self.current_branch = self.system_branch
     self.call_context = ExecutionContext(parent=None)
     self.__current_text_writer = None
-    self.__call_stack = []
+    self.__call_stack = [None] * MAX_NESTED_CALLS
+    self.__call_stack_size = 0
     self.__include_stack = []
     self.RegisterBranch(self.system_branch)
 
@@ -414,10 +420,7 @@ class Executor:
     """
     for node in nodes:
       try:
-        if isinstance(node, TextNode):
-          self.AppendText(node.text)
-        else:
-          self.CallMacro(node)
+        node.Execute(self)
       except InternalError as e:
         self.FatalError(node.location, e)
 
@@ -430,23 +433,23 @@ class Executor:
       call_context: (ExecutionContext|None)
         The call context to execute the nodes in, None for current.
     """
-    if call_context:
+    if call_context is None:
+      self.ExecuteNodes(nodes)
+    else:
       old_call_context = self.call_context
       self.call_context = call_context
       try:
         self.ExecuteNodes(nodes)
       finally:
         self.call_context = old_call_context
-    else:
-      self.ExecuteNodes(nodes)
 
   def AppendText(self, text):
     """Appends a block of text to the current branch."""
     text_writer = self.__current_text_writer
-    if text_writer:
-      text_writer.write(text)
-    else:
+    if text_writer is None:
       self.current_branch.AppendText(text)
+    else:
+      text_writer.write(text)
 
   def RegisterBranch(self, branch):
     """
@@ -456,10 +459,10 @@ class Executor:
       branch: (Branch) The branch to register.
     """
     for sub_branch in branch.IterBranches():
-      if not sub_branch.name:
+      if sub_branch.name is None:
         sub_branch.name = 'auto{index}'.format(index=len(self.branches))
       self.branches[sub_branch.name] = sub_branch
-      if not sub_branch.parent:
+      if sub_branch.parent is None:
         self.root_branches.append(sub_branch)
 
   def EvalText(self, nodes):
@@ -489,9 +492,8 @@ class Executor:
 
   def FatalError(self, location, message, call_frame_skip=0, **kwargs):
     """Logs and raises a fatal error."""
-    call_stack = self.__call_stack
-    if call_frame_skip > 0:
-      call_stack = call_stack[:-call_frame_skip]
+    call_stack = self.__call_stack[
+        :max(0, self.__call_stack_size - call_frame_skip)]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
     raise self.logger.LogLocation(location, message, call_stack, **kwargs)
 
@@ -519,7 +521,7 @@ class Executor:
     """
     for context in (self.call_context, self.current_branch.context):
       callback = context.LookupMacro(name, text_compatible)
-      if callback:
+      if callback is not None:
         return callback
     return None
 
@@ -530,31 +532,37 @@ class Executor:
     Args:
       call_node: (CallNode) The macro call description.
     """
-    text_compatible = bool(self.__current_text_writer)
+    text_compatible = (self.__current_text_writer is not None)
     callback = self.LookupMacro(call_node.name, text_compatible=text_compatible)
-    if not callback:
+    if callback is None:
       # Macro not found
       if text_compatible:
         # Show a specific error message if the macro is not found
         # because text-incompatible.
         callback = self.LookupMacro(call_node.name, text_compatible=False)
-        if callback:
+        if callback is not None:
           self.MacroFatalError(call_node, 'text-incompatible macro call',
                                call_frame_skip=0)
       self.FatalError(call_node.location, 'macro not found: ${call_node.name}',
                       call_node=call_node)
 
-    if len(self.__call_stack) >= MAX_NESTED_CALLS:
+    # Store the new call stack frame. Enforce the call stack size limit.
+    call_stack_size_orig = self.__call_stack_size
+    try:
+      self.__call_stack[call_stack_size_orig] = (call_node, callback)
+      self.__call_stack_size = call_stack_size_orig + 1
+    except IndexError:
       self.MacroFatalError(call_node, 'too many nested macro calls',
                            call_frame_skip=0)
 
-    self.__call_stack.append((call_node, callback))
+    # Execute the macro.
     try:
       callback(self, call_node)
     except InternalError as e:
       self.MacroFatalError(call_node, e)
     finally:
-      self.__call_stack.pop()
+      # Pop the call stack frame.
+      self.__call_stack_size = call_stack_size_orig
 
   def CheckArgumentCount(self, call_node, macro_callback,
                          min_args_count, max_args_count=None):

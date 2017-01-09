@@ -17,7 +17,7 @@ class LatexBranch(execution.TextBranch):
   def __init__(self, *args, **kwargs):
     super(LatexBranch, self).__init__(*args, **kwargs)
 
-    if not self.parent:
+    if self.parent is None:
       self.context.AddMacros(GetPublicMacros(Macros))
 
 

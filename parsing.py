@@ -43,6 +43,9 @@ class TextNode:
     self.location = location
     self.text = text
 
+  def Execute(self, executor):
+    executor.AppendText(self.text)
+
   def __str__(self):
     return repr(self.text)
 
@@ -67,6 +70,9 @@ class CallNode:
     self.location = location
     self.name = name
     self.args = args
+
+  def Execute(self, executor):
+    executor.CallMacro(self)
 
   def __str__(self):
     return '${name}{args}'.format(
@@ -165,7 +171,7 @@ class RegexpParser:
     rule_pattern = re.compile('Rule(?P<name>.+)')
     for symbol_name, symbol in inspect.getmembers(rules_container):
       rule_match = rule_pattern.match(symbol_name)
-      if rule_match:
+      if rule_match is not None:
         rule_name = rule_match.group('name')
         rule_regexp = symbol.__doc__
         assert rule_regexp is not None, 'Regexp missing in ' + symbol_name
@@ -248,7 +254,10 @@ class Lexer:
     for token in tokens:
       if token.type == TOKEN_TEXT:
         # Text token
-        if text_token_accu:
+        if text_token_accu is None:
+          # Start a new text accumulator.
+          text_token_accu = token
+        else:
           if text_token_accu.lineno == token.lineno:
             # Same line: append the text token to the accumulator.
             text_token_accu.value += token.value
@@ -256,17 +265,14 @@ class Lexer:
           yield text_token_accu
           text_token_accu = None
           yield token
-        else:
-          # Start a new text accumulator.
-          text_token_accu = token
       else:
         # Not a text token: flush the text accumulator (if any) then the token.
-        if text_token_accu:
+        if text_token_accu is not None:
           yield text_token_accu
           text_token_accu = None
         yield token
 
-    if text_token_accu:
+    if text_token_accu is not None:
       yield text_token_accu
 
   def __Parse(self):
@@ -278,18 +284,18 @@ class Lexer:
     from collections import Iterable
     for text_before, rule_callable, matched_text in \
         self.__parser.Parse(self.__input_text):
-      if text_before:
+      if text_before is not None:
         if self.__skip_spaces:
           text_before = text_before.lstrip(' \t')
         for token in self.__text_processor(text_before):
           yield token
         self.__skip_spaces = (text_before and text_before[-1] == '\n')
-      if rule_callable:
+      if rule_callable is not None:
         token = rule_callable(matched_text)
         if isinstance(token, Iterable):
           for single_token in token:
             yield single_token
-        elif token:
+        elif token is not None:
           yield token
 
   def __TextProcessorPreserveWhitespace(self, text):
@@ -380,9 +386,7 @@ class Lexer:
     preproc_instr_name = value[2:].strip()
     preproc_instr_callback = \
         self.__preproc_instr_callbacks.get(preproc_instr_name)
-    if preproc_instr_callback:
-      preproc_instr_callback()
-    else:
+    if preproc_instr_callback is None:
       self.context.MakeFatalError(
           self.__Location(),
           "unknown pre-processing instruction: '{name}'\n" +
@@ -390,6 +394,7 @@ class Lexer:
           name='$$' + preproc_instr_name,
           known=', '.join(sorted((
               '$$' + name for name in self.__preproc_instr_callbacks))))
+    preproc_instr_callback()
     self.__UpdateLineno(value)
     self.__skip_spaces = True
     return None
@@ -404,7 +409,7 @@ class Lexer:
 
   def RuleMacro(self, value):
     macro_name = value[1:]
-    if not VALID_MACRO_NAME_REGEXP.match(macro_name):
+    if VALID_MACRO_NAME_REGEXP.match(macro_name) is None:
       return self.RuleMacroInvalid(value)
     token = self.__MacroToken(value[1:])
     self.__skip_spaces |= self.__text_processor.skip_whitespace_after_macro
@@ -530,7 +535,7 @@ class Parser:
       nodes = []
       while True:
         token = tokens.peek()
-        if not token:
+        if token is None:
           break
 
         token_type = token.type
@@ -551,7 +556,7 @@ class Parser:
           while True:
             # If '[', expect a new argument; else end the macro call.
             token = tokens.peek()
-            if not token or token.type != TOKEN_LBRACKET:
+            if token is None or token.type != TOKEN_LBRACKET:
               break
             next(tokens)
             arg_lineno = token.lineno
@@ -561,7 +566,7 @@ class Parser:
 
             # Expect a ']'.
             token = next(tokens)
-            if not token:
+            if token is None:
               raise LogLocation(MakeLocation(arg_lineno),
                                 "syntax error: macro argument should be closed")
             assert token.type == TOKEN_RBRACKET

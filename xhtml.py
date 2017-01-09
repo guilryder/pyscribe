@@ -152,7 +152,7 @@ class XhtmlBranch(execution.Branch):
 
     # Create the contexts tree.
     context = self.context
-    if not parent:
+    if parent is None:
       context.AddMacros(GetPublicMacros(Macros))
       context = execution.ExecutionContext(parent=context)
     self.__typography_context = context
@@ -160,15 +160,9 @@ class XhtmlBranch(execution.Branch):
     self.context = context
 
     # Set a typography for root branches.
-    if parent:
-      self.typography = None
-    else:
-      self.typography = TYPOGRAPHIES['neutral']
+    self.typography = TYPOGRAPHIES['neutral'] if parent is None else None
 
-    if parent:
-      # Sub-branch: create a placeholder element in the DOM.
-      self.__root_elem = etree.Element('branch')
-    else:
+    if parent is None:
       # Root branch: start from the XHTML stub.
       self.__tree = etree.fromstring(self.__XHTML_STUB).getroottree()
 
@@ -180,6 +174,9 @@ class XhtmlBranch(execution.Branch):
       self.__head_branch = XhtmlBranch(parent=self, name='head')
       self.__tree.find('head').append(self.__head_branch.__root_elem)
       self.__head_branch.attached = True
+    else:
+      # Sub-branch: create a placeholder element in the DOM.
+      self.__root_elem = etree.Element('branch')
 
     self.__current_elem = self.__root_elem
     self.__current_elem_info = self.ElementInfo(
@@ -193,7 +190,7 @@ class XhtmlBranch(execution.Branch):
 
   def GetTypography(self):
     branch = self
-    while branch:
+    while branch is not None:
       typography = branch.__typography
       if typography:
         return typography
@@ -500,7 +497,7 @@ class XhtmlBranch(execution.Branch):
     else:
       # Deepest element with the given tag.
       tag = self.__TAG_TARGET_REGEXP.match(target)
-      if not tag:
+      if tag is None:
         raise InternalError('invalid target: {target}', target=target)
       tag = tag.group(1)
       elem_info_predicate = lambda elem_info: elem_info.elem.tag == tag
@@ -509,7 +506,7 @@ class XhtmlBranch(execution.Branch):
     elem_info = self.__current_elem_info
     while elem_info and not elem_info_predicate(elem_info):
       elem_info = elem_info.parent
-    if not elem_info:
+    if elem_info is None:
       raise InternalError('no element found for target: {target}',
                           target=target)
     action(elem_info.elem)
@@ -946,7 +943,7 @@ class Macros:
     Formats a number according to the current typography rules.
     """
     # Reject invalid values.
-    if not _NUMBER_REGEXP.match(number):
+    if _NUMBER_REGEXP.match(number) is None:
       executor.MacroFatalError(
           call_node, 'invalid integer: {number}', number=number)
     text = executor.current_branch.root.typography.FormatNumber(number)

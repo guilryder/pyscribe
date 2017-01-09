@@ -126,10 +126,10 @@ def ParseMacroSignature(signature):
     raise InternalError('invalid signature: {signature}', signature=signature)
   macro_name = signature_match.group(1)
   macro_arg_names = signature_match.group(2)
-  if macro_arg_names:
-    macro_arg_names = [name.strip() for name in macro_arg_names.split(',')]
-  else:
+  if macro_arg_names is None:
     macro_arg_names = []
+  else:
+    macro_arg_names = [name.strip() for name in macro_arg_names.split(',')]
 
   # Check that the macro arguments are unique.
   macro_arg_names_set = set(macro_arg_names)
@@ -197,7 +197,7 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
   * $original set to the overridden macro
   """
   macro_name, macro_arg_names = ParseMacroSignature(signature)
-  if not VALID_MACRO_NAME_REGEXP.match(original):
+  if VALID_MACRO_NAME_REGEXP.match(original) is None:
     raise InternalError('invalid original macro name: ' + original)
   if original in macro_arg_names:
     raise InternalError('original macro name conflicts with signature: ' +
@@ -225,10 +225,10 @@ def MacroWrap(executor, unused_call_node, macro_name, head, tail):
   macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'wrap')
 
   # Add the hooks.
-  if head:
+  if head is not None:
     macro_callback.head_hooks.insert(
         0, _MakeHook(head, executor.call_context))
-  if tail:
+  if tail is not None:
     macro_callback.tail_hooks.append(
         _MakeHook(tail, executor.call_context))
 
@@ -264,7 +264,7 @@ def MacroCall(executor, call_node):
 def _LookupNonBuiltinMacro(executor, macro_name, verb):
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
-  if not macro_callback:
+  if macro_callback is None:
     raise InternalError('cannot {verb} a non-existing macro: {macro_name}',
                         verb=verb, macro_name=macro_name)
   if macro_callback.builtin:
@@ -319,7 +319,7 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
 
   # Parse the branch type.
   branch_class = BRANCH_TYPES.get(branch_type)
-  if not branch_class:
+  if branch_class is None:
     raise InternalError(
         'unknown branch type: {branch_type}; expected one of: {known}',
         branch_type=branch_type, known=', '.join(sorted(BRANCH_TYPES)))
@@ -373,7 +373,7 @@ def __ParseBranchName(executor, branch_name):
     (Branch) The branch having the given name.
   """
   branch = executor.branches.get(branch_name)
-  if not branch:
+  if branch is None:
     raise InternalError('branch not found: {branch_name}',
                         branch_name=branch_name)
   return branch
@@ -493,9 +493,9 @@ def Roman(executor, unused_call_node, number):
        args_signature='macro_name,*then_block,*else_block?',
        text_compatible=True)
 def IfDef(executor, unused_call_node, macro_name, then_block, else_block):
-  if executor.LookupMacro(macro_name, text_compatible=False):
+  if executor.LookupMacro(macro_name, text_compatible=False) is not None:
     executor.ExecuteNodes(then_block)
-  elif else_block:
+  elif else_block is not None:
     executor.ExecuteNodes(else_block)
 
 @macro(public_name='if.eq', args_signature='a,b,*then_block,*else_block?',
@@ -503,7 +503,7 @@ def IfDef(executor, unused_call_node, macro_name, then_block, else_block):
 def IfEq(executor, unused_call_node, a, b, then_block, else_block):
   if a == b:
     executor.ExecuteNodes(then_block)
-  elif else_block:
+  elif else_block is not None:
     executor.ExecuteNodes(else_block)
 
 

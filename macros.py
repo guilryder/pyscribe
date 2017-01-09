@@ -111,19 +111,16 @@ class macro:
     else:
       (required_arg_parsers, optional_arg_parsers) = arg_parsers
       min_args_count = len(required_arg_parsers)
-      max_args_count = len(required_arg_parsers) + len(optional_arg_parsers)
+      max_args_count = min_args_count + len(optional_arg_parsers)
       arg_parsers = required_arg_parsers + optional_arg_parsers
       def ArgsParsingWrapper(executor, call_node):
         executor.CheckArgumentCount(call_node, ArgsParsingWrapper,
                                     min_args_count=min_args_count,
                                     max_args_count=max_args_count)
-        args = call_node.args
-        missing_args_count = max_args_count - len(args)
-        if missing_args_count > 0:
-          args = args + [None] * missing_args_count
-        extra_args = dict(
-            (name, parser(executor, arg))
-            for (name, parser), arg in zip(arg_parsers, args))
+        args_iter = iter(call_node.args)
+        extra_args = {}
+        for name, parser in arg_parsers:
+          extra_args[name] = parser(executor, next(args_iter, None))
         return callback(executor, call_node, **extra_args)
       standard_callback = ArgsParsingWrapper
 
@@ -167,7 +164,7 @@ def GetPublicMacros(container):
     public_macros = {}
     for _, symbol in inspect.getmembers(container):
       public_name = getattr(symbol, 'public_name', None)
-      if public_name:
+      if public_name is not None:
         assert public_name not in public_macros, \
             'duplicate public name "{public_name}" in {container}'.format(
                 public_name=public_name, container=container)
