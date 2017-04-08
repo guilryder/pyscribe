@@ -426,7 +426,15 @@ class ParsingTest(TestCase):
     self.assertParsing('before<<<<in>>>>after',
                        "'before<<<<in>>>>after'")
 
-  def testBacktick(self):
+  def testQuote(self):
+    self.assertParsing('before"in"after',
+                       "'before\"in\"after'")
+    self.assertParsing('before "in" after',
+                       "'before \"in\" after'")
+    self.assertParsing('before""in""after',
+                       "'before\"\"in\"\"after'")
+
+  def testBacktickSingle(self):
     self.assertParsing(
         "a`b `c` d",
         ''.join((
@@ -437,7 +445,18 @@ class ParsingTest(TestCase):
             "' d'",
         )))
 
-  def testApostrophe(self):
+  def testBacktickDouble(self):
+    self.assertParsing(
+        "a``b ``c`` d",
+        ''.join((
+            "'a'$text.backtick$text.backtick'b '",
+            "$text.backtick$text.backtick",
+            "'c'",
+            "$text.backtick$text.backtick",
+            "' d'",
+        )))
+
+  def testApostropheSingle(self):
     self.assertParsing(
         "a'b 'c' d",
         ''.join((
@@ -446,6 +465,28 @@ class ParsingTest(TestCase):
             "'c'",
             "$text.apostrophe",
             "' d'",
+        )))
+
+  def testApostropheDouble(self):
+    self.assertParsing(
+        "a''b ''c'' d",
+        ''.join((
+            "'a'$text.apostrophe$text.apostrophe'b '",
+            "$text.apostrophe$text.apostrophe",
+            "'c'",
+            "$text.apostrophe$text.apostrophe",
+            "' d'",
+        )))
+
+  def testManyBackticksAndApostrophes(self):
+    self.assertParsing(
+        "a`````b'''''c",
+        ''.join((
+            "'a'",
+            "$text.backtick$text.backtick$text.backtick$text.backtick$text.backtick",
+            "'b'",
+            "$text.apostrophe$text.apostrophe$text.apostrophe$text.apostrophe$text.apostrophe",
+            "'c'",
         )))
 
   def testDoublePunctuation(self):
@@ -473,13 +514,18 @@ class ParsingTest(TestCase):
             "'$text.guillemet.open' f '$text.guillemet.close'",
             "'$text.backtick'g'$text.apostrophe'h'$text.apostrophe'",
             "'$text.apostrophe'g'$text.backtick'h'$text.backtick'",
-            "i '$text.punctuation.double['!']'",
-            "j'$text.punctuation.double[':']'",
-            "k '$text.punctuation.double[';']'",
-            "l'$text.punctuation.double['?']'",
-            "m'$text.punctuation.double['!:;?']",
+            "'$text.backtick$text.backtick'i'$text.apostrophe$text.apostrophe" +
+                "'j'$text.apostrophe$text.apostrophe'",
+            "'$text.apostrophe$text.apostrophe'k'$text.backtick$text.backtick" +
+                "'l'$text.backtick$text.backtick'",
+            "'$text.backtick$text.backtick$text.backtick'm" +
+                "'$text.apostrophe$text.apostrophe$text.apostrophe'",
+            "n '$text.punctuation.double['!']'",
+            "o'$text.punctuation.double[':']'",
+            "p '$text.punctuation.double[';']'",
+            "q'$text.punctuation.double['?']'",
+            "r'$text.punctuation.double['!:;?']",
         )))
-
   def testNoValidToken(self):
     self.assertParsing(
         '$macro[',

@@ -380,8 +380,10 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
             "«e»",
             "« f »",
             "`g'h' 'g`h`",
-            "i ! j: k ; l?",
-            "m!:;?",
+            "``i''j'' ''k``l``",
+            "```m'''",
+            "n ! o: p ; q?",
+            "r!:;?",
         ))))
 
   def testPunctuationDouble_keepsSpaces(self):
@@ -489,8 +491,10 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             "«\xa0e\xa0»",
             "«\xa0f\xa0»",
             "‘g’h’ ’g‘h‘",
-            "i\xa0! j\xa0: k\xa0; l\xa0?",
-            "m\xa0!:;?",
+            "‘‘i’’j’’ ’’k‘‘l‘‘",
+            "‘‘‘m’’’",
+            "n\xa0! o\xa0: p\xa0; q\xa0?",
+            "r\xa0!:;?",
         ))))
 
   def testPunctuationDouble_convertsSpaces(self):

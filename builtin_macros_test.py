@@ -23,8 +23,10 @@ class SpecialCharsTest(ExecutionTestCase):
             "«e»",
             "« f »",
             "`g'h' 'g`h`",
-            "i ! j: k ; l?",
-            "m!:;?",
+            "``i''j'' ''k``l``",
+            "```m'''",
+            "n ! o: p ; q?",
+            "r!:;?",
         )))
 
   def testSoftHyphenAlias(self):
