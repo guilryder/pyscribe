@@ -31,6 +31,8 @@ class SpecialCharacters:
       StaticAppendTextCallback('»', public_name='text.guillemet.close')
   TextBacktick = StaticAppendTextCallback("`", public_name='text.backtick')
   TextApostrophe = StaticAppendTextCallback("'", public_name='text.apostrophe')
+  TextQuoteOpen = StaticAppendTextCallback('“', public_name='text.quote.open')
+  TextQuoteClose = StaticAppendTextCallback('”', public_name='text.quote.close')
   Newline = StaticAppendTextCallback('\n', public_name='newline')
 
   @staticmethod

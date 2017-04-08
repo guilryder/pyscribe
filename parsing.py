@@ -472,13 +472,19 @@ class Lexer:
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
-  def RuleBacktick(self, unused_value):
-    r"`"
-    return self.__MacroToken('text.backtick')
+  def RuleBacktick(self, value):
+    r"`{1,2}"
+    if len(value) == 1:
+      return self.__MacroToken('text.backtick')
+    else:
+      return self.__MacroToken('text.quote.open')
 
-  def RuleApostrophe(self, unused_value):
-    r"'"
-    return self.__MacroToken('text.apostrophe')
+  def RuleApostrophe(self, value):
+    r"'{1,2}"
+    if len(value) == 1:
+      return self.__MacroToken('text.apostrophe')
+    else:
+      return self.__MacroToken('text.quote.close')
 
   def RuleDoublePunctuation(self, value):
     r'[!:;?]+'

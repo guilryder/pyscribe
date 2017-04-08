@@ -380,8 +380,8 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
             "«e»",
             "« f »",
             "`g'h' 'g`h`",
-            "``i''j'' ''k``l``",
-            "```m'''",
+            "“i”j” ”k“l“",
+            "“`m”'",
             "n ! o: p ; q?",
             "r!:;?",
         ))))
@@ -491,8 +491,8 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
             "«\xa0e\xa0»",
             "«\xa0f\xa0»",
             "‘g’h’ ’g‘h‘",
-            "‘‘i’’j’’ ’’k‘‘l‘‘",
-            "‘‘‘m’’’",
+            "“i”j” ”k“l“",
+            "“‘m”’",
             "n\xa0! o\xa0: p\xa0; q\xa0?",
             "r\xa0!:;?",
         ))))

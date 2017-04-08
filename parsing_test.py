@@ -449,10 +449,10 @@ class ParsingTest(TestCase):
     self.assertParsing(
         "a``b ``c`` d",
         ''.join((
-            "'a'$text.backtick$text.backtick'b '",
-            "$text.backtick$text.backtick",
+            "'a'$text.quote.open'b '",
+            "$text.quote.open",
             "'c'",
-            "$text.backtick$text.backtick",
+            "$text.quote.open",
             "' d'",
         )))
 
@@ -471,10 +471,10 @@ class ParsingTest(TestCase):
     self.assertParsing(
         "a''b ''c'' d",
         ''.join((
-            "'a'$text.apostrophe$text.apostrophe'b '",
-            "$text.apostrophe$text.apostrophe",
+            "'a'$text.quote.close'b '",
+            "$text.quote.close",
             "'c'",
-            "$text.apostrophe$text.apostrophe",
+            "$text.quote.close",
             "' d'",
         )))
 
@@ -483,9 +483,9 @@ class ParsingTest(TestCase):
         "a`````b'''''c",
         ''.join((
             "'a'",
-            "$text.backtick$text.backtick$text.backtick$text.backtick$text.backtick",
+            "$text.quote.open$text.quote.open$text.backtick",
             "'b'",
-            "$text.apostrophe$text.apostrophe$text.apostrophe$text.apostrophe$text.apostrophe",
+            "$text.quote.close$text.quote.close$text.apostrophe",
             "'c'",
         )))
 
@@ -514,12 +514,10 @@ class ParsingTest(TestCase):
             "'$text.guillemet.open' f '$text.guillemet.close'",
             "'$text.backtick'g'$text.apostrophe'h'$text.apostrophe'",
             "'$text.apostrophe'g'$text.backtick'h'$text.backtick'",
-            "'$text.backtick$text.backtick'i'$text.apostrophe$text.apostrophe" +
-                "'j'$text.apostrophe$text.apostrophe'",
-            "'$text.apostrophe$text.apostrophe'k'$text.backtick$text.backtick" +
-                "'l'$text.backtick$text.backtick'",
-            "'$text.backtick$text.backtick$text.backtick'm" +
-                "'$text.apostrophe$text.apostrophe$text.apostrophe'",
+            "'$text.quote.open'i'$text.quote.close'j'$text.quote.close'",
+            "'$text.quote.close'k'$text.quote.open'l'$text.quote.open'",
+            "'$text.quote.open$text.backtick'm" +
+                "'$text.quote.close$text.apostrophe'",
             "n '$text.punctuation.double['!']'",
             "o'$text.punctuation.double[':']'",
             "p '$text.punctuation.double[';']'",
