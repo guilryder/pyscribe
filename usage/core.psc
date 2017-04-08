@@ -10,14 +10,20 @@ $macro.call[format.init.$output.format]
 
 $macro.new[root.create(basename,contents)][
   $branch.create.root[$macro.call[root.branch.type.$output.format]][root][
-    $macro.call[output.filename.$output.format][$basename]]
+    $macro.call[output.filename.$output.format][$basename]
+  ]
   $macro.new[root.basename][$basename]
 
   $branch.write[root][
     $macro.call[root.open.$output.format]
+    $root.open.hook
     $contents
     $macro.call[root.close.$output.format]
   ]
+]
+
+$macro.new[root.open.hook][
+  $metadata.all.set
 ]
 
 
@@ -45,6 +51,14 @@ $macro.new[formatsize.select(if.xhtml,if.latex.small,if.latex.large)][
 
 ################################################################################
 # Common
+
+# Metadata
+$macro.new[metadata.all.set][
+  $metadata.title.set[$book.title]
+  $metadata.author.set[$book.author]
+  $metadata.language.set[$book.language]
+  $typo.set[$book.typo]
+]
 
 # Various
 $macro.new[text.colon][$format.select[^:][\string^:]]
@@ -170,8 +184,8 @@ $macro.new[root.open.xhtml][
   $css.file[$file.output2core[core.css]]
 
   # Metadata
-  $macro.new[metadata.title.set(title.file,title.book)][
-    $head.append[$tag[title][block][$title.file]]
+  $macro.new[metadata.title.set(title)][
+    $head.append[$tag[title][block][$title]]
   ]
   $macro.new[metadata.author.set(author)][
     $head.meta.name[author][$author]
@@ -364,8 +378,6 @@ $macro.new[root.open.xhtml][
       $tag.class.add[current][$css.class]
     ]
   ]
-
-  $typo.set[french]
 ]
 
 $macro.new[root.close.xhtml][
@@ -381,6 +393,16 @@ $macro.new[root.branch.type.latex][latex]
 
 $macro.new[root.open.latex][
   \documentclass$device.size.select[^[ebook^]][]{pyscribe}$newline
+
+  # Metadata
+  $macro.new[metadata.title.set(title)][
+    \titleset{$title}$newline
+  ]
+  $macro.new[metadata.author.set(author)][
+    \authorset{$author}$newline
+  ]
+  $macro.new[metadata.language.set(language.code)][]
+  $macro.new[typo.set(typo.name)][]
 
   # Latex helpers
   $macro.new[latex.env(name,contents)][
