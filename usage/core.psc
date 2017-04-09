@@ -290,6 +290,14 @@ $macro.new[root.open.xhtml][
   $macro.new[list.enumerate(contents)][$tag[ol][block][$contents]]
   $macro.new[list.item(contents)][$tag[li][block][$contents]]
 
+  # Links
+  $macro.new[hyperlink(url,contents)][
+    $tag[a][inline][
+      $tag.attr.set[current][href][$url]
+      $contents
+    ]
+  ]
+
   # Link IDs
   $counter.create[id.counter]
   $macro.new[id.new][$id.counter.incr]
@@ -477,6 +485,11 @@ $macro.new[root.open.latex][
   $latex.env.new.para[list.itemize][itemize]
   $latex.env.new.para[list.enumerate][enumerate]
   $macro.new[list.item(contents)][\item $contents]
+
+  # Links
+  $macro.new[hyperlink(url,contents)][
+    \href{$url}{$contents}
+  ]
 
   # Footnotes
   $latex.macro.new[footnotes.add][\footnote]
