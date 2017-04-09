@@ -4,7 +4,6 @@ __pycache__
 
 /cov
 /epubcheck
-/usage/institutions
-/usage/kalon
+/usage/*/
 
 /profile.txt
