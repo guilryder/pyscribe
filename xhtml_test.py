@@ -436,44 +436,231 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
         '<p>a\xa0\xa0\xa0</p>')
 
 
+class EnglishTypographyTest(XhtmlExecutionTestCase):
+
+  typo = EnglishTypography
+
+  def InputHook(self, text):
+    return '$typo.set[english]' + text
+
+  def testFormatNumber_zero(self):
+    self.assertEqual(self.typo.FormatNumber('0'), '0')
+
+  def testFormatNumber_short(self):
+    self.assertEqual(self.typo.FormatNumber('123'), '123')
+
+  def testFormatNumber_long(self):
+    self.assertEqual(self.typo.FormatNumber('12345678'),
+                     '12,345,678')
+    self.assertEqual(self.typo.FormatNumber('123456'),
+                     '123,456')
+
+  def testFormatNumber_negative(self):
+    self.assertEqual(self.typo.FormatNumber('-1234,5678'),
+                     '\u20131,234,567,8')
+
+  def testFormatNumber_positive(self):
+    self.assertEqual(self.typo.FormatNumber('+1234.5678'),
+                     '+1,234.567,8')
+
+  def testFormatNumber_decimalShort(self):
+    self.assertEqual(self.typo.FormatNumber('3.5'), '3.5')
+
+  def testFormatNumber_decimalLong(self):
+    self.assertEqual(self.typo.FormatNumber('3.567890'),
+                     '3.567,890')
+    self.assertEqual(self.typo.FormatNumber('3,5678901'),
+                     '3,567,890,1')
+
+  def testFormatNumber_decimalOnly(self):
+    self.assertEqual(self.typo.FormatNumber('.5'), '.5')
+    self.assertEqual(self.typo.FormatNumber(',123'), ',123')
+    self.assertEqual(self.typo.FormatNumber('-.5'), '\u2013.5')
+
+  def testTypoNumber(self):
+    self.assertExecution('before $typo.number[-12345678] after',
+                         '<p>before \u201312,345,678 after</p>')
+
+  def testAllSpecialChars(self):
+    self.assertExecution(
+        special_chars,
+        '<p>{0}</p>'.format(' '.join((
+            "% &amp; _ $ $ # #",
+            "a\xa0b",
+            "n\xado",
+            "–c—",
+            "d…",
+            "«e»",
+            "« f »",
+            "‘g’h’ ’g‘h‘",
+            "“i”j” ”k“l“",
+            "“‘m”’",
+            "n ! o: p ; q?",
+            "r!:;?",
+        ))))
+
+  def testPunctuationDouble_preservesSpaces(self):
+    self.assertExecution(
+        'one ! two : three ; four ? five , six .',
+        '<p>one ! two : three ; four ? five , six .</p>')
+
+  def testPunctuationDouble_doesNotInsertSpaces(self):
+    self.assertExecution(
+        'one! two: three; four? five, six.',
+        '<p>one! two: three; four? five, six.</p>')
+
+  def testPunctuationDouble_doesNotInsertSpacesAfterInlineTag(self):
+    self.assertExecution(
+        (
+            '$tag.open[span][inline]one$tag.close[span]! ',
+            '$tag.open[span][inline]two$tag.close[span]: ',
+            '$tag.open[span][inline]three$tag.close[span]; ',
+            '$tag.open[span][inline]four$tag.close[span]? ',
+        ), (
+            '<p>'
+              '<span>one</span>! '
+              '<span>two</span>: '
+              '<span>three</span>; '
+              '<span>four</span>?'
+            '</p>'
+        ))
+
+  def testPunctuationDouble_insertsNoSpacesAfterBlockTag(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]one$tag.close[div]! ',
+            '$tag.open[div][block]two$tag.close[div]',
+              '$tag.open[div][block]:$tag.close[div]',
+            '$tag.open[div][block]three$tag.close[div]; ',
+            '$tag.open[div][block]four$tag.close[div]? ',
+        ), (
+            '<div>one</div>', '<p>!</p>',
+            '<div>two</div>', '<div>:</div>',
+            '<div>three</div>', '<p>;</p>',
+            '<div>four</div>', '<p>?</p>',
+        ))
+
+  def testPunctuationDouble_preservesSpaceAfterEllipsis(self):
+    self.assertExecution(
+        'Err... ? Ah... ! Yes..... : here',
+        '<p>Err… ? Ah… ! Yes..... : here</p>')
+
+  def testPunctuationDouble_insertsNoSpaceAfterEllipsis(self):
+    self.assertExecution(
+        'Err...? Ah...! Yes.....: here',
+        '<p>Err…? Ah…! Yes.....: here</p>')
+
+  def testPunctuationDouble_multipleInSequence(self):
+    self.assertExecution('what !?;: wtf:;?!',
+                         '<p>what !?;: wtf:;?!</p>')
+
+  def testPunctuationDouble_afterNbsp(self):
+    self.assertExecution('$macro.new[test][dialog~]$test?',
+                         '<p>dialog\xa0?</p>')
+
+  def testPunctuationDouble_afterNbspAndSpace(self):
+    self.assertExecution('$macro.new[test][dialog~]$test ?',
+                         '<p>dialog\xa0?</p>')
+
+  def testPunctuationDouble_cornerCases(self):
+    self.assertExecution(
+        (
+            'A', '$text.punctuation.double[]',
+            'B', '$text.punctuation.double[ ]',
+            'C', '$text.punctuation.double[^ ]',
+            'D',
+        ),
+        '<p>ABC D</p>')
+
+  def testGuillemets_preservesSpaces(self):
+    self.assertExecution('one « two » three',
+                         '<p>one « two » three</p>')
+
+  def testGuillemets_doesNotInsertSpaces(self):
+    self.assertExecution('one «two» three',
+                         '<p>one «two» three</p>')
+
+  def testGuillemets_doesNotInsertSpacesAroundInlineTag(self):
+    self.assertExecution(
+        'one «$tag.open[span][inline]two$tag.close[span]» three',
+        '<p>one «<span>two</span>» three</p>')
+
+  def testGuillemets_doesNotInsertSpacesAroundBlockTag(self):
+    self.assertExecution(
+        'one «$tag.open[div][block] two $tag.close[div]» three',
+        (
+            '<p>one «</p>',
+            '<div>two</div>',
+            '<p>» three</p>',
+        ))
+
+  def testGuillemets_aroundNbsp(self):
+    self.assertExecution('«~inside~»',
+                         '<p>«\xa0inside\xa0»</p>')
+
+  def testBackticksApostrophes(self):
+    self.assertExecution("`one' 'two` th'ree fo`ur `' ' `",
+                         "<p>‘one’ ’two‘ th’ree fo‘ur ‘’ ’ ‘</p>")
+
+  def testTypoNewline(self):
+    self.assertExecution("<<$typo.newline>>", '<p>«»</p>')
+
+  def testNbsp_inside(self):
+    self.assertExecution(
+        'a~~b  ~~  c~~  ~~d  ~~e~~  f',
+        '<p>a\xa0\xa0b\xa0\xa0c\xa0\xa0\xa0\xa0d\xa0\xa0e\xa0\xa0f</p>')
+
+  def testNbsp_prefix(self):
+    self.assertExecution(
+        '~~~a',
+        '<p>\xa0\xa0\xa0a</p>')
+
+  def testNbsp_suffix(self):
+    self.assertExecution(
+        'a~~~',
+        '<p>a\xa0\xa0\xa0</p>')
+
+
 class FrenchTypographyTest(XhtmlExecutionTestCase):
+
+  typo = FrenchTypography
 
   def InputHook(self, text):
     return '$typo.set[french]' + text
 
   def testFormatNumber_zero(self):
-    self.assertEqual(FrenchTypography.FormatNumber('0'), '0')
+    self.assertEqual(self.typo.FormatNumber('0'), '0')
 
   def testFormatNumber_short(self):
-    self.assertEqual(FrenchTypography.FormatNumber('123'), '123')
+    self.assertEqual(self.typo.FormatNumber('123'), '123')
 
   def testFormatNumber_long(self):
-    self.assertEqual(FrenchTypography.FormatNumber('12345678'),
+    self.assertEqual(self.typo.FormatNumber('12345678'),
                      '12\xa0345\xa0678')
-    self.assertEqual(FrenchTypography.FormatNumber('123456'),
+    self.assertEqual(self.typo.FormatNumber('123456'),
                      '123\xa0456')
 
   def testFormatNumber_negative(self):
-    self.assertEqual(FrenchTypography.FormatNumber('-1234,5678'),
+    self.assertEqual(self.typo.FormatNumber('-1234,5678'),
                      '\u20131\xa0234,567\xa08')
 
   def testFormatNumber_positive(self):
-    self.assertEqual(FrenchTypography.FormatNumber('+1234.5678'),
+    self.assertEqual(self.typo.FormatNumber('+1234.5678'),
                      '+1\xa0234.567\xa08')
 
   def testFormatNumber_decimalShort(self):
-    self.assertEqual(FrenchTypography.FormatNumber('3.5'), '3.5')
+    self.assertEqual(self.typo.FormatNumber('3.5'), '3.5')
 
   def testFormatNumber_decimalLong(self):
-    self.assertEqual(FrenchTypography.FormatNumber('3.567890'),
+    self.assertEqual(self.typo.FormatNumber('3.567890'),
                      '3.567\xa0890')
-    self.assertEqual(FrenchTypography.FormatNumber('3,5678901'),
+    self.assertEqual(self.typo.FormatNumber('3,5678901'),
                      '3,567\xa0890\xa01')
 
   def testFormatNumber_decimalOnly(self):
-    self.assertEqual(FrenchTypography.FormatNumber('.5'), '.5')
-    self.assertEqual(FrenchTypography.FormatNumber(',123'), ',123')
-    self.assertEqual(FrenchTypography.FormatNumber('-.5'), '\u2013.5')
+    self.assertEqual(self.typo.FormatNumber('.5'), '.5')
+    self.assertEqual(self.typo.FormatNumber(',123'), ',123')
+    self.assertEqual(self.typo.FormatNumber('-.5'), '\u2013.5')
 
   def testTypoNumber(self):
     self.assertExecution('before $typo.number[-12345678] after',
@@ -638,7 +825,7 @@ class SimpleMacrosTest(XhtmlExecutionTestCase):
     self.assertExecution(
         '$typo.set[invalid]',
         messages=['/root:1: $typo.set: unknown typography name: invalid; ' +
-                  'expected one of: french, neutral'])
+                  'expected one of: english, french, neutral'])
 
   def testTypoSet_multipleTimes(self):
     self.assertExecution(

@@ -714,6 +714,28 @@ class Typography(metaclass=ABCMeta):
     """
     pass
 
+  @staticmethod
+  def FormatNumberCustom(number, thousands_sep):
+    (sign, before_decimal, decimal_sep, after_decimal) = \
+        _NUMBER_REGEXP.match(number).groups()
+
+    # Use an en-dash as minus sign.
+    if sign == '-':
+      sign = '–'
+    text = sign
+
+    text += thousands_sep.join(
+        reversed([before_decimal[max(0, group_end-3):group_end]
+                  for group_end in range(len(before_decimal), 0, -3)]))
+
+    if decimal_sep:
+      text += decimal_sep
+      text += thousands_sep.join(
+          [after_decimal[group_start:group_start+3]
+           for group_start in range(0, len(after_decimal), 3)])
+
+    return text
+
 
 class NeutralTypography(Typography):
   """Language-neutral typography rules."""
@@ -726,6 +748,19 @@ class NeutralTypography(Typography):
     return number
 
 
+class EnglishTypography(Typography):
+  """English-specific typography rules."""
+
+  name = 'english'
+
+  @staticmethod
+  def FormatNumber(number):  # pylint: disable=arguments-differ
+    return Typography.FormatNumberCustom(number, ',')
+
+  TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
+  TextApostrophe = StaticAppendTextCallback("’", public_name='text.apostrophe')
+
+
 class FrenchTypography(Typography):
   """French-specific typography rules."""
 
@@ -733,26 +768,7 @@ class FrenchTypography(Typography):
 
   @staticmethod
   def FormatNumber(number):  # pylint: disable=arguments-differ
-    # Separate thoushands with a non-breaking space.
-    (sign, before_decimal, decimal_sep, after_decimal) = \
-        _NUMBER_REGEXP.match(number).groups()
-
-    # Use an en-dash as minus sign.
-    if sign == '-':
-      sign = '–'
-    text = sign
-
-    text += NBSP.join(
-        reversed([before_decimal[max(0, group_end-3):group_end]
-                  for group_end in range(len(before_decimal), 0, -3)]))
-
-    if decimal_sep:
-      text += decimal_sep
-      text += NBSP.join(
-          [after_decimal[group_start:group_start+3]
-           for group_start in range(0, len(after_decimal), 3)])
-
-    return text
+    return Typography.FormatNumberCustom(number, NBSP)
 
   TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
   TextApostrophe = StaticAppendTextCallback("’", public_name='text.apostrophe')
@@ -782,9 +798,11 @@ class FrenchTypography(Typography):
     branch.AppendLineText(contents)
 
 
-TYPOGRAPHIES = \
-    dict((typography_type.name, typography_type())
-         for typography_type in (NeutralTypography, FrenchTypography))
+TYPOGRAPHIES = {
+    typography_type.name: typography_type()
+    for typography_type in (
+        NeutralTypography, EnglishTypography, FrenchTypography)
+}
 
 
 class Macros:
