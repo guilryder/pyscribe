@@ -127,11 +127,11 @@ def ParseMacroSignature(signature):
   if not signature_match:
     raise InternalError('invalid signature: {signature}', signature=signature)
   macro_name = signature_match.group(1)
-  macro_arg_names = signature_match.group(2)
-  if macro_arg_names is None:
+  macro_arg_names_text = signature_match.group(2)
+  if macro_arg_names_text is None:
     macro_arg_names = []
   else:
-    macro_arg_names = [name.strip() for name in macro_arg_names.split(',')]
+    macro_arg_names = [name.strip() for name in macro_arg_names_text.split(',')]
 
   # Check that the macro arguments are unique.
   macro_arg_names_set = set(macro_arg_names)
