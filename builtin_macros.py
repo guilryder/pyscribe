@@ -263,6 +263,20 @@ def MacroCall(executor, call_node):
   executor.CallMacro(called_node)
 
 
+@macro(public_name='macro.context.new', args_signature='*body')
+def MacroContext(executor, unused_call_node, body):
+  """
+  Executes code in a new execution context.
+
+  Allows to define temporary macros in the new context.
+
+  Args:
+    body: The code to execute in the new context.
+  """
+  new_branch_context = ExecutionContext(parent=executor.current_branch.context)
+  executor.ExecuteInBranchContext(body, new_branch_context)
+
+
 def _LookupNonBuiltinMacro(executor, macro_name, verb):
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)

@@ -794,6 +794,66 @@ class MacroCallTest(ExecutionTestCase):
                   '  /root:1: $macro.call'])
 
 
+class MacroContextNewTest(ExecutionTestCase):
+
+  def GetExecutionBranch(self, executor):
+    self.CreateBranch(executor, TextBranch, name='other')
+    return executor.system_branch
+
+  def testText(self):
+    self.assertExecution(
+        'BEFORE $macro.context.new[INSIDE] AFTER',
+        'BEFORE INSIDE AFTER')
+
+  def testParentMacroUsed(self):
+    self.assertExecution(
+        (
+            '$macro.new[parent][original]',
+            'BEFORE $macro.context.new[INSIDE $parent]',
+            ' AFTER $parent',
+        ),
+        'BEFORE INSIDE original AFTER original')
+
+  def testParentMacroChangedAndUsed(self):
+    self.assertExecution(
+        (
+            '$macro.new[parent][original]',
+            'BEFORE $macro.context.new[',
+                '$macro.new[parent][modified]',
+                'INSIDE $parent',
+            ']',
+            ' AFTER $parent',
+        ),
+        'BEFORE INSIDE modified AFTER original')
+
+  def testChildMacroDisappears(self):
+    self.assertExecution(
+        (
+            'BEFORE $macro.context.new[',
+                '$macro.new[child][in-child]',
+                'INSIDE',
+            ']',
+            ' AFTER $child',
+        ),
+        messages=['/root:5: macro not found: $child'])
+
+  def testImpactsOnlyCurrentBranch(self):
+    self.assertExecution(
+        (
+            '$macro.new[parent][original]',
+            '$branch.write[other][BEFORE $parent]',
+            'BEFORE $macro.context.new[',
+                '$macro.new[parent][modified]',
+                '$branch.write[other][^ INSIDE $parent]',
+                'INSIDE $parent',
+            ']',
+            '$branch.write[other][^ AFTER $parent]',
+            ' AFTER $parent',
+        ),
+        dict(system='BEFORE INSIDE modified AFTER original',
+             other='BEFORE original INSIDE original AFTER original'))
+
+
 class BranchWriteTest(ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):

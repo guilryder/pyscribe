@@ -443,6 +443,22 @@ class Executor:
       finally:
         self.call_context = old_call_context
 
+  def ExecuteInBranchContext(self, nodes, branch_context):
+    """
+    Executes the given nodes in the given branch context.
+
+    Args:
+      nodes: (node list) The nodes to execute.
+      call_context: (ExecutionContext)
+        The branch context to execute the nodes in.
+    """
+    old_branch_context = self.current_branch.context
+    self.current_branch.context = branch_context
+    try:
+      self.ExecuteNodes(nodes)
+    finally:
+      self.current_branch.context = old_branch_context
+
   def AppendText(self, text):
     """Appends a block of text to the current branch."""
     text_writer = self.__current_text_writer
