@@ -243,9 +243,12 @@ $macro.new[root.open.xhtml][
     $macro.call[header.level$level^.counter.fmt]~~~$title.doc
   ]
   $macro.new[header.nonumber(level,title)][
+    $header.nonumber.withtoc[$level][$title][$title]
+  ]
+  $macro.new[header.nonumber.withtoc(level,title.toc,title.doc)][
     $header.before[$level]
     $macro.call[header.level$level^.counter.child.reset]
-    $macro.call[header.render][$level][$title][$title]
+    $macro.call[header.render][$level][$title.toc][$title.doc]
   ]
   $macro.new[header.render(level,title.toc,title.doc)][
     $tag[h$level][para][$title.doc]
@@ -436,14 +439,14 @@ $macro.new[root.open.latex][
 
   # Headers
   $macro.new[headers.config.sectionsonly.latex][
-    $macro.new[header.level1.cmd][\section]
+    $macro.new[header.level1.cmdname][section]
   ]
   $macro.new[headers.config.chaptersandsections.latex][
-    $macro.new[header.level1.cmd][\chapter]
-    $macro.new[header.level2.cmd][\section]
+    $macro.new[header.level1.cmdname][chapter]
+    $macro.new[header.level2.cmdname][section]
   ]
   $macro.new[header.level.cmd(level)][
-    $macro.call[header.level$level^.cmd]
+    \$macro.call[header.level$level^.cmdname]
   ]
   $macro.new[header(level,title)][
     $header.level.cmd[$level]{$title}
@@ -453,6 +456,10 @@ $macro.new[root.open.latex][
   ]
   $macro.new[header.nonumber(level,title)][
     $header.level.cmd[$level]*{$title}
+  ]
+  $macro.new[header.nonumber.withtoc(level,title.toc,title.doc)][
+    $header.level.cmd[$level]*{$title.doc}
+    \addcontentsline{toc}{$macro.call[header.level$level^.cmdname]}{$title.toc}
   ]
   $macro.new[section.nonumber(title)][\section*{$title}]
   $macro.new[section.withtoc(title.toc,title.doc)][\section^[$title.toc^]{$title.doc}]
