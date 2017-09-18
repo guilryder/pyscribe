@@ -120,6 +120,30 @@ $para.macro.new[para.italic][italic][\itshape]
 $para.macro.new[para.sansserif][sansserif][\sf]
 $para.macro.new[para.typewriter][typewriter][\ttfamily]
 
+# Table of contents
+$macro.new[page.toc.initialize][
+  $if.def[page.toc.defined][][
+    $macro.new[page.toc.defined][]
+    $branch.create.sub[toc]
+  ]
+]
+$macro.new[page.toc.withtitle(title)][
+  $format.select[
+    $page.toc.initialize
+    $footnotes.flush
+    $para.block.css[toc-title][$title]
+    $para.block.css[toc][$branch.append[toc]]
+  ][
+    \renewcommand\contentsname{$title}$newline
+    \addtocontents{toc}{\protect\thispagestyle{empty}}$newline
+    \tableofcontents
+  ]
+]
+$macro.new[page.toc.append(contents)][
+  $page.toc.initialize
+  $branch.write[toc][$contents]
+]
+
 
 ################################################################################
 # XHTML
@@ -237,10 +261,17 @@ $macro.new[root.open.xhtml][
   $macro.new[header.withtoc(level,title.toc,title.doc)][
     $header.before[$level]
     $header.incr[$level]
-    $macro.call[header.render][$level][$title.toc][$header.title.numbered[$level][$title.doc]]
+    $macro.call[header.render][$level][
+      $header.title.numbered.toc[$level][$title.toc]
+    ][
+      $header.title.numbered[$level][$title.doc]
+    ]
   ]
-  $macro.new[header.title.numbered(level,title.doc)][
-    $macro.call[header.level$level^.counter.fmt]~~~$title.doc
+  $macro.new[header.title.numbered(level,title)][
+    $macro.call[header.level$level^.counter.fmt]~~~$title
+  ]
+  $macro.new[header.title.numbered.toc(level,title.toc)][
+    $header.title.numbered[$level][$title.toc]
   ]
   $macro.new[header.nonumber(level,title)][
     $header.nonumber.withtoc[$level][$title][$title]
@@ -251,7 +282,32 @@ $macro.new[root.open.xhtml][
     $macro.call[header.render][$level][$title.toc][$title.doc]
   ]
   $macro.new[header.render(level,title.toc,title.doc)][
-    $tag[h$level][para][$title.doc]
+    $tag[h$level][para][
+      $if.def[header.level$level^.toc.use][
+        $header.render.toc[$level][$title.toc]
+      ][]
+      $title.doc
+    ]
+  ]
+
+  # Table of contents
+  $macro.new[header.render.toc(level,title)][
+    $id.new
+    $id.attr.set[header]
+    $header.render.toc.entry[$level][
+      $tag[a][inline][
+        $id.href.set[header]
+        $title
+      ]
+    ]
+  ]
+  $macro.new[header.render.toc.entry(level,contents)][
+    $page.toc.append[
+      $tag[p][para][
+        $tag.class.add[current][toc$level]
+        $contents
+      ]
+    ]
   ]
 
   # Vertical spacing

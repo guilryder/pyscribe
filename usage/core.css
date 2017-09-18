@@ -15,7 +15,8 @@ ul, ol {
 .center p,
 .flushleft p,
 .flushright p,
-.footnotes p {
+.footnotes p,
+.toc p {
   text-indent: 0;
 }
 
@@ -44,4 +45,11 @@ ul, ol {
 .separator {
   text-align: center;
   margin: 2ex 0 1ex 0;
+}
+
+.toc-title {
+  font-size: xx-large;
+  font-weight: bold;
+  margin: 3ex 0;
+  page-break-before: always;
 }
