@@ -6,15 +6,15 @@
 
 \ProcessOptions\relax
 
-\LoadClass[a4paper,oneside]{book}
-
 \ifebook
+\LoadClass[a4paper,oneside]{book}
 \RequirePackage[papersize={90mm,120mm},margin=2mm]{geometry}
 \RequirePackage{fourier}
 \sloppy
 \pagestyle{empty}
 
 \else
+\LoadClass[a4paper,oneside,11pt]{book}
 \RequirePackage{a4wide}
 \RequirePackage{lmodern}
 
