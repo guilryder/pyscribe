@@ -385,10 +385,11 @@ $macro.new[root.open.xhtml][
     ]
   ]
   $macro.new[page.same(content)][$para.css[page-same][$content]]
+  $macro.new[image.ext][jpg]
   $macro.new[image(alt.text,image.file.noext,css.class,width.latex)][
     $tag[img][inline][
       $tag.attr.set[current][alt][$alt.text]
-      $tag.attr.set[current][src][$image.file.noext^.jpg]
+      $tag.attr.set[current][src][$image.file.noext^.$image.ext]
       $tag.class.add[current][$css.class]
     ]
   ]
