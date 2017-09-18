@@ -271,6 +271,9 @@ $macro.new[root.open.xhtml][
   ]
   $macro.new[number(number)][$typo.number[$number]]
 
+  # Escaping
+  $macro.new[code.nopipe(contents)][$fmt.typewriter[$contents]]
+
   # Paragraph formatting
   $macro.new[para.css.custom(level,css.class,contents)][
     $tag[div][$level][
@@ -500,6 +503,9 @@ $macro.new[root.open.latex][
 
   # Footnotes
   $latex.macro.new[footnotes.add][\footnote]
+
+  # Escaping
+  $macro.new[code.nopipe(contents)][\verb|$contents|]
 
   # Various
   $macro.new[\][\\]
