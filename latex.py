@@ -33,3 +33,4 @@ class Macros:
   TextSoftHyphen = StaticAppendTextCallback('\-', public_name='text.softhyphen')
   TextDashEn = StaticAppendTextCallback('--', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback('---', public_name='text.dash.em')
+  TextEllipsis = StaticAppendTextCallback('\dots{}', public_name='text.ellipsis')

@@ -33,7 +33,7 @@ class LatexEndToEndTest(ExecutionTestCase):
             "a~b",
             "n\\-o",
             "--c---",
-            "d…",
+            r"d\dots{}",
             "«e»",
             "« f »",
             "`g'h' 'g`h`",
