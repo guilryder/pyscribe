@@ -416,7 +416,11 @@ $macro.new[root.open.latex][
   $macro.new[metadata.author.set(author)][
     \authorset{$author}$newline
   ]
-  $macro.new[metadata.language.set(language.code)][]
+  $macro.new[metadata.language.set(language.code)][
+    \languageset{$macro.call[language.name.$language.code]}$newline
+  ]
+  $macro.new[language.name.fr][french]
+  $macro.new[language.name.en][english]
   $macro.new[typo.set(typo.name)][]
 
   # Latex helpers
