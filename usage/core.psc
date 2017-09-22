@@ -59,6 +59,12 @@ $macro.new[metadata.all.set][
   $metadata.language.set[$book.language]
   $typo.set[$book.typo]
 ]
+# Default typography: derived from the language.
+$macro.new[book.typo][$macro.call[language.name.$book.language]]
+
+# Map of language codes to names.
+$macro.new[language.name.fr][french]
+$macro.new[language.name.en][english]
 
 # Various
 $macro.new[text.colon][$format.select[^:][\string^:]]
@@ -475,8 +481,6 @@ $macro.new[root.open.latex][
   $macro.new[metadata.language.set(language.code)][
     \languageset{$macro.call[language.name.$language.code]}$newline
   ]
-  $macro.new[language.name.fr][french]
-  $macro.new[language.name.en][english]
   $macro.new[typo.set(typo.name)][]
 
   # Latex helpers
