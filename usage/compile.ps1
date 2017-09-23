@@ -26,6 +26,7 @@ begin {
       [Parameter(ValueFromRemainingArguments)] $ExtraArgs)
     & "C:\Program Files\Calibre\ebook-convert.exe" `
       "${Basename}.html" "${Basename}.${OutputExtension}" `
+      --toc-filter="\[[0-9]+\]" `
       $ExtraArgs
   }
 
@@ -71,7 +72,7 @@ process {
         }
         if ($Mobi) {
           echo "Compiling ${filename}.html to MOBI..."
-          EbookConvert $basename "mobi" --no-inline-toc
+          EbookConvert $basename "mobi" --no-inline-toc --mobi-keep-original-images --cover=nul
         }
       }
       "latex" {
