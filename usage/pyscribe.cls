@@ -1,8 +1,15 @@
 \NeedsTeXFormat{LaTeX2e}[1999/01/01]
 \ProvidesClass{pyscribe}[2011/07/18]
 
+% Whether to format as an e-book: small page size, no margins.
 \newif\ifebook
 \DeclareOption{ebook}{\ebooktrue}
+
+% Whether to use simple formatting for short, plain text documents:
+% article class instead of book (except with the ebook option),
+% simpler cover page.
+\newif\ifsimple
+\DeclareOption{simple}{\simpletrue}
 
 \ProcessOptions\relax
 
@@ -14,8 +21,13 @@
 \pagestyle{empty}
 
 \else
+\ifsimple
+\LoadClass[a4paper,11pt]{article}
+\else
 \LoadClass[a4paper,oneside,11pt]{book}
 \RequirePackage{a4wide}
+\fi
+
 \RequirePackage{lmodern}
 
 \RequirePackage{slantsc}

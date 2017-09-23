@@ -467,9 +467,19 @@ $macro.new[root.close.xhtml][
 
 $macro.new[output.filename.latex(basename)][$basename^ -^ $device.size^.tex]
 $macro.new[root.branch.type.latex][latex]
+$macro.new[latex.class.options][]
 
 $macro.new[root.open.latex][
-  \documentclass$device.size.select[^[ebook^]][]{pyscribe}$newline
+  # Latex class options: set 'ebook' in small mode, append the custom options.
+  # Avoid unnecessary commas like [ebook,] and empty option blocks [].
+  $macro.new[latex.class.options.all][
+    $device.size.select[
+        ebook$if.eq[$latex.class.options][][][,$latex.class.options]
+      ][
+        $latex.class.options
+      ]
+  ]
+  \documentclass$if.eq[$latex.class.options.all][][][^[$latex.class.options.all^]]{pyscribe}$newline
 
   # Metadata
   $macro.new[metadata.title.set(title)][
