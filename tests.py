@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 #
 # Runs unit tests for all modules.
