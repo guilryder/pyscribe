@@ -76,7 +76,6 @@ class TestsManager:
     # Configure the coverage recorder.
     cov = coverage.coverage(include=self.__python_files)
     cov.config.exclude_list.append(r'if __name__ == .__main__.:')
-    cov.use_cache(False)
 
     # Record coverage information.
     cov.start()
