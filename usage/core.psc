@@ -447,11 +447,10 @@ $macro.new[root.open.xhtml][
     ]
   ]
   $macro.new[page.same(content)][$para.css[page-same][$content]]
-  $macro.new[image.ext][jpg]
-  $macro.new[image(alt.text,image.file.noext,css.class,width.latex)][
+  $macro.new[image(alt.text,image.file.noext,ext.html,css.class,width.latex)][
     $tag[img][inline][
       $tag.attr.set[current][alt][$alt.text]
-      $tag.attr.set[current][src][$image.file.noext^.$image.ext]
+      $tag.attr.set[current][src][$image.file.noext^.$ext.html]
       $tag.class.add[current][$css.class]
     ]
   ]
@@ -590,7 +589,7 @@ $macro.new[root.open.latex][
   $macro.new[par][\par]
   $macro.new[separator][\separator]
   $latex.env.new[page.same][samepage]
-  $macro.new[image(alt.text,image.file.noext,css.class,width.latex)][
+  $macro.new[image(alt.text,image.file.noext,ext.html,css.class,width.latex)][
     \ifx\pdfoutput\undefined\else$newline
     \includegraphics^[width=$width.latex^]{$image.file.noext}$newline
   ]
