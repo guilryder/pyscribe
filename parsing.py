@@ -77,12 +77,12 @@ class CallNode:
   def __str__(self):
     return '${name}{args}'.format(
         name=self.name,
-        args=''.join('[%s]' % FormatNodes(param) for param in self.args))
+        args=''.join('[{}]'.format(FormatNodes(param)) for param in self.args))
 
   def __repr__(self):
     return '${name}{args}'.format(
         name=self.name,
-        args=''.join('[%s]' % ReprNodes(param) for param in self.args))
+        args=''.join('[{}]'.format(ReprNodes(param)) for param in self.args))
 
   def __eq__(self, other):
     return isinstance(other, CallNode) and \
@@ -104,13 +104,11 @@ def CompactTextNodes(nodes):
   """
   def GroupingKey(node):
     return (type(node), node.location)
-  for (node_type, location), nodes in itertools.groupby(nodes, GroupingKey):
+  for (node_type, location), nodes_grp in itertools.groupby(nodes, GroupingKey):
     if issubclass(node_type, TextNode):
-      nodes = list(nodes)
-      yield TextNode(location, ''.join(node.text for node in nodes))
+      yield TextNode(location, ''.join(node.text for node in list(nodes_grp)))
     else:
-      for node in nodes:
-        yield node
+      yield from nodes_grp
 
 
 def FormatNodes(nodes):
@@ -287,14 +285,12 @@ class Lexer:
       if text_before is not None:
         if self.__skip_spaces:
           text_before = text_before.lstrip(' \t')
-        for token in self.__text_processor(text_before):
-          yield token
+        yield from self.__text_processor(text_before)
         self.__skip_spaces = (text_before and text_before[-1] == '\n')
       if rule_callable is not None:
         token = rule_callable(matched_text)
         if isinstance(token, Iterable):
-          for single_token in token:
-            yield single_token
+          yield from token
         elif token is not None:
           yield token
 

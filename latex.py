@@ -9,7 +9,7 @@ from macros import *
 
 class LatexBranch(execution.TextBranch):
   """
-  Branch for LaTeX-code.
+  Branch for LaTeX code.
   """
 
   type_name = 'latex'
@@ -22,15 +22,16 @@ class LatexBranch(execution.TextBranch):
 
 
 class Macros:
-  # pylint: disable=anomalous-backslash-in-string
-
-  TextPercent = StaticAppendTextCallback('\%', public_name='text.percent')
-  TextAmpersand = StaticAppendTextCallback('\&', public_name='text.ampersand')
-  TextUnderscore = StaticAppendTextCallback('\_', public_name='text.underscore')
-  TextDollar = StaticAppendTextCallback('\$', public_name='text.dollar')
-  TextHash = StaticAppendTextCallback('\#', public_name='text.hash')
+  TextPercent = StaticAppendTextCallback(r'\%', public_name='text.percent')
+  TextAmpersand = StaticAppendTextCallback(r'\&', public_name='text.ampersand')
+  TextUnderscore = \
+      StaticAppendTextCallback(r'\_', public_name='text.underscore')
+  TextDollar = StaticAppendTextCallback(r'\$', public_name='text.dollar')
+  TextHash = StaticAppendTextCallback(r'\#', public_name='text.hash')
   TextNbsp = StaticAppendTextCallback('~', public_name='text.nbsp')
-  TextSoftHyphen = StaticAppendTextCallback('\-', public_name='text.softhyphen')
+  TextSoftHyphen = \
+      StaticAppendTextCallback(r'\-', public_name='text.softhyphen')
   TextDashEn = StaticAppendTextCallback('--', public_name='text.dash.en')
   TextDashEm = StaticAppendTextCallback('---', public_name='text.dash.em')
-  TextEllipsis = StaticAppendTextCallback('\dots{}', public_name='text.ellipsis')
+  TextEllipsis = \
+      StaticAppendTextCallback(r'\dots{}', public_name='text.ellipsis')

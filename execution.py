@@ -136,7 +136,7 @@ class Branch(metaclass=ABCMeta):
     if parent and not parent_context:
       parent_context = parent.context
     self.parent = parent
-    self.root = parent and parent.root or self
+    self.root = parent.root if parent else self
     self.context = ExecutionContext(parent=parent_context)
     self.name = name
     self.sub_branches = []
@@ -151,12 +151,11 @@ class Branch(metaclass=ABCMeta):
       self.writer = writer
 
   def __repr__(self):
-    return '<%s: %s>' % (self.__class__.__name__, self.name)
+    return '<{}: {}>'.format(self.__class__.__name__, self.name)
 
   @abstractmethod
   def AppendText(self, text):
     """Appends a block of text to the branch."""
-    pass  # pragma: no cover
 
   @abstractmethod
   def CreateSubBranch(self):
@@ -168,7 +167,6 @@ class Branch(metaclass=ABCMeta):
     Returns:
       (Branch) The new sub-branch, unattached.
     """
-    pass  # pragma: no cover
 
   def AppendSubBranch(self, sub_branch):
     """
@@ -207,7 +205,6 @@ class Branch(metaclass=ABCMeta):
     Args:
       sub_branch: (Branch) The sub-branch to insert.
     """
-    pass  # pragma: no cover
 
   def IterBranches(self):
     """
@@ -218,8 +215,7 @@ class Branch(metaclass=ABCMeta):
     """
     yield self
     for sub_branch in self.sub_branches:
-      for sub_sub_branch in sub_branch.IterBranches():
-        yield sub_sub_branch
+      yield from sub_branch.IterBranches()
 
   def Render(self):
     """
@@ -241,7 +237,6 @@ class Branch(metaclass=ABCMeta):
       write: (stream) The stream to render the output text to.
         Must have a write() method.
     """
-    pass  # pragma: no cover
 
 
 class TextBranch(Branch):

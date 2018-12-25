@@ -143,8 +143,8 @@ class XhtmlBranchTest(BranchTestCase):
     self.assertRender('<p>test " \' &amp; &lt;tag&gt;</p>')
 
   def testRender_unicode(self):
-    self.branch.AppendText(test_unicode)
-    self.assertRender('<p>{0}</p>'.format(test_unicode))
+    self.branch.AppendText(TEST_UNICODE)
+    self.assertRender('<p>{}</p>'.format(TEST_UNICODE))
 
   def testRender_mix(self):
     self.PrepareMix(self.branch)
@@ -370,8 +370,8 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
 
   def testAllSpecialChars(self):
     self.assertExecution(
-        special_chars,
-        '<p>{0}</p>'.format(' '.join((
+        SPECIAL_CHARS,
+        '<p>{}</p>'.format(' '.join((
             "% &amp; _ $ $ # #",
             "a\xa0b",
             "n\xado",
@@ -483,8 +483,8 @@ class EnglishTypographyTest(XhtmlExecutionTestCase):
 
   def testAllSpecialChars(self):
     self.assertExecution(
-        special_chars,
-        '<p>{0}</p>'.format(' '.join((
+        SPECIAL_CHARS,
+        '<p>{}</p>'.format(' '.join((
             "% &amp; _ $ $ # #",
             "a\xa0b",
             "n\xado",
@@ -668,8 +668,8 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
 
   def testAllSpecialChars(self):
     self.assertExecution(
-        special_chars,
-        '<p>{0}</p>'.format(' '.join((
+        SPECIAL_CHARS,
+        '<p>{}</p>'.format(' '.join((
             "% &amp; _ $ $ # #",
             "a\xa0b",
             "n\xado",

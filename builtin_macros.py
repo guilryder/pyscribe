@@ -134,7 +134,7 @@ def ParseMacroSignature(signature):
     macro_arg_names = [name.strip() for name in macro_arg_names_text.split(',')]
 
   # Check that the macro arguments are unique.
-  macro_arg_names_set = set(macro_arg_names)
+  macro_arg_names_set = frozenset(macro_arg_names)
   if len(macro_arg_names_set) != len(macro_arg_names):
     for macro_arg_name in macro_arg_names:
       macro_arg_names.remove(macro_arg_name)
@@ -202,8 +202,8 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
   if VALID_MACRO_NAME_REGEXP.match(original) is None:
     raise InternalError('invalid original macro name: ' + original)
   if original in macro_arg_names:
-    raise InternalError('original macro name conflicts with signature: ' +
-                        '%s vs. %s' % (original, signature))
+    raise InternalError('original macro name conflicts with signature: '
+                        '{} vs. {}'.format(original, signature))
   macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'override')
 
   # Create the override execution context: map the original macro to $original.
@@ -264,7 +264,7 @@ def MacroCall(executor, call_node):
 
 
 @macro(public_name='macro.context.new', args_signature='*body')
-def MacroContext(executor, unused_call_node, body):
+def MacroContextNew(executor, unused_call_node, body):
   """
   Executes code in a new execution context.
 
@@ -291,16 +291,16 @@ def _LookupNonBuiltinMacro(executor, macro_name, verb):
 
 # Branches
 
-import latex
-import xhtml
+import latex  # pylint: disable=wrong-import-position
+import xhtml  # pylint: disable=wrong-import-position
 
 __BRANCH_CLASSES = (
     TextBranch,
     latex.LatexBranch,
     xhtml.XhtmlBranch,
 )
-BRANCH_TYPES = dict((branch_class.type_name, branch_class)
-                    for branch_class in __BRANCH_CLASSES)
+BRANCH_TYPES = {branch_class.type_name: branch_class
+                for branch_class in __BRANCH_CLASSES}
 
 @macro(public_name='branch.write', args_signature='branch_name,*contents')
 def BranchWrite(executor, unused_call_node, branch_name, contents):
@@ -536,31 +536,33 @@ def CounterCreate(executor, unused_call_node, counter_name):
       $<counter-name>.set[value]
       $<counter-name>.incr
   """
-  value_holder = [0]
+  counter_value = 0
 
   @macro(text_compatible=True)
   def ValueCallback(executor, unused_call_node):
     """Writes the value of the counter as an arabic number."""
-    executor.AppendText(str(value_holder[0]))
+    executor.AppendText(str(counter_value))
 
   @macro(args_signature='*contents', text_compatible=True)
   def IfPositiveCallback(executor, unused_call_node, contents):
     """Executes the contents if the counter is strictly positive (1 or more)."""
-    if value_holder[0] > 0:
+    if counter_value > 0:
       executor.ExecuteNodes(contents)
 
   @macro(args_signature='value')
   def SetCallback(unused_executor, unused_call_node, value):
     """Sets the value of a counter to the given integer."""
+    nonlocal counter_value
     try:
-      value_holder[0] = int(value)
+      counter_value = int(value)
     except ValueError:
       raise InternalError('invalid integer value: {value}', value=value)
 
   @macro()
   def IncrCallback(unused_executor, unused_call_node):
     """Increments the counter."""
-    value_holder[0] += 1
+    nonlocal counter_value
+    counter_value += 1
 
   macros = {
       '': ValueCallback,

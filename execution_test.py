@@ -98,7 +98,7 @@ class ExecutorTest(TestCase):
 
   def CheckArgumentCount(self, min_args_count, max_args_count,
                          actual_args_count):
-    call_node = CallNode(test_location, 'name',
+    call_node = CallNode(TEST_LOCATION, 'name',
                          [str(i) for i in range(actual_args_count)])
     self.executor.CheckArgumentCount(
         call_node, self.MacroCallback, min_args_count, max_args_count)
@@ -149,7 +149,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     self.assertExecution('', '', expected_infos=[])
 
   def testUnicode(self):
-    self.assertExecution(test_unicode, test_unicode)
+    self.assertExecution(TEST_UNICODE, TEST_UNICODE)
 
   def testSyntaxError(self):
     self.assertExecution(
@@ -189,7 +189,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$macro.new[loop][',
               '$i ',
               '$i.incr',
-              '$if.eq[$i][%d][][$loop]' % expected_loop_iterations,
+              '$if.eq[$i][{}][][$loop]'.format(expected_loop_iterations),
             ']',
             '$loop',
         ),
@@ -227,15 +227,15 @@ class ExecutorEndToEndTest(ExecutionTestCase):
         {'/output/newtex': '\\%test\\&'})
 
   def testAllBranchTypes(self):
-    for branch_type_name in BRANCH_TYPES:
+    for type_name in BRANCH_TYPES:
       executor = self.assertExecution(
           (
-              '$branch.create.root[%s][new][newoutput]' % branch_type_name,
+              '$branch.create.root[{}][new][newoutput]'.format(type_name),
               '$branch.write[new][test]',
           ),
           {},
           expected_infos=['Writing: /output/newoutput'])
-      self.__VerifyBranchType(branch_type_name,
+      self.__VerifyBranchType(type_name,
                               executor.branches.get('new').context)
 
   def __VerifyBranchType(self, branch_type_name, context):

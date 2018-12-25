@@ -101,7 +101,6 @@ class macro:
     return [parsers_keyed_by_optional[optional] for optional in (False, True)]
 
   def __call__(self, callback):
-    # pylint: disable=unpacking-non-sequence
     # If automatic arguments parsing is enabled, wrap the callback.
     # standard_callback takes (executor, call_node) as parameters.
     # callback takes (executor, call_node, **kwargs).

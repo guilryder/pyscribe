@@ -21,7 +21,7 @@ class MacroTest(TestCase):
     self.executor.EvalText = lambda args: 'T' + args
 
   def __MacroCall(self, macro_callback, args):
-    call_node = CallNode(test_location, 'name', args)
+    call_node = CallNode(TEST_LOCATION, 'name', args)
     self.called = False
     macro_callback(self.executor, call_node)
 
@@ -36,7 +36,7 @@ class MacroTest(TestCase):
 
   def __CheckMacroCallFailure(self, macro_callback, args, expected_message):
     expected_message = '{location}: {message}'.format(
-        location=test_location, message=expected_message)
+        location=TEST_LOCATION, message=expected_message)
     try:
       self.__MacroCall(macro_callback, args)
       self.fail('expected error: ' + expected_message)  # pragma: no cover
@@ -185,8 +185,8 @@ def PublicMacro2():
 """
     exec(code, module.__dict__)  # pylint: disable=exec-used
     self.assertDictEqual(GetPublicMacros(module),
-                         dict(public1=module.PublicMacro1,
-                              public2=module.PublicMacro2))
+                         dict(public1=getattr(module, 'PublicMacro1'),
+                              public2=getattr(module, 'PublicMacro2')))
 
   def testMultipleCalls(self):
     self.assertDictEqual(GetPublicMacros(self.TestClass),

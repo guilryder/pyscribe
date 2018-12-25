@@ -20,9 +20,9 @@ __import__('tests')  # for unittest hooks
 def loc(display_path, lineno, dir_path='/cur'):
   return Location(Filename(display_path, dir_path), lineno)
 
-test_location = loc('file.txt', 42)
-test_unicode = 'Îñţérñåţîöñåļîžåţîöñ'
-special_chars = ' '.join((
+TEST_LOCATION = loc('file.txt', 42)
+TEST_UNICODE = 'Îñţérñåţîöñåļîžåţîöñ'
+SPECIAL_CHARS = ' '.join((
     "% & _ ^$ $text.dollar ^# $text.hash",
     "a~b",
     "n$-o",
@@ -101,28 +101,28 @@ class FakeFileSystem:
 
 class TestCase(unittest.TestCase):
 
-  def FailureMessage(self, fmt_string, msg, fmt, *args):  #pragma: no cover
+  def __FailureMessage(self, fmt_string, msg, fmt, *args):  #pragma: no cover
     if msg:
       msg += '\n'
     else:
       msg = ''
     if fmt is None:
       fmt = lambda x: x
-    return msg + (fmt_string % tuple(map(fmt, args)))
+    return msg + fmt_string.format(*map(fmt, args))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
     if not actual == expected:  #pragma: no cover
-      raise self.failureException(self.FailureMessage(
-          'Actual:   %s\nExpected: %s', msg, fmt, actual, expected))
+      raise self.failureException(self.__FailureMessage(
+          'Actual:   {}\nExpected: {}', msg, fmt, actual, expected))
 
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
     if not actual == expected:  #pragma: no cover
       if '\xa0' in actual or '\xa0' in expected:
         actual, expected = repr(actual), repr(expected)
-      raise self.failureException(self.FailureMessage(
-          'Actual:\n%s\nExpected:\n%s', msg, None, actual, expected))
+      raise self.failureException(self.__FailureMessage(
+          'Actual:\n{}\nExpected:\n{}', msg, None, actual, expected))
 
   def FakeInputFile(self, contents, **kwargs):
     """
@@ -154,7 +154,8 @@ class TestCase(unittest.TestCase):
       def lexists(self, path):
         return path in inputs
 
-      def open(fs, filename, mode='rt', **kwargs):
+      def open(fs, filename, mode='rt', **kwargs):  # pylint: disable=inconsistent-return-statements
+        # pylint: disable=arguments-differ
         assert kwargs.pop('encoding', None) == 'utf-8'
         if mode == 'rt':
           # Open an input file.
@@ -249,7 +250,7 @@ class ExecutionTestCase(TestCase):
 
     # By default, expect a fatal error if log messages are expected.
     if fatal_error is None:
-      fatal_error = (len(messages) > 0)
+      fatal_error = bool(messages)
 
     # Create the input dictionary.
     if not isinstance(inputs, collections.Mapping):
@@ -273,9 +274,9 @@ class ExecutionTestCase(TestCase):
     # Create the expected output dictionary.
     if not isinstance(expected_outputs, collections.Mapping):
       expected_outputs = {output_branch.name: expected_outputs}
-    expected_outputs = dict(
-        (branch_name, self.PrepareInputOutput(text_or_iter, separator='\n'))
-        for branch_name, text_or_iter in expected_outputs.items())
+    expected_outputs = {
+        branch_name: self.PrepareInputOutput(text_or_iter, separator='\n')
+        for branch_name, text_or_iter in expected_outputs.items()}
 
     # Execute the input, render the output branches.
     try:
@@ -299,10 +300,10 @@ class ExecutionTestCase(TestCase):
       self.assertTrue(actual_fatal_error, 'expected a fatal error')
     else:
       self.assertFalse(actual_fatal_error,
-                       'unexpected fatal error; messages: {0}'.format(
+                       'unexpected fatal error; messages: {}'.format(
                            logger.ConsumeStdErr()))
-      expected_filenames = set(expected_outputs.keys())
-      actual_filenames = set(actual_outputs.keys())
+      expected_filenames = frozenset(expected_outputs.keys())
+      actual_filenames = frozenset(actual_outputs.keys())
       self.assertTrue(
           expected_filenames.issubset(actual_filenames),
           ('output file names mismatch; expected filenames:\n  {expected}\n' +

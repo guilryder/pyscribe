@@ -41,12 +41,13 @@ class MainTest(TestCase):
     # pylint: disable=no-self-argument
     class FakeArgumentParser(ArgumentParser):
       """Option parser that prints to self.stderr."""
+      # pylint: disable=arguments-differ
       def exit(parser, status=0, msg='', **unused_kwargs):
         self.fs.stderr.write(msg)
         sys.exit(status)
 
       def error(parser, msg):
-        parser.exit(2, "error: %s\n" % msg)
+        parser.exit(2, "error: {}\n".format(msg))
 
       def print_help(parser, file=None, **kwargs):
         ArgumentParser.print_help(parser, self.fs.stderr, **kwargs)

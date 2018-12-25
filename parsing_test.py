@@ -17,46 +17,46 @@ class TokenTest(TestCase):
 class TextNodeTest(TestCase):
 
   def testStr(self):
-    self.assertEqual(str(TextNode(test_location, 'a\nb')), r"'a\nb'")
+    self.assertEqual(str(TextNode(TEST_LOCATION, 'a\nb')), r"'a\nb'")
 
   def testRepr(self):
-    self.assertEqual(repr(TextNode(test_location, 'a\nb')),
+    self.assertEqual(repr(TextNode(TEST_LOCATION, 'a\nb')),
                      r"file.txt:42'a\nb'")
 
   def testEq(self):
-    node = TextNode(test_location, 'text')
-    self.assertEqual(node, TextNode(test_location, 'text'))
-    self.assertNotEqual(node, CallNode(test_location, 'text', []))
+    node = TextNode(TEST_LOCATION, 'text')
+    self.assertEqual(node, TextNode(TEST_LOCATION, 'text'))
+    self.assertNotEqual(node, CallNode(TEST_LOCATION, 'text', []))
     self.assertNotEqual(node, TextNode(loc('file.txt', 43), 'text'))
-    self.assertNotEqual(node, TextNode(test_location, 'other'))
+    self.assertNotEqual(node, TextNode(TEST_LOCATION, 'other'))
 
 
 class CallNodeTest(TestCase):
 
   def testStr_noArgs(self):
-    self.assertEqual(str(CallNode(test_location, 'name', [])),
+    self.assertEqual(str(CallNode(TEST_LOCATION, 'name', [])),
                      '$name')
 
   def testStr_twoArgs(self):
-    self.assertEqual(str(CallNode(test_location, 'name',
-                                  [[TextNode(test_location, 'one')],
-                                   [TextNode(test_location, 'two')]])),
+    self.assertEqual(str(CallNode(TEST_LOCATION, 'name',
+                                  [[TextNode(TEST_LOCATION, 'one')],
+                                   [TextNode(TEST_LOCATION, 'two')]])),
                      "$name['one']['two']")
 
   def testRepr_noArgs(self):
-    self.assertEqual(repr(CallNode(test_location, 'name', [])),
+    self.assertEqual(repr(CallNode(TEST_LOCATION, 'name', [])),
                      '$name')
 
   def testRepr_twoArgs(self):
-    self.assertEqual(repr(CallNode(test_location, 'name', [['one'], ['two']])),
+    self.assertEqual(repr(CallNode(TEST_LOCATION, 'name', [['one'], ['two']])),
                      "$name['one']['two']")
 
   def testEq(self):
-    node = CallNode(test_location, 'name', ['one', 'two'])
-    self.assertEqual(node, CallNode(test_location, 'name', ['one', 'two']))
-    self.assertNotEqual(node, TextNode(test_location, 'text'))
-    self.assertNotEqual(node, CallNode(test_location, 'name', ['other']))
-    self.assertNotEqual(node, CallNode(test_location, 'other', ['one', 'two']))
+    node = CallNode(TEST_LOCATION, 'name', ['one', 'two'])
+    self.assertEqual(node, CallNode(TEST_LOCATION, 'name', ['one', 'two']))
+    self.assertNotEqual(node, TextNode(TEST_LOCATION, 'text'))
+    self.assertNotEqual(node, CallNode(TEST_LOCATION, 'name', ['other']))
+    self.assertNotEqual(node, CallNode(TEST_LOCATION, 'other', ['one', 'two']))
 
 
 class FormatNodesTest(TestCase):
@@ -74,8 +74,8 @@ class FormatNodesTest(TestCase):
                      "'one''two'")
 
   def testTwoTextNodesSameLine(self):
-    self.assertEqual(FormatNodes([TextNode(test_location, 'one'),
-                                  TextNode(test_location, 'two')]),
+    self.assertEqual(FormatNodes([TextNode(TEST_LOCATION, 'one'),
+                                  TextNode(TEST_LOCATION, 'two')]),
                      "'onetwo'")
 
 
@@ -122,7 +122,7 @@ class ParsingTest(TestCase):
                     fatal_error=None, filename=Filename('root', '/cur')):
     # By default, expect a fatal error if log messages are expected.
     if fatal_error is None:
-      fatal_error = (len(messages) > 0)
+      fatal_error = bool(messages)
 
     logger = FakeLogger()
 
@@ -165,7 +165,7 @@ class ParsingTest(TestCase):
     self.assertParsing('text', "'text'")
 
   def testUnicode(self):
-    self.assertParsing(test_unicode, repr(test_unicode))
+    self.assertParsing(TEST_UNICODE, repr(TEST_UNICODE))
 
   def testStrips(self):
     self.assertParsing(' \t\n\r\f\v\xa0text\xa0 \t\n\r\f\v',
@@ -502,7 +502,7 @@ class ParsingTest(TestCase):
 
   def testAllSpecialChars(self):
     self.assertParsing(
-        special_chars,
+        SPECIAL_CHARS,
         ' '.join((
             "$text.percent' '$text.ampersand' '$text.underscore'",
             "$ '$text.dollar' # '$text.hash'",

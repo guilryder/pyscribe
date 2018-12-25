@@ -31,28 +31,27 @@ class TestsManager:
   )
 
   def __init__(self, *, included_files, excluded_files):
-    self.__python_files = set(included_files) - set(excluded_files)
+    self.__python_files = frozenset(set(included_files) - set(excluded_files))
 
   def Main(self):
     parser = argparse.ArgumentParser(
         description="Runs the actions in the same order they are specified.")
 
     def AddAction(function, name, *args, **kwargs):
-      kwargs.update(dict(action='append_const',
-                         const=function,
-                         dest='actions'))
+      kwargs.update(action='append_const', const=function, dest='actions')
       parser.add_argument('--' + name, *args, **kwargs)
 
-    AddAction(self.RunTests, 'test', '-t', help="run the tests")
+    AddAction(self.RunTests, 'test', '-t',
+        help="run the tests")
     AddAction(self.RunTestsAndReportCoverage, 'coverage', '-c',
         help="run the tests, record coverage information, print a summary, and "
             "generate detailed HTML reports (default action)")
     AddAction(self.Clean, 'clean', '-x',
-        help="deletes compilation artifacts and coverage reports")
+        help="delete compilation artifacts and coverage reports")
     AddAction(self.ShowCoverage, 'show-coverage', '-s',
-        help="shows coverage results in the default Internet browser")
+        help="show coverage results in the default Internet browser")
     AddAction(self.Lint, 'lint', '-l',
-        help="runs the linter against all source files")
+        help="run the linter against all source files")
     args = parser.parse_args()
 
     default_actions = [self.RunTestsAndReportCoverage]
@@ -99,8 +98,9 @@ class TestsManager:
 
   def Lint(self):
     """Runs the linter against all source files."""
-    os.system('python -m pylint --output-format=parseable {files}'
-        .format(files=' '.join(map(shlex.quote, self.__python_files))))
+    os.system('{python} -m pylint --output-format=parseable {files}'.format(
+        python=sys.executable,
+        files=' '.join(map(shlex.quote, self.__python_files))))
 
 
 if __name__ == '__main__':

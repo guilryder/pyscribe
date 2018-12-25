@@ -47,8 +47,6 @@ class FatalError(BaseError):
   The error message is expected to be complete: stacktrace included if needed.
   """
 
-  pass
-
 
 class InternalError(BaseError):
   """
@@ -57,8 +55,6 @@ class InternalError(BaseError):
   The error should not be exposed to the end-user, as it may miss additional
   information such as stacktrace.
   """
-
-  pass
 
 
 class Filename:

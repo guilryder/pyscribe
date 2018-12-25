@@ -76,12 +76,12 @@ class FilenameTest(TestCase):
 class LocationTest(TestCase):
 
   def testRepr(self):
-    self.assertEqual(repr(test_location), 'file.txt:42')
+    self.assertEqual(repr(TEST_LOCATION), 'file.txt:42')
 
   def testEq(self):
-    self.assertEqual(test_location, Location(Filename('file.txt', '/cur'), 42))
-    self.assertNotEqual(test_location, Location(Filename('other.txt', '/'), 42))
-    self.assertNotEqual(test_location, Location(test_location.filename, 43))
+    self.assertEqual(TEST_LOCATION, Location(Filename('file.txt', '/cur'), 42))
+    self.assertNotEqual(TEST_LOCATION, Location(Filename('other.txt', '/'), 42))
+    self.assertNotEqual(TEST_LOCATION, Location(TEST_LOCATION.filename, 43))
 
 
 class LoggerTest(TestCase):
@@ -92,7 +92,6 @@ class LoggerTest(TestCase):
     self.info_file = self.FakeOutputFile()
 
   def __CreateLogger(self, **kwargs):
-    # pylint: disable=missing-kwoa
     kwargs.setdefault('fmt', Logger.FORMATS['simple'])
     kwargs.setdefault('err_file', self.err_file)
     kwargs.setdefault('info_file', self.info_file)
@@ -119,7 +118,7 @@ class LoggerTest(TestCase):
 
   def testLogLocation_someArgs(self):
     logger = self.__CreateLogger(fmt=Logger.FORMATS['simple'])
-    logger.LogLocation(test_location, 'arg={arg}; {number}',
+    logger.LogLocation(TEST_LOCATION, 'arg={arg}; {number}',
                        arg='value', number=42)
     self.assertOutputs(err=['file.txt:42: arg=value; 42'])
 

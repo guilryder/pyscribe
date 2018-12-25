@@ -13,7 +13,7 @@ class SpecialCharsTest(ExecutionTestCase):
 
   def testAll(self):
     self.assertExecution(
-        special_chars,
+        SPECIAL_CHARS,
         ' '.join((
             "% & _ $ $ # #",
             "a\xa0b",

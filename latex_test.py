@@ -20,14 +20,14 @@ class LatexEndToEndTest(ExecutionTestCase):
     self.assertExecution('', '')
 
   def testUnicode(self):
-    self.assertExecution(test_unicode, test_unicode)
+    self.assertExecution(TEST_UNICODE, TEST_UNICODE)
 
   def testEscape(self):
     self.assertExecution('^% ^&', '% &')
 
   def testAllSpecialChars(self):
     self.assertExecution(
-        special_chars,
+        SPECIAL_CHARS,
         ' '.join((
             "\\% \\& \\_ $ \\$ # \\#",
             "a~b",

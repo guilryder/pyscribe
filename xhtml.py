@@ -4,8 +4,10 @@
 __author__ = 'Guillaume Ryder'
 
 from abc import ABCMeta, abstractmethod
-from lxml import etree
 import re
+
+from lxml import etree
+# pylint: disable=len-as-condition
 
 import execution
 from log import InternalError
@@ -85,7 +87,7 @@ TagLevel.INLINE = TagLevel('inline', is_inline=True)
 
 class XhtmlBranch(execution.Branch):
   """
-  Branch for plain-text.
+  Branch for HTML.
 
   Fields:
     sub_branches: (XhtmlBranch list) The direct sub-branches of this branch.
@@ -127,7 +129,8 @@ class XhtmlBranch(execution.Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XML_HEADER = '<?xml version="1.0" encoding="%s"?>\n' % execution.ENCODING
+  __XML_HEADER = '<?xml version="1.0" encoding="{}"?>\n'.format(
+      execution.ENCODING)
   __XHTML_STUB = bytes("""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -170,7 +173,6 @@ class XhtmlBranch(execution.Branch):
       self.__root_elem = etree.SubElement(self.__tree.getroot(), 'body')
 
       # Create a sub-branch for the <head>.
-      # TODO: give unique name to <head>
       self.__head_branch = XhtmlBranch(parent=self, name='head')
       self.__tree.find('head').append(self.__head_branch.__root_elem)
       self.__head_branch.attached = True
@@ -201,7 +203,7 @@ class XhtmlBranch(execution.Branch):
     # pylint: disable=attribute-defined-outside-init
     self.__typography = typography
     self.__typography_context.macros = \
-        typography and typography.context.macros or {}
+        typography.context.macros if typography else {}
 
   typography = property(GetTypography, SetTypography,
                         doc='(Typography) The typography rules.')
@@ -221,7 +223,7 @@ class XhtmlBranch(execution.Branch):
       self.AutoParaTryClose()
       if not self.AutoParaTryOpen():
         raise InternalError('unable to open a new paragraph')
-      if para:
+      if para:  # pragma: no cover
         # Should never happen: at most one paragraph break per chunk of text.
         self.AppendLineText(para)
 
@@ -304,7 +306,7 @@ class XhtmlBranch(execution.Branch):
   def GetTailChar(self):
     """Returns the tail character of the current line."""
     tail = self.__text_sep or self.__line_tail
-    return tail and tail[-1] or None
+    return tail[-1] if tail else None
 
   def AutoParaTryOpen(self, except_tag=None):
     """
@@ -701,7 +703,7 @@ class Typography(metaclass=ABCMeta):
     self.context.AddMacros(GetPublicMacros(self.macros_container))
 
   @abstractmethod
-  def FormatNumber(self, number):  # pragma: no cover
+  def FormatNumber(self, number):
     """
     Formats a number to a string.
 
@@ -712,7 +714,6 @@ class Typography(metaclass=ABCMeta):
     Returns:
       (string) The formatted number.
     """
-    pass
 
   @staticmethod
   def FormatNumberCustom(number, thousands_sep):
@@ -744,7 +745,7 @@ class NeutralTypography(Typography):
   macros_container = __import__('builtin_macros').SpecialCharacters
 
   @staticmethod
-  def FormatNumber(number):  # pylint: disable=arguments-differ
+  def FormatNumber(number):
     return number
 
 
@@ -754,7 +755,7 @@ class EnglishTypography(Typography):
   name = 'english'
 
   @staticmethod
-  def FormatNumber(number):  # pylint: disable=arguments-differ
+  def FormatNumber(number):
     return Typography.FormatNumberCustom(number, ',')
 
   TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
@@ -775,21 +776,21 @@ class FrenchTypography(Typography):
 
   @staticmethod
   @macro(public_name='text.guillemet.open')
-  def RuleGuillemetOpen(executor, unused_call_node):
+  def TextGuillemetOpen(executor, unused_call_node):
     branch = executor.current_branch
     branch.AppendLineText('«')
     branch.RequireNonBreakingSpace()
 
   @staticmethod
   @macro(public_name='text.guillemet.close')
-  def RuleGuillemetClose(executor, unused_call_node):
+  def TextGuillemetClose(executor, unused_call_node):
     branch = executor.current_branch
     branch.RequireNonBreakingSpace()
     branch.AppendLineText('»')
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents')
-  def RulePunctuationDouble(executor, unused_call_node, contents):
+  def TextPunctuationDouble(executor, unused_call_node, contents):
     if not contents:
       return
     branch = executor.current_branch
