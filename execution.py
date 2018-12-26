@@ -294,6 +294,7 @@ class FileSystem:
   getcwd = staticmethod(os.getcwd)
   join = staticmethod(os.path.join)
   lexists = staticmethod(os.path.lexists)
+  makedirs = staticmethod(os.makedirs)
   normpath = staticmethod(os.path.normpath)
   open = staticmethod(io.open)
   splitext = staticmethod(os.path.splitext)

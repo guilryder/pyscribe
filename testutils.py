@@ -72,8 +72,14 @@ class FakeFileSystem:
 
   stdout = None
   stderr = None
+  created_dirs = None
 
   __cwd = '/cur'
+
+  def InitializeForWrites(self):
+    self.stdout = io.StringIO()
+    self.stderr = io.StringIO()
+    self.created_dirs = set()
 
   def __unixpath(self, path):
     return path.replace(os.sep, '/')
@@ -89,6 +95,11 @@ class FakeFileSystem:
 
   def lexists(self, path):
     raise NotImplementedError()  # pragma: no cover
+
+  def makedirs(self, path, exist_ok=False):
+    if not exist_ok:
+      raise NotImplementedError()  # pragma: no cover
+    self.created_dirs.add(path)
 
   def normpath(self, path):
     return self.__unixpath(os.path.normpath(path))

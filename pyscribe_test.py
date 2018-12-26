@@ -3,7 +3,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-import io
 from argparse import ArgumentParser
 import shlex
 import sys
@@ -26,8 +25,7 @@ class MainTest(TestCase):
         '/cur/defines.psc': Output('$one,$two,$three,$a.b'),
         '/cur/error.psc': '$invalid',
     })
-    self.fs.stdout = io.StringIO()
-    self.fs.stderr = io.StringIO()
+    self.fs.InitializeForWrites()
 
   def GetStdFile(self, name):
     return getattr(self.fs, 'std' + name).getvalue().strip()
@@ -92,6 +90,7 @@ class MainTest(TestCase):
 
   def testCustomOutput(self):
     self.Execute('input.psc --output /custom')
+    self.assertEqual(self.fs.created_dirs, set(['/custom']))
     self.assertEqual(self.GetStdFile('out'),
                      'Writing: /custom/output.txt')
     self.assertEqual(self.GetStdFile('err'), '')

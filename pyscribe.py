@@ -66,6 +66,7 @@ class Main:
                         help='output format')
     parser.add_argument('-o', '--output', metavar='DIR',
                         dest='output_dir',
+                        default=self.__fs.join(self.__current_dir, 'output'),
                         help='output directory')
     parser.add_argument('-q', '--quiet',
                         dest='info_file',
@@ -77,8 +78,7 @@ class Main:
     args = parser.parse_args(self.__input_args)
 
     # Output directory
-    if not args.output_dir:
-      args.output_dir = self.__fs.join(self.__current_dir, 'output')
+    self.__fs.makedirs(args.output_dir, exist_ok=True)
 
     # Logger
     self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.logger_format],
