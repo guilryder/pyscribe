@@ -1,7 +1,7 @@
 $$whitespace.skip
 
-$macro.new[file.output2source(path)][../$path]
-$macro.new[file.output2core(path)][$file.source2core[$file.output2source[$path]]]
+$macro.new[file.output2source(path)][$dir.source.rel.output/$path]
+$macro.new[file.output2core(path)][$dir.lib.rel.output/$path]
 
 $macro.new[format.init.xhtml][$macro.new[format.select(if.xhtml,if.latex)][$if.xhtml]]
 $macro.new[format.init.latex][$macro.new[format.select(if.xhtml,if.latex)][$if.latex]]

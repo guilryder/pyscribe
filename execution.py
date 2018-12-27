@@ -293,6 +293,7 @@ class FileSystem:
   makedirs = staticmethod(os.makedirs)
   normpath = staticmethod(os.path.normpath)
   open = staticmethod(io.open)
+  relpath = staticmethod(os.path.relpath)
   splitext = staticmethod(os.path.splitext)
 
 

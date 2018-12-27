@@ -7,24 +7,26 @@ from argparse import ArgumentParser
 import shlex
 import sys
 
-from pyscribe import Main
+import pyscribe
 from testutils import *
 
 
 class MainTest(TestCase):
 
+  @staticmethod
+  def __Output(contents):
+    return ('$branch.create.root[text][root][output.txt]' +
+            '$branch.write[root][' + contents + ']')
+
   def setUp(self):
     super(MainTest, self).setUp()
-    def Output(contents):
-      return ('$branch.create.root[text][root][output.txt]' +
-              '$branch.write[root][' + contents + ']')
 
-    self.fs = self.GetFileSystem({
-        '/cur/input.psc': Output('Hello, World!'),
-        '/cur/format.psc': Output('Format: $output.format'),
-        '/cur/defines.psc': Output('$one,$two,$three,$a.b'),
+    self.inputs = {
+        '/cur/input.psc': self.__Output('Hello, World!'),
+        '/cur/format.psc': self.__Output('Format: $output.format'),
         '/cur/error.psc': '$invalid',
-    })
+    }
+    self.fs = self.GetFileSystem(self.inputs)
     self.fs.InitializeForWrites()
 
   def GetStdFile(self, name):
@@ -51,7 +53,11 @@ class MainTest(TestCase):
         ArgumentParser.print_help(parser, self.fs.stderr, **kwargs)
 
     args = shlex.split(cmdline)
-    Main(args, self.fs, FakeArgumentParser).Run()
+    main = pyscribe.Main(args,
+                         fs=self.fs,
+                         main_file='/pyscribe/pyscribe.py',
+                         ArgumentParser=FakeArgumentParser)
+    main.Run()
 
   def testNoArguments(self):
     with self.assertRaises(SystemExit):
@@ -128,12 +134,13 @@ class MainTest(TestCase):
     self.assertOutput('Format: xhtml')
 
   def testDefines(self):
+    self.inputs['/cur/defines.psc'] = self.__Output('$one,$two,$three,$a.b')
     self.Execute('defines.psc -d one=1 -d two=2 -d three= -d two=2bis -d a.b=c')
     self.assertOutput('1,2bis,,c')
 
   def testDefinesInvalidFormat(self):
     with self.assertRaises(SystemExit):
-      self.Execute('defines.psc -d name')
+      self.Execute('input.psc -d name')
     self.assertIn('-d/--define: invalid value, expected format: ' +
                   'name=text; got: name',
                   self.GetStdFile('err'))
@@ -141,6 +148,53 @@ class MainTest(TestCase):
   def testOutputFormatOverwritesDefines(self):
     self.Execute('format.psc --format xhtml -d output.format=ignored')
     self.assertOutput('Format: xhtml')
+
+  def testConstants(self):
+    constants = {
+        'dir.lib': '/pyscribe/usage',
+        'dir.lib.rel.output': '../pyscribe/usage',
+        'dir.output': '/cur',
+        'dir.source': '/cur',
+        'dir.source.rel.output': '.',
+    }
+    self.inputs['/cur/constants.psc'] = \
+        self.__Output(', '.join('{0}=${0}'.format(name) for name in constants))
+    self.Execute('constants.psc')
+    self.assertOutput(', '.join('{}={}'.format(*constant)
+                                for constant in constants.items()))
+
+
+class ComputePathConstantsTest(TestCase):
+
+  def testAbsoluteInputPaths(self):
+    self.assertEqual(pyscribe._ComputePathConstants(
+                        fs=self.GetFileSystem({}),
+                        cur_dir='/root/current/ignored',
+                        lib_dir='/pyscribe/usage',
+                        out_dir='/root/output',
+                        input_filename='/root/input/sub/file.psc'),
+                     {
+                        'dir.lib': '/pyscribe/usage',
+                        'dir.lib.rel.output': '../../pyscribe/usage',
+                        'dir.output': '/root/output',
+                        'dir.source': '/root/input/sub',
+                        'dir.source.rel.output': '../input/sub',
+                     })
+
+  def testRelativeInputPaths(self):
+    self.assertEqual(pyscribe._ComputePathConstants(
+                        fs=self.GetFileSystem({}),
+                        cur_dir='/root/current',
+                        lib_dir='..',
+                        out_dir='output',
+                        input_filename='file.psc'),
+                     {
+                        'dir.lib': '/root',
+                        'dir.lib.rel.output': '../..',
+                        'dir.output': '/root/current/output',
+                        'dir.source': '/root/current',
+                        'dir.source.rel.output': '..',
+                     })
 
 
 if __name__ == '__main__':

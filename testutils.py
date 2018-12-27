@@ -111,6 +111,9 @@ class FakeFileSystem:
   def open(self, *args, **kwargs):
     raise NotImplementedError()  # pragma: no cover
 
+  def relpath(self, path, start):
+    return self.__unixpath(os.path.relpath(path, start))
+
   splitext = staticmethod(os.path.splitext)
 
 

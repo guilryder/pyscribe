@@ -4,6 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 import argparse
+import os
 import sys
 
 from execution import PYSCRIBE_EXT, Executor, FileSystem
@@ -12,10 +13,11 @@ import log
 
 class Main:
 
-  def __init__(self, input_args, fs=FileSystem(),
+  def __init__(self, input_args, fs=FileSystem(), main_file=sys.argv[0],
                ArgumentParser=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__fs = fs
+    self.__main_file = main_file
     self.__ArgumentParser = ArgumentParser
 
   def Run(self):
@@ -24,11 +26,9 @@ class Main:
     self.__Execute()
 
   def __LoadEnvironment(self):
-    """Retrieves the environment: current directory, etc."""
+    """Retrieves the environment: current directory."""
     # pylint: disable=attribute-defined-outside-init
-    fs = self.__fs
-    self.__lib_dir = fs.dirname(fs.normpath(__file__))
-    self.__current_dir = fs.getcwd()
+    self.__current_dir = self.__fs.getcwd()
 
   def __ParseArguments(self):
     """
@@ -86,25 +86,72 @@ class Main:
                                info_file=args.info_file)
 
     # Constants
-    self.__constants = constants = dict(args.defines)
-    constants['output.format'] = args.output_format
+    self.__constants = dict(args.defines)
+    self.__constants['output.format'] = args.output_format
 
     self.__args = args
 
   def __Execute(self):
     """Executes the action specified on the command-line."""
     args = self.__args
-    executor = Executor(args.output_dir, logger=self.__logger, fs=self.__fs)
+    fs = self.__fs
+    out_dir = args.output_dir
+    executor = Executor(out_dir, logger=self.__logger, fs=fs)
     executor.AddConstants(self.__constants)
 
     try:
+      # Resolve the input filename.
       resolved_path = executor.ResolveFilePath(args.input_filename,
                                                cur_dir=self.__current_dir,
                                                default_ext=PYSCRIBE_EXT)
+
+      # Set the constants that depend on the input filename.
+      executor.AddConstants(_ComputePathConstants(
+          fs,
+          cur_dir=self.__current_dir,
+          lib_dir=fs.join(fs.dirname(self.__main_file), 'usage'),
+          out_dir=out_dir,
+          input_filename=args.input_filename))
+
+      # Load and execute the input file.
       executor.ExecuteFile(resolved_path)
       executor.RenderBranches()
     except log.FatalError:
       sys.exit(1)
+
+
+def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
+  """
+  Returns the standard constant definitions for files and directories.
+
+  Args:
+    cur_dir: (string) The current directory, used to resolve relative paths.
+    lib_dir: (string) The path to the directory that contains core.psc.
+    out_dir: (string) The path to the output directory.
+    input_filename: (string) The path to the top-level file being executed.
+
+  Returns:
+    (name string, value string) dict
+  """
+  def MakeAbsolute(path):
+    return fs.normpath(fs.join(cur_dir, path))
+  lib_dir = MakeAbsolute(lib_dir)
+  out_dir = MakeAbsolute(out_dir)
+  source_dir = MakeAbsolute(fs.dirname(input_filename))
+
+  def MakeRelativeToOutDir(abs_path):
+    return fs.relpath(abs_path, out_dir)
+  constants = {
+      'dir.lib': lib_dir,
+      'dir.lib.rel.output': MakeRelativeToOutDir(lib_dir),
+      'dir.output': out_dir,
+      'dir.source': source_dir,
+      'dir.source.rel.output': MakeRelativeToOutDir(source_dir),
+  }
+
+  def Canonicalize(path):
+    return path.replace(os.sep, '/')
+  return {name: Canonicalize(value) for name, value in constants.items()}
 
 
 if __name__ == '__main__':
