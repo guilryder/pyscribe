@@ -141,11 +141,11 @@ class ParsingContext:
 
   def MakeFatalError(self, *args, **kwargs):
     """
-    Raises a fatal error.
+    Returns a fatal error for the current location.
 
     See Logger.LogLocation() for parameters.
     """
-    raise self.logger.LogLocation(*args, **kwargs)
+    return self.logger.LogLocation(*args, **kwargs)
 
 
 class RegexpParser:
@@ -383,7 +383,7 @@ class Lexer:
     preproc_instr_callback = \
         self.__preproc_instr_callbacks.get(preproc_instr_name)
     if preproc_instr_callback is None:
-      self.context.MakeFatalError(
+      raise self.context.MakeFatalError(
           self.__Location(),
           "unknown pre-processing instruction: '{name}'\n" +
           "known instructions: {known}",
@@ -414,9 +414,9 @@ class Lexer:
 
   def RuleMacroInvalid(self, value):
     r'\$(?:[^$]\S{,9}|\Z)'
-    self.context.MakeFatalError(self.__Location(),
-                                "invalid macro name: '{name}'",
-                                name=value)
+    raise self.context.MakeFatalError(self.__Location(),
+                                      "invalid macro name: '{name}'",
+                                      name=value)
 
   # Special characters
 
@@ -638,11 +638,11 @@ def ParseFile(reader, filename, logger):
   # Read the file entirely.
   try:
     input_text = reader.read()
-  except Exception as e:  # pylint: disable=broad-except
-    context.MakeFatalError(
+  except Exception as e:
+    raise context.MakeFatalError(
         context.MakeLocation(1),
         'unable to read the input file: {filename}\n{error}'.format(
-            filename=filename, error=e))
+            filename=filename, error=e)) from e
 
   # Parse the file contents.
   lexer = Lexer(context, input_text)

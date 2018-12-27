@@ -427,7 +427,7 @@ class Executor:
       try:
         node.Execute(self)
       except InternalError as e:
-        self.FatalError(node.location, e)
+        raise self.FatalError(node.location, e) from e
 
   def ExecuteInCallContext(self, nodes, call_context):
     """
@@ -516,14 +516,14 @@ class Executor:
     call_stack = self.__call_stack[
         :max(0, self.__call_stack_size - call_frame_skip)]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    raise self.logger.LogLocation(location, message, call_stack, **kwargs)
+    return self.logger.LogLocation(location, message, call_stack, **kwargs)
 
   def MacroFatalError(self, call_node, message, **kwargs):
     """Logs and raises a macro fatal error."""
-    self.FatalError(call_node.location, '${call_node.name}: {details}',
-                    call_node=call_node,
-                    call_frame_skip=kwargs.get('call_frame_skip', 1),
-                    details=FormatMessage(message, **kwargs))
+    return self.FatalError(call_node.location, '${call_node.name}: {details}',
+                           call_node=call_node,
+                           call_frame_skip=kwargs.get('call_frame_skip', 1),
+                           details=FormatMessage(message, **kwargs))
 
   def LookupMacro(self, name, text_compatible):
     """
@@ -562,25 +562,26 @@ class Executor:
         # because text-incompatible.
         callback = self.LookupMacro(call_node.name, text_compatible=False)
         if callback is not None:
-          self.MacroFatalError(call_node, 'text-incompatible macro call',
-                               call_frame_skip=0)
-      self.FatalError(call_node.location, 'macro not found: ${call_node.name}',
-                      call_node=call_node)
+          raise self.MacroFatalError(call_node, 'text-incompatible macro call',
+                                     call_frame_skip=0)
+      raise self.FatalError(call_node.location,
+                            'macro not found: ${call_node.name}',
+                            call_node=call_node)
 
     # Store the new call stack frame. Enforce the call stack size limit.
     call_stack_size_orig = self.__call_stack_size
     try:
       self.__call_stack[call_stack_size_orig] = (call_node, callback)
       self.__call_stack_size = call_stack_size_orig + 1
-    except IndexError:
-      self.MacroFatalError(call_node, 'too many nested macro calls',
-                           call_frame_skip=0)
+    except IndexError as e:
+      raise self.MacroFatalError(call_node, 'too many nested macro calls',
+                                 call_frame_skip=0) from e
 
     # Execute the macro.
     try:
       callback(self, call_node)
     except InternalError as e:
-      self.MacroFatalError(call_node, e)
+      raise self.MacroFatalError(call_node, e) from e
     finally:
       # Pop the call stack frame.
       self.__call_stack_size = call_stack_size_orig
@@ -620,7 +621,7 @@ class Executor:
     expected_message += '{min_args_count}'
     if min_args_count < max_args_count:
       expected_message += '..{max_args_count}'
-    self.FatalError(
+    raise self.FatalError(
         call_node.location,
         '{signature}: arguments count mismatch: ' +
             'expected ' + expected_message + ', got {actual}',

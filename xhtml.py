@@ -838,14 +838,14 @@ class Macros:
       level = TagLevel.BLOCK
       auto_para_tag = autoparablock_match.group('auto_para_tag')
       if auto_para_tag in _VOID_TAGS_TO_NONE:
-        executor.MacroFatalError(
+        raise executor.MacroFatalError(
             call_node, 'cannot use void tag as autopara: <{tag}>',
             tag=auto_para_tag)
     else:
       level = TagLevel.by_name.get(level_name)
       auto_para_tag = None
     if not level:
-      executor.MacroFatalError(
+      raise executor.MacroFatalError(
           call_node, 'unknown level: {level}; expected one of: {known}.',
           level=level_name, known=', '.join(sorted(TagLevel.by_name)))
 
@@ -899,7 +899,8 @@ class Macros:
   @staticmethod
   def __TagAttrSet(executor, call_node, target, attr_name, value):
     if not attr_name.strip():
-      executor.MacroFatalError(call_node, 'attribute name cannot be empty')
+      raise executor.MacroFatalError(call_node,
+                                     'attribute name cannot be empty')
 
     def Action(elem):
       elem.set(attr_name, value)
@@ -949,7 +950,7 @@ class Macros:
     """
     typography = TYPOGRAPHIES.get(typo_name, None)
     if not typography:
-      executor.MacroFatalError(
+      raise executor.MacroFatalError(
           call_node,
           'unknown typography name: {typo_name}; expected one of: {known}',
           typo_name=typo_name, known=', '.join(sorted(TYPOGRAPHIES)))
@@ -963,7 +964,7 @@ class Macros:
     """
     # Reject invalid values.
     if _NUMBER_REGEXP.match(number) is None:
-      executor.MacroFatalError(
+      raise executor.MacroFatalError(
           call_node, 'invalid integer: {number}', number=number)
     text = executor.current_branch.root.typography.FormatNumber(number)
     executor.AppendText(text)

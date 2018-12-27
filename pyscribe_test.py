@@ -37,7 +37,7 @@ class MainTest(TestCase):
     self.assertEqual(self.fs.GetOutputs(),
                      {'/cur/output.txt': expected_output})
 
-  def Execute(self, cmdline):
+  def Execute(self, cmdline, expect_failure=False):
     # pylint: disable=no-self-argument
     class FakeArgumentParser(ArgumentParser):
       """Option parser that prints to self.stderr."""
@@ -57,25 +57,30 @@ class MainTest(TestCase):
                          fs=self.fs,
                          main_file='/pyscribe/pyscribe.py',
                          ArgumentParser=FakeArgumentParser)
-    main.Run()
+    if expect_failure:
+      with self.assertRaises(SystemExit):
+        main.Run()
+    else:
+      try:
+        main.Run()
+      except SystemExit as e:  # pragma: no cover
+        msg = 'Unexpected error:\n{}'.format(self.GetStdFile('err'))
+        raise AssertionError(msg) from e
 
   def testNoArguments(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('')
+    self.Execute('', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
                      'error: the following arguments are required: filename')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testTwoArguments(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('first second')
+    self.Execute('first second', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
                      'error: unrecognized arguments: second')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testHelp(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('--help')
+    self.Execute('--help', expect_failure=True)
     self.assertIn('usage', self.GetStdFile('err'))
     self.assertEqual(self.fs.GetOutputs(), {})
 
@@ -111,15 +116,13 @@ class MainTest(TestCase):
                      {'/custom/output.txt': 'Hello, World!'})
 
   def testExecutionError(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('error.psc')
+    self.Execute('error.psc', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
                      '/cur/error.psc:1: macro not found: $invalid')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testCustomErrorFormat(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('error.psc --error_format python')
+    self.Execute('error.psc --error_format python', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
                      'File "/cur/error.psc", line 1\n' +
                      '    macro not found: $invalid')
@@ -139,8 +142,7 @@ class MainTest(TestCase):
     self.assertOutput('1,2bis,,c')
 
   def testDefinesInvalidFormat(self):
-    with self.assertRaises(SystemExit):
-      self.Execute('input.psc -d name')
+    self.Execute('input.psc -d name', expect_failure=True)
     self.assertIn('-d/--define: invalid value, expected format: ' +
                   'name=text; got: name',
                   self.GetStdFile('err'))

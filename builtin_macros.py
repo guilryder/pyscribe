@@ -100,10 +100,10 @@ def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
     resolved_path_handler(resolved_path)
   except IOError as e:
     raise InternalError('unable to include "{path}": {reason}',
-                       path=path, reason=e.strerror)
+                       path=path, reason=e.strerror) from e
   except InternalError as e:
     raise InternalError('unable to include "{path}": {reason}',
-                        path=path, reason=e)
+                        path=path, reason=e) from e
 
 
 __SIGNATURE_REGEX = re.compile(
@@ -453,8 +453,8 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
 def ParseArabic(number):
   try:
     return int(number)
-  except ValueError:
-    raise InternalError('invalid Arabic number: {number}', number=number)
+  except ValueError as e:
+    raise InternalError('invalid Arabic number: {number}', number=number) from e
 
 
 @macro(public_name='case.lower', args_signature='text', text_compatible=True)
@@ -578,8 +578,8 @@ def CounterCreate(executor, unused_call_node, counter_name):
     nonlocal counter_value
     try:
       counter_value = int(value)
-    except ValueError:
-      raise InternalError('invalid integer value: {value}', value=value)
+    except ValueError as e:
+      raise InternalError('invalid integer value: {value}', value=value) from e
 
   @macro()
   def IncrCallback(unused_executor, unused_call_node):
