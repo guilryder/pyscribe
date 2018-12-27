@@ -4,7 +4,6 @@
 __author__ = 'Guillaume Ryder'
 
 import argparse
-import os
 import sys
 
 from execution import PYSCRIBE_EXT, Executor, FileSystem
@@ -133,11 +132,9 @@ def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
   Returns:
     (name string, value string) dict
   """
-  def MakeAbsolute(path):
-    return fs.normpath(fs.join(cur_dir, path))
-  lib_dir = MakeAbsolute(lib_dir)
-  out_dir = MakeAbsolute(out_dir)
-  source_dir = MakeAbsolute(fs.dirname(input_filename))
+  lib_dir = fs.MakeAbsolute(cur_dir, lib_dir)
+  out_dir = fs.MakeAbsolute(cur_dir, out_dir)
+  source_dir = fs.MakeAbsolute(cur_dir, fs.dirname(input_filename))
 
   def MakeRelativeToOutDir(abs_path):
     return fs.relpath(abs_path, out_dir)
@@ -149,9 +146,7 @@ def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
       'dir.source.rel.output': MakeRelativeToOutDir(source_dir),
   }
 
-  def Canonicalize(path):
-    return path.replace(os.sep, '/')
-  return {name: Canonicalize(value) for name, value in constants.items()}
+  return {name: fs.MakeUnix(value) for name, value in constants.items()}
 
 
 if __name__ == '__main__':

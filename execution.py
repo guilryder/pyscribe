@@ -283,7 +283,27 @@ class TextBranch(Branch):
         output._Render(writer)
 
 
-class FileSystem:
+class AbstractFileSystem:  # pylint: disable=no-member
+
+  @staticmethod
+  def MakeUnix(path):
+    """Converts an OS path to Unix format: '/' as separator."""
+    return path.replace(os.sep, '/')
+
+  @classmethod
+  def MakeAbsolute(cls, cur_dir, path):
+    """
+    Makes a path absolute and normalized.
+
+    Args:
+      cur_dir: (string) The path to the current directory, used if the path is
+        relative.
+      path: (string) The path to make absolute.
+    """
+    return cls.normpath(cls.join(cur_dir, path))
+
+
+class FileSystem(AbstractFileSystem):
   stdout = sys.stdout
   stderr = sys.stderr
   dirname = staticmethod(os.path.dirname)
@@ -361,7 +381,7 @@ class Executor:
         directory. Cannot be absolute.
     """
     fs = self.fs
-    abs_filename = fs.normpath(fs.join(self.__output_dir, filename))
+    abs_filename = fs.MakeAbsolute(self.__output_dir, filename)
     if not abs_filename.startswith(fs.join(self.__output_dir, '')):
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
@@ -382,7 +402,7 @@ class Executor:
           none and it refers to a non-existing file.
     """
     fs = self.fs
-    path = fs.normpath(fs.join(cur_dir, path))
+    path = fs.MakeAbsolute(cur_dir, path)
     if default_ext is not None \
         and not fs.splitext(path)[1] and not fs.lexists(path):
       path += default_ext

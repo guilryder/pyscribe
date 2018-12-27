@@ -5,6 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import imp
 
+from execution import Executor
 from macros import *
 from parsing import CallNode
 from testutils import *

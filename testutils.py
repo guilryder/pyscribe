@@ -9,7 +9,7 @@ import io
 import os
 import unittest
 
-from execution import Executor
+import execution
 from log import FatalError, Filename, InternalError, Location, Logger
 from macros import macro, GetPublicMacros
 
@@ -72,30 +72,30 @@ class FakeLogger(Logger):
     self.info_messages.append(message)
 
 
-class FakeFileSystem:
+class FakeFileSystem(execution.AbstractFileSystem):
 
-  stdout = None
-  stderr = None
-  created_dirs = None
-
-  __cwd = '/cur'
+  def __init__(self):
+    super(FakeFileSystem, self).__init__()
+    self.stdout = None
+    self.stderr = None
+    self.__cwd = '/cur'
+    self.created_dirs = None
 
   def InitializeForWrites(self):
     self.stdout = io.StringIO()
     self.stderr = io.StringIO()
     self.created_dirs = set()
 
-  def __unixpath(self, path):
-    return path.replace(os.sep, '/')
-
-  def dirname(self, path):
-    return self.__unixpath(os.path.dirname(path))
+  @classmethod
+  def dirname(cls, path):
+    return cls.MakeUnix(os.path.dirname(path))
 
   def getcwd(self):
     return self.__cwd
 
-  def join(self, path1, *paths):
-    return self.__unixpath(os.path.join(path1, *paths))
+  @classmethod
+  def join(cls, path1, *paths):
+    return cls.MakeUnix(os.path.join(path1, *paths))
 
   def lexists(self, path):
     raise NotImplementedError()  # pragma: no cover
@@ -105,14 +105,16 @@ class FakeFileSystem:
       raise NotImplementedError()  # pragma: no cover
     self.created_dirs.add(path)
 
-  def normpath(self, path):
-    return self.__unixpath(os.path.normpath(path))
+  @classmethod
+  def normpath(cls, path):
+    return cls.MakeUnix(os.path.normpath(path))
 
   def open(self, *args, **kwargs):
     raise NotImplementedError()  # pragma: no cover
 
-  def relpath(self, path, start):
-    return self.__unixpath(os.path.relpath(path, start))
+  @classmethod
+  def relpath(cls, path, start):
+    return cls.MakeUnix(os.path.relpath(path, start))
 
   splitext = staticmethod(os.path.splitext)
 
@@ -169,7 +171,7 @@ class TestCase(unittest.TestCase):
         super(TestFileSystem, fs).__init__()
         fs.__output_writers = {}
 
-      def lexists(self, path):
+      def lexists(fs, path):
         return path in inputs
 
       def open(fs, filename, mode='rt', **kwargs):  # pylint: disable=inconsistent-return-statements
@@ -282,7 +284,7 @@ class ExecutionTestCase(TestCase):
     fs = self.GetFileSystem(inputs)
 
     logger = FakeLogger()
-    executor = Executor(output_dir='/output', logger=logger, fs=fs)
+    executor = execution.Executor(output_dir='/output', logger=logger, fs=fs)
     executor.system_branch.writer = \
         fs.open(executor.system_branch.name, 'wt', encoding='utf-8')
     output_branch = self.GetExecutionBranch(executor)
