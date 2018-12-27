@@ -66,7 +66,7 @@ class Main:
                         help='output format')
     parser.add_argument('-o', '--output', metavar='DIR',
                         dest='output_dir',
-                        default=self.__fs.join(self.__current_dir, 'output'),
+                        default=self.__current_dir,
                         help='output directory')
     parser.add_argument('-q', '--quiet',
                         dest='info_file',

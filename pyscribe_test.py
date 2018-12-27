@@ -33,7 +33,7 @@ class MainTest(TestCase):
   def assertOutput(self, expected_output):
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
-                     {'/cur/output/output.txt': expected_output})
+                     {'/cur/output.txt': expected_output})
 
   def Execute(self, cmdline):
     # pylint: disable=no-self-argument
@@ -77,7 +77,7 @@ class MainTest(TestCase):
     self.Execute('input.psc')
     self.assertOutput('Hello, World!')
     self.assertEqual(self.GetStdFile('out'),
-                     'Writing: /cur/output/output.txt')
+                     'Writing: /cur/output.txt')
 
   def testSimple_autoExtension(self):
     self.Execute('input')

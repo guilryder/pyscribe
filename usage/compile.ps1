@@ -15,6 +15,7 @@ begin {
   $usageDir = Split-Path (Resolve-Path $MyInvocation.MyCommand.Path)
   $pyscribeDir = Split-Path ($usageDir)
   $pyscribeScript = Join-Path "$pyscribeDir" "pyscribe.py"
+  $outDir = "output"
 
   # Allow using core.cls; relative paths generate warnings.
   $env:TEXINPUTS="$usageDir;"
@@ -57,10 +58,10 @@ process {
     echo "### Processing ${filename} - format: $Format - size: $Size"
     if ($PyScribe) {
       echo "Compiling PyScribe source..."
-      & $pyscribeScript --format=$Format -d device.size=$Size "$filename"
+      & $pyscribeScript --output=$outDir --format=$Format -d device.size=$Size "$filename"
     }
 
-    Push-Location "output"
+    Push-Location $outDir
     switch ($Format) {
       "xhtml" {
         if ($PyScribe -and $View) {
