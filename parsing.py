@@ -620,6 +620,8 @@ def ParseFile(reader, filename, logger):
   """
   Parses a file into a list of nodes.
 
+  Does not close the file.
+
   Args:
     filename: (Filename) The file to parse.
     logger: (Logger) The logger to use to report errors.
@@ -636,7 +638,6 @@ def ParseFile(reader, filename, logger):
   # Read the file entirely.
   try:
     input_text = reader.read()
-    reader.close()
   except Exception as e:  # pylint: disable=broad-except
     context.MakeFatalError(
         context.MakeLocation(1),

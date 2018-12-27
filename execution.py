@@ -387,17 +387,17 @@ class Executor:
     if not fs.splitext(path)[1] and not fs.lexists(path):
       path += DEFAULT_EXT
     filename = Filename(path, fs.dirname(path))
-    reader = fs.open(path, encoding=ENCODING)
 
-    if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
-      raise InternalError('too many nested includes')
+    with fs.open(path, encoding=ENCODING) as reader:
+      if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
+        raise InternalError('too many nested includes')
 
-    self.__include_stack.append(filename)
-    try:
-      nodes = ParseFile(reader, filename, logger=self.logger)
-      self.ExecuteNodes(nodes)
-    finally:
-      self.__include_stack.pop()
+      self.__include_stack.append(filename)
+      try:
+        nodes = ParseFile(reader, filename, logger=self.logger)
+        self.ExecuteNodes(nodes)
+      finally:
+        self.__include_stack.pop()
 
   def RenderBranches(self):
     """Renders all root branches with an output file."""
