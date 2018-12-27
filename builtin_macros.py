@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import re
 
-from execution import PYSCRIBE_EXT, ExecutionContext, TextBranch
+from execution import ENCODING, PYSCRIBE_EXT, ExecutionContext, TextBranch
 from log import InternalError
 from macros import *
 from parsing import CallNode, TextNode
@@ -73,12 +73,31 @@ def Include(executor, call_node, path):
       Automatically appends the '.psc' extension to the file name if the given
       file name has no extension.
   """
+  _IncludeFile(executor.ExecuteFile,
+               executor, call_node, path, default_ext=PYSCRIBE_EXT)
+
+
+@macro(public_name='include.text', args_signature='path', text_compatible=True)
+def IncludeText(executor, call_node, path):
+  """
+  Includes the given UTF-8 text file.
+
+  Args:
+    path: The path of the file, relative to the current file, with extension.
+  """
+  def Run(resolved_path):
+    with executor.fs.open(resolved_path, encoding=ENCODING) as reader:
+      executor.AppendText(reader.read())
+  _IncludeFile(Run, executor, call_node, path, default_ext=None)
+
+
+def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
   try:
     cur_dir = call_node.location.filename.dir_path
     resolved_path = executor.ResolveFilePath(path,
                                              cur_dir=cur_dir,
-                                             default_ext=PYSCRIBE_EXT)
-    executor.ExecuteFile(resolved_path)
+                                             default_ext=default_ext)
+    resolved_path_handler(resolved_path)
   except IOError as e:
     raise InternalError('unable to include "{path}": {reason}',
                        path=path, reason=e.strerror)

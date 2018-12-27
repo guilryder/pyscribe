@@ -134,6 +134,55 @@ class IncludeTest(ExecutionTestCase):
                  ['  /root:1: $include'] * 24)
 
 
+class IncludeTextTest(ExecutionTestCase):
+
+  def testBasic(self):
+    self.assertExecution(
+        {
+            '/root': 'roota $include.text[hello.txt] rootb',
+            '/hello.txt': 'Hello, World!',
+        },
+        'roota Hello, World! rootb')
+
+  def testDoesNotInterpretSpecialCharacters(self):
+    included = '\n'.join((
+        '$$invalid',
+        '$foo',
+        '^',
+        TEST_UNICODE,
+        SPECIAL_CHARS,
+    ))
+    self.assertExecution(
+        {
+            '/root': 'roota $include.text[hello.txt] rootb',
+            '/hello.txt': included,
+        },
+        'roota {} rootb'.format(included))
+
+  def testFileNotFound(self):
+    self.assertExecution(
+        '$include.text[404.txt]',
+        messages=['/root:1: $include.text: unable to include "404.txt": ' +
+                  'file not found: /404.txt'])
+
+  def testNoAutoExtension(self):
+    self.assertExecution(
+        {
+            '/root': '$include.text[hello]',
+            '/hello.txt': 'Hello, World!',
+        },
+        messages=['/root:1: $include.text: unable to include "hello": ' +
+                  'file not found: /hello'])
+
+  def testTextCompatible(self):
+    self.assertExecution(
+        {
+            '/root': '$eval.text[$include.text[hello.txt]]',
+            '/hello.txt': 'Hello, World!',
+        },
+        'Hello, World!')
+
+
 class MacroNewTest(ExecutionTestCase):
 
   def testNoArgs(self):

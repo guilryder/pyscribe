@@ -306,6 +306,20 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
             '<wbr/>',
         ))
 
+  def testIncludeText(self):
+    included = '\n'.join((
+        '$$invalid',
+        '$foo',
+        '^',
+        TEST_UNICODE,
+    ))
+    self.assertExecution(
+        {
+            '/root': 'roota $include.text[hello.txt] rootb',
+            '/hello.txt': included + SPECIAL_CHARS,
+        },
+        '<p>roota {} rootb</p>'.format(included + SPECIAL_CHARS_AS_HTML))
+
 
 class StructureExecutionTest(XhtmlExecutionTestCase):
 

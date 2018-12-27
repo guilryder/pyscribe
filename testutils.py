@@ -36,6 +36,10 @@ SPECIAL_CHARS = ' '.join((
     "n ! o: p ; q?",
     "r!:;?",
 ))
+SPECIAL_CHARS_AS_HTML = (
+    SPECIAL_CHARS.replace('&', '&amp;')
+                 .replace('<', '&lt;')
+                 .replace('>', '&gt;'))
 
 
 class FakeLogger(Logger):
