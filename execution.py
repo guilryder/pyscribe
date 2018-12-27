@@ -13,7 +13,7 @@ from parsing import ParseFile
 
 
 ENCODING = 'utf-8'
-DEFAULT_EXT = '.psc'
+PYSCRIBE_EXT = '.psc'
 
 MAX_NESTED_CALLS = 100
 MAX_NESTED_INCLUDES = 25
@@ -369,22 +369,34 @@ class Executor:
         'Writing: {filename}'.format(filename=abs_filename))
     return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
 
-  def ExecuteFile(self, path, cur_dir):
+  def ResolveFilePath(self, path, cur_dir, default_ext=None):
     """
-    Executes the given input file.
+    Normalizes a user-entered, possibly relative file path.
 
     Args:
-      path: (string) The path of the file to execute.
-      cur_dir: (string|None) The full path of the current directory.
-        Used if filename is relative.
+        path: (string) The path to resolve.
+        cur_dir: (string|None) The full path of the current directory.
+          Used if filename is relative.
+        default_ext: (string|None) The extension to append to the path if it has
+          none and it refers to a non-existing file.
     """
     fs = self.fs
     path = fs.normpath(fs.join(cur_dir, path))
-    if not fs.splitext(path)[1] and not fs.lexists(path):
-      path += DEFAULT_EXT
-    filename = Filename(path, fs.dirname(path))
+    if default_ext is not None \
+        and not fs.splitext(path)[1] and not fs.lexists(path):
+      path += default_ext
+    return path
 
-    with fs.open(path, encoding=ENCODING) as reader:
+  def ExecuteFile(self, path):
+    """
+    Executes the given PyScribe file.
+
+    Args:
+      path: (string) The path of the file to execute.
+        Should be returned by ResolveFilePath.
+    """
+    filename = Filename(path, self.fs.dirname(path))
+    with self.fs.open(path, encoding=ENCODING) as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
         raise InternalError('too many nested includes')
 

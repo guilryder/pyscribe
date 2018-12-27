@@ -291,7 +291,7 @@ class ExecutionTestCase(TestCase):
 
     # Execute the input, render the output branches.
     try:
-      executor.ExecuteFile('/root', cur_dir='/cur')
+      executor.ExecuteFile('/root')
       actual_fatal_error = False
     except FatalError:
       actual_fatal_error = True

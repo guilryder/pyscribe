@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import re
 
-from execution import ExecutionContext, TextBranch
+from execution import PYSCRIBE_EXT, ExecutionContext, TextBranch
 from log import InternalError
 from macros import *
 from parsing import CallNode, TextNode
@@ -66,7 +66,7 @@ def Log(executor, unused_call_node, message):
 @macro(public_name='include', args_signature='path')
 def Include(executor, call_node, path):
   """
-  Includes the given file.
+  Includes and executes the given PyScribe file.
 
   Args:
     path: The path of the file, relative to the current file.
@@ -74,7 +74,11 @@ def Include(executor, call_node, path):
       file name has no extension.
   """
   try:
-    executor.ExecuteFile(path, cur_dir=call_node.location.filename.dir_path)
+    cur_dir = call_node.location.filename.dir_path
+    resolved_path = executor.ResolveFilePath(path,
+                                             cur_dir=cur_dir,
+                                             default_ext=PYSCRIBE_EXT)
+    executor.ExecuteFile(resolved_path)
   except IOError as e:
     raise InternalError('unable to include "{path}": {reason}',
                        path=path, reason=e.strerror)

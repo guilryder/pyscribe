@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 import argparse
 import sys
 
-from execution import Executor, FileSystem
+from execution import PYSCRIBE_EXT, Executor, FileSystem
 import log
 
 
@@ -98,7 +98,10 @@ class Main:
     executor.AddConstants(self.__constants)
 
     try:
-      executor.ExecuteFile(args.input_filename, self.__current_dir)
+      resolved_path = executor.ResolveFilePath(args.input_filename,
+                                               cur_dir=self.__current_dir,
+                                               default_ext=PYSCRIBE_EXT)
+      executor.ExecuteFile(resolved_path)
       executor.RenderBranches()
     except log.FatalError:
       sys.exit(1)
