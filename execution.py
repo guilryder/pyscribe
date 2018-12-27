@@ -244,8 +244,6 @@ class TextBranch(Branch):
   Branch for plain-text.
 
   Fields:
-    text_hook: (string -> string function) The hook applied to all text passed
-      to AppendText(); defaults to the identity function (no transformation).
     __outputs: (string|Branch list) The text nodes and sub-branches of branch.
     __text_accu: (StringIO) The current text accumulator of the branch.
       Used to merge consecutive text nodes created by AppendText.
@@ -255,12 +253,10 @@ class TextBranch(Branch):
 
   def __init__(self, *args, **kwargs):
     super(TextBranch, self).__init__(*args, **kwargs)
-    self.text_hook = lambda text: text
     self.__outputs = []
     self.__text_accu = io.StringIO()
 
   def AppendText(self, text):
-    text = self.text_hook(text)
     self.__text_accu.write(text)
 
   def __FlushText(self):
