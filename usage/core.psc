@@ -67,6 +67,7 @@ $macro.new[language.name.fr][french]
 $macro.new[language.name.en][english]
 
 # Various
+$macro.new[text.backslash][$format.select[^\][\textbackslash{}]]
 $macro.new[text.colon][$format.select[^:][\string^:]]
 
 $macro.new[linebreak.small][$formatsize.select[][$\][]]
@@ -96,7 +97,7 @@ $macro.new[fmt.macro.new(macro.name,xhtml.macro,xhtml.arg,latex.macro,latex.arg)
 $fmt.macro.new[fmt.bold][fmt.tag][b][fmt.latex][\textbf]
 $fmt.macro.new[fmt.italic][fmt.tag][i][fmt.latex][\textit]
 $fmt.macro.new[fmt.sansserif][fmt.css][sansserif][fmt.latex][\textsf]
-$fmt.macro.new[fmt.script][fmt.css][script][fmt.latex][\scripttext]
+$fmt.macro.new[fmt.script][fmt.css][script][fmt.latex][\scripttext]  # undefined in Latex
 $fmt.macro.new[fmt.smallcaps][fmt.css][smallcaps][fmt.latex][\textsc]
 $fmt.macro.new[fmt.strikeout][fmt.tag][s][fmt.latex][\sout]
 $fmt.macro.new[fmt.subscript][fmt.tag][sub][fmt.latex][\textsubscript]
@@ -316,11 +317,6 @@ $macro.new[root.open.xhtml][
     ]
   ]
 
-  # Vertical spacing
-  $macro.new[bigskip][$tag.class.add[previous][bigskip]]
-  $macro.new[medskip][$tag.class.add[previous][medskip]]
-  $macro.new[smallskip][$tag.class.add[previous][smallskip]]
-
   # Text formatting
   $macro.new[fmt.tag(tag.name,contents)][
     $tag[$tag.name][inline][$contents]
@@ -332,9 +328,6 @@ $macro.new[root.open.xhtml][
     ]
   ]
   $macro.new[number(number)][$typo.number[$number]]
-
-  # Escaping
-  $macro.new[code.nopipe(contents)][$fmt.typewriter[$contents]]
 
   # Paragraph formatting
   $macro.new[para.css.custom(level,css.class,contents)][
@@ -352,6 +345,11 @@ $macro.new[root.open.xhtml][
   $macro.new[para.noindent][$tag.class.add[para][noindent]]
   $macro.new[para.nospace.before][$tag.class.add[para][nospace-before]]
   $macro.new[para.nospace.after][$tag.class.add[para][nospace-after]]
+
+  # Vertical spacing
+  $macro.new[bigskip][$tag.class.add[previous][bigskip]]
+  $macro.new[medskip][$tag.class.add[previous][medskip]]
+  $macro.new[smallskip][$tag.class.add[previous][smallskip]]
 
   # Lists
   $macro.new[list.itemize(contents)][$tag[ul][block][$contents]]
@@ -436,17 +434,14 @@ $macro.new[root.open.xhtml][
   $footnotes.reset
 
   # Various
+
   $macro.new[\][$tag.empty[br][inline]]
   $macro.new[line.break][$\]
+
   $macro.new[page.new][$tag.class.add[previous][page-after]]
   $macro.new[page.before.avoid][$tag.class.add[previous][page-after-avoid]]
-  $macro.new[separator][
-    $tag[div][block][
-      $tag.class.add[nonauto][separator]
-      *~~~*~~~*
-    ]
-  ]
   $macro.new[page.same(content)][$para.css[page-same][$content]]
+
   $macro.new[image(alt.text,image.file.noext,ext.html,css.class,width.latex)][
     $tag[img][inline][
       $tag.attr.set[current][alt][$alt.text]
@@ -454,6 +449,8 @@ $macro.new[root.open.xhtml][
       $tag.class.add[current][$css.class]
     ]
   ]
+
+  $macro.new[code.nopipe(contents)][$fmt.typewriter[$contents]]
 ]
 
 $macro.new[root.close.xhtml][
@@ -517,10 +514,12 @@ $macro.new[root.open.latex][
   # Headers
   $macro.new[headers.config.sectionsonly.latex][
     $macro.new[header.level1.cmdname][section]
+    $macro.new[header.level2.cmdname][subsection]
   ]
   $macro.new[headers.config.chaptersandsections.latex][
     $macro.new[header.level1.cmdname][chapter]
     $macro.new[header.level2.cmdname][section]
+    $macro.new[header.level3.cmdname][subsection]
   ]
   $macro.new[header.level.cmd(level)][
     \$macro.call[header.level$level^.cmdname]
@@ -542,11 +541,6 @@ $macro.new[root.open.latex][
   $macro.new[section.withtoc(title.toc,title.doc)][\section^[$title.toc^]{$title.doc}]
   $latex.macro.new[chapter][\chapter]
 
-  # Vertical spacing
-  $macro.new[bigskip][\bigskip]
-  $macro.new[medskip][\medskip]
-  $macro.new[smallskip][\smallskip]
-
   # Text formatting
   $macro.new[fmt.latex(cmd.name,contents)][
     $cmd.name{$contents}
@@ -565,6 +559,11 @@ $macro.new[root.open.latex][
   $macro.new[para.nospace.before][\vspace{-\parskip}]
   $macro.new[para.nospace.after][\vspace{-\parskip}]
 
+  # Vertical spacing
+  $macro.new[bigskip][\bigskip]
+  $macro.new[medskip][\medskip]
+  $macro.new[smallskip][\smallskip]
+
   # Lists
   $latex.env.new.para[list.itemize][itemize]
   $latex.env.new.para[list.enumerate][enumerate]
@@ -578,21 +577,22 @@ $macro.new[root.open.latex][
   # Footnotes
   $latex.macro.new[footnotes.add][\footnote]
 
-  # Escaping
-  $macro.new[code.nopipe(contents)][\verb|$contents|]
-
   # Various
+
   $macro.new[\][\\]
-  $macro.new[line.break][\newline]
+  $macro.new[line.break][\newline ]
+  $macro.new[par][\par ]
+
   $macro.new[page.new][\newpage]
   $macro.new[page.before.avoid][\nopagebreak^[4^]]
-  $macro.new[par][\par]
-  $macro.new[separator][\separator]
   $latex.env.new[page.same][samepage]
+
   $macro.new[image(alt.text,image.file.noext,ext.html,css.class,width.latex)][
     \ifx\pdfoutput\undefined\else$newline
     \includegraphics^[width=$width.latex^]{$image.file.noext}$newline
   ]
+
+  $macro.new[code.nopipe(contents)][\verb|$contents|]
 ]
 
 $macro.new[root.close.latex][
