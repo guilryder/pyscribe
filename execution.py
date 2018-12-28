@@ -326,9 +326,12 @@ class Executor:
   2) the branch context: self.current_branch.context
 
   Fields:
-    __output_dir: (string) The parent directory of all output files
+    __output_dir: (string) The path of the parent directory of all output files,
+      possibly relative.
     logger: (Logger) The logger used to print all error messages.
     fs: (FileSystem) The file system abstraction.
+    __writer_filenames: (string set) The full, normalized, possibly relative
+      filenames of the opened writers.
     system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (Branch list) All root branches, including the system branch.
     current_branch: (Branch) The currently selected branch.
@@ -346,6 +349,7 @@ class Executor:
     self.__output_dir = fs.normpath(output_dir)
     self.logger = logger
     self.fs = fs
+    self.__writer_filenames = set()
     self.system_branch = TextBranch(parent=None, name='system')
     self.branches = {}
     self.root_branches = []
@@ -378,17 +382,27 @@ class Executor:
 
     Args:
       filename: (string) The name of the output file, relative to the output
-        directory. Cannot be absolute.
+        directory. If absolute, must be located under the output directory.
     """
     fs = self.fs
-    abs_filename = fs.MakeAbsolute(self.__output_dir, filename)
-    if not abs_filename.startswith(fs.join(self.__output_dir, '')):
+
+    # Compute and validate the full filename, with output directory prefix.
+    # full_filename is relative if __output_dir is relative.
+    full_filename = fs.MakeAbsolute(self.__output_dir, filename)
+    if not full_filename.startswith(fs.join(self.__output_dir, '')):
       raise InternalError("invalid output file name: '{filename}'; " +
                           "must be below the output directory",
                           filename=filename)
+    if full_filename in self.__writer_filenames:
+      raise InternalError("output file already opened: {filename}",
+                          filename=full_filename)
     self.logger.LogInfo(
-        'Writing: {filename}'.format(filename=abs_filename))
-    return fs.open(abs_filename, mode='wt', encoding=ENCODING, newline=None)
+        'Writing: {filename}'.format(filename=full_filename))
+
+    # Create the writer.
+    writer = fs.open(full_filename, mode='wt', encoding=ENCODING, newline=None)
+    self.__writer_filenames.add(full_filename)
+    return writer
 
   def ResolveFilePath(self, path, cur_dir, default_ext=None):
     """
@@ -429,7 +443,11 @@ class Executor:
         self.__include_stack.pop()
 
   def RenderBranches(self):
-    """Renders all root branches with an output file."""
+    """Renders all root branches with an output file.
+
+    Do not close the writers: tests need to be able to call StringIO.getvalue(),
+    and production closes the files automatically.
+    """
     for branch in self.root_branches:
       branch.Render()
 

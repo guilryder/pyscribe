@@ -276,6 +276,24 @@ class ExecutorEndToEndTest(ExecutionTestCase):
                   '  /root:2: $eval.text',
                   '  /root:1: $identity'])
 
+  def testOutputFileOpenedTwice_sameInputPath(self):
+    self.assertExecution(
+        (
+            '$branch.create.root[latex][new][foo]',
+            '$branch.create.root[latex][new][foo]',
+        ),
+        messages=['/root:2: $branch.create.root: output file already opened: '
+                  '/output/foo'])
+
+  def testOutputFileOpenedTwice_differentInputPaths(self):
+    self.assertExecution(
+        (
+            '$branch.create.root[latex][new][foo]',
+            '$branch.create.root[latex][new][/output/foo]',
+        ),
+        messages=['/root:2: $branch.create.root: output file already opened: '
+                  '/output/foo'])
+
   def testLatex(self):
     self.assertExecution(
         (

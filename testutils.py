@@ -177,6 +177,7 @@ class TestCase(unittest.TestCase):
       def open(fs, filename, mode='rt', **kwargs):  # pylint: disable=inconsistent-return-statements
         # pylint: disable=arguments-differ
         assert kwargs.pop('encoding', None) == 'utf-8'
+        filename = fs.MakeAbsolute(fs.getcwd(), filename)
         if mode == 'rt':
           # Open an input file.
           if filename in inputs:
@@ -220,9 +221,17 @@ class ExecutionTestCase(TestCase):
     super(ExecutionTestCase, self).setUp()
     self.additional_builtin_macros = GetPublicMacros(self)
 
+  @staticmethod
+  def GetBranchFilename(branch_name):
+    if branch_name == 'system':
+      return '/system'
+    else:
+      return '/output/' + branch_name
+
   def CreateBranch(self, executor, branch_class, **kwargs):
-    kwargs.setdefault('name', 'root')
-    writer = executor.fs.open(kwargs['name'], mode='wt', encoding='utf-8')
+    name = kwargs.setdefault('name', 'root')
+    writer = executor.fs.open(self.GetBranchFilename(name),
+                              mode='wt', encoding='utf-8')
     branch = branch_class(
         parent=None, parent_context=executor.system_branch.context,
         writer=writer, **kwargs)
@@ -285,18 +294,22 @@ class ExecutionTestCase(TestCase):
 
     logger = FakeLogger()
     executor = execution.Executor(output_dir='/output', logger=logger, fs=fs)
-    executor.system_branch.writer = \
-        fs.open(executor.system_branch.name, 'wt', encoding='utf-8')
+    executor.system_branch.writer = fs.open(
+        self.GetBranchFilename(executor.system_branch.name), 'wt',
+        encoding='utf-8')
     output_branch = self.GetExecutionBranch(executor)
     executor.current_branch = output_branch
     output_branch.context.AddMacros(self.additional_builtin_macros)
 
     # Create the expected output dictionary.
     if not isinstance(expected_outputs, collections.Mapping):
-      expected_outputs = {output_branch.name: expected_outputs}
+      expected_outputs = {
+          self.GetBranchFilename(output_branch.name): expected_outputs,
+      }
     expected_outputs = {
         branch_name: self.PrepareInputOutput(text_or_iter, separator='\n')
-        for branch_name, text_or_iter in expected_outputs.items()}
+        for branch_name, text_or_iter in expected_outputs.items()
+    }
 
     # Execute the input, render the output branches.
     try:

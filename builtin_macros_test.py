@@ -873,8 +873,10 @@ class MacroContextNewTest(ExecutionTestCase):
             '$branch.write[other][^ AFTER $parent]',
             ' AFTER $parent',
         ),
-        dict(system='BEFORE INSIDE modified AFTER original',
-             other='BEFORE original INSIDE original AFTER original'))
+        {
+            '/system': 'BEFORE INSIDE modified AFTER original',
+            '/output/other': 'BEFORE original INSIDE original AFTER original',
+        })
 
 
 class BranchWriteTest(ExecutionTestCase):
@@ -886,12 +888,12 @@ class BranchWriteTest(ExecutionTestCase):
   def testCurrentBranch(self):
     self.assertExecution(
         '$branch.write[system][contents]',
-        dict(system='contents', other=''))
+        {'/system': 'contents', '/output/other': ''})
 
   def testDifferentBranch(self):
     self.assertExecution(
         '$branch.write[other][contents]',
-        dict(system='', other='contents'))
+        {'/system': '', '/output/other': 'contents'})
 
   def testBranchNotFound(self):
     self.assertExecution(
@@ -907,7 +909,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$branch.create.root[text][new][out]\n',
             '$branch.write[new][one\n\ntwo]\n',
         ),
-        {'system': '\n', '/output/out': 'one\n\ntwo'})
+        {'/system': '\n', '/output/out': 'one\n\ntwo'})
 
   def testRoot_unknownType(self):
     self.assertExecution(
@@ -938,7 +940,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$branch.create.root[text][new][../output/below]\n',
             '$branch.write[new][test]\n',
         ),
-        {'system': '\n', '/output/below': 'test'})
+        {'/system': '\n', '/output/below': 'test'})
 
   def testRoot_nameRef(self):
     self.assertExecution(
@@ -947,7 +949,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$branch.write[$new][inside]',
             '$new',
         ),
-        {'system': 'auto1', '/output/out': 'inside'})
+        {'/system': 'auto1', '/output/out': 'inside'})
 
   def testRoot_inheritsCurrentBranch(self):
     self.assertExecution(
@@ -957,7 +959,7 @@ class BranchCreateTest(ExecutionTestCase):
             '$macro.new[second][two]',
             '$branch.write[new][$first $second]',
         ),
-        {'system': '', '/output/new': 'one two'})
+        {'/system': '', '/output/new': 'one two'})
 
   def testRoot_doesNotInheritsOtherBranches(self):
     self.assertExecution(
