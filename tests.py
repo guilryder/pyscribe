@@ -52,6 +52,8 @@ class TestsManager:
         help="show coverage results in the default Internet browser")
     AddAction(self.Lint, 'lint', '-l',
         help="run the linter against all source files")
+    AddAction(self.RegenerateGoldens, 'golden', '-g',
+        help="regenerate the golden outputs")
     args = parser.parse_args()
 
     default_actions = [self.RunTestsAndReportCoverage]
@@ -101,6 +103,17 @@ class TestsManager:
     os.system('{python} -m pylint --output-format=parseable {files}'.format(
         python=sys.executable,
         files=' '.join(map(shlex.quote, self.__python_files))))
+
+  def RegenerateGoldens(self):
+    """Regenerates the golden output files under testdata/."""
+    print('Switching to: {}'.format(os.getcwd()))
+    os.chdir('testdata')
+    import pyscribe_test
+    for cmdline in pyscribe_test.GOLDEN_TEST_DEFINITIONS:
+      full_cmdline = '{python} ../pyscribe.py {cmdline}'.format(
+          python=sys.executable, cmdline=cmdline)
+      print('Executing: {}'.format(full_cmdline), flush=True)
+      os.system(full_cmdline)
 
 
 if __name__ == '__main__':

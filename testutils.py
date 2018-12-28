@@ -41,6 +41,9 @@ SPECIAL_CHARS_AS_HTML = (
                  .replace('<', '&lt;')
                  .replace('>', '&gt;'))
 
+FAKE_PYSCRIBE_DIR = '/pyscribe/'
+REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')
+
 
 class FakeLogger(Logger):
 
@@ -78,7 +81,7 @@ class FakeFileSystem(execution.AbstractFileSystem):
     super(FakeFileSystem, self).__init__()
     self.stdout = None
     self.stderr = None
-    self.__cwd = '/cur'
+    self.cwd = '/cur'
     self.created_dirs = None
 
   def InitializeForWrites(self):
@@ -91,7 +94,7 @@ class FakeFileSystem(execution.AbstractFileSystem):
     return cls.MakeUnix(os.path.dirname(path))
 
   def getcwd(self):
-    return self.__cwd
+    return self.cwd
 
   @classmethod
   def join(cls, path1, *paths):
@@ -164,6 +167,14 @@ class TestCase(unittest.TestCase):
   def FakeOutputFile(self, **kwargs):
     return io.StringIO(**kwargs)
 
+  def OpenSourceFile(self, path, **kwargs):
+    kwargs.setdefault('encoding', 'utf-8')
+    assert path.startswith(FAKE_PYSCRIBE_DIR), (
+        'Source path must start with {}: {}'.format(FAKE_PYSCRIBE_DIR, path))
+    real_suffix = path[len(FAKE_PYSCRIBE_DIR):]
+    real_path = os.path.normpath(os.path.join(REAL_PYSCRIBE_DIR, real_suffix))
+    return open(real_path, **kwargs)
+
   def GetFileSystem(self, inputs):
     class TestFileSystem(FakeFileSystem):
       # pylint: disable=no-self-argument
@@ -182,6 +193,8 @@ class TestCase(unittest.TestCase):
           # Open an input file.
           if filename in inputs:
             return self.FakeInputFile(inputs[filename], **kwargs)
+          elif filename.startswith(FAKE_PYSCRIBE_DIR):
+            return self.OpenSourceFile(filename, mode=mode, **kwargs)
           else:
             raise IOError(2, 'file not found: ' + filename)
         elif mode == 'wt':

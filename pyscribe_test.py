@@ -11,31 +11,21 @@ import pyscribe
 from testutils import *
 
 
-class MainTest(TestCase):
-
-  @staticmethod
-  def __Output(contents):
-    return ('$branch.create.root[text][root][output.txt]' +
-            '$branch.write[root][' + contents + ']')
+class EndToEndTestCase(TestCase):
 
   def setUp(self):
-    super(MainTest, self).setUp()
-
-    self.inputs = {
-        '/cur/input.psc': self.__Output('Hello, World!'),
-        '/cur/format.psc': self.__Output('Format: $output.format'),
-        '/cur/error.psc': '$invalid',
-    }
+    super(EndToEndTestCase, self).setUp()
+    self.inputs = {}
     self.fs = self.GetFileSystem(self.inputs)
     self.fs.InitializeForWrites()
 
   def GetStdFile(self, name):
     return getattr(self.fs, 'std' + name).getvalue().strip()
 
-  def assertOutput(self, expected_output):
+  def assertOutput(self, expected_output, expected_filename='/cur/output.txt'):
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
-                     {'/cur/output.txt': expected_output})
+                     {expected_filename: expected_output})
 
   def Execute(self, cmdline, expect_failure=False):
     # pylint: disable=no-self-argument
@@ -55,7 +45,7 @@ class MainTest(TestCase):
     args = shlex.split(cmdline)
     main = pyscribe.Main(args,
                          fs=self.fs,
-                         main_file='/pyscribe/pyscribe.py',
+                         main_file=FAKE_PYSCRIBE_DIR + 'pyscribe.py',
                          ArgumentParser=FakeArgumentParser)
     if expect_failure:
       with self.assertRaises(SystemExit):
@@ -66,6 +56,22 @@ class MainTest(TestCase):
       except SystemExit as e:  # pragma: no cover
         msg = 'Unexpected error:\n{}'.format(self.GetStdFile('err'))
         raise AssertionError(msg) from e
+
+
+class MainTest(EndToEndTestCase):
+
+  @staticmethod
+  def __Output(contents):
+    return ('$branch.create.root[text][root][output.txt]' +
+            '$branch.write[root][' + contents + ']')
+
+  def setUp(self):
+    super(MainTest, self).setUp()
+    self.inputs.update({
+        '/cur/input.psc': self.__Output('Hello, World!'),
+        '/cur/format.psc': self.__Output('Format: $output.format'),
+        '/cur/error.psc': '$invalid',
+    })
 
   def testNoArguments(self):
     self.Execute('', expect_failure=True)
@@ -164,6 +170,32 @@ class MainTest(TestCase):
     self.Execute('constants.psc')
     self.assertOutput(', '.join('{}={}'.format(*constant)
                                 for constant in constants.items()))
+
+
+# Command-line to generated output file basename.
+GOLDEN_TEST_DEFINITIONS = {
+  'test.psc --format=xhtml': 'Test.html',
+  'test.psc --format=latex': 'Test - small.tex',
+  'test.psc --format=latex -d device.size=large': 'Test - large.tex',
+}
+
+class GoldenTest(EndToEndTestCase):
+
+  def __Run(self, cmdline, output_basename):
+    output_path = '/pyscribe/testdata/' + output_basename
+    self.fs.cwd = '/pyscribe/testdata'
+    self.Execute(cmdline)
+    with self.OpenSourceFile(output_path) as expected_file:
+      self.maxDiff = None
+      self.assertOutput(expected_file.read(), expected_filename=output_path)
+
+  @classmethod
+  def AddTestMethod(cls, cmdline, output_basename):
+    setattr(cls, 'test_' + output_basename.replace(' ', '_'),
+            lambda self: self.__Run(cmdline, output_basename))
+
+for definition in GOLDEN_TEST_DEFINITIONS.items():
+  GoldenTest.AddTestMethod(*definition)
 
 
 class ComputePathConstantsTest(TestCase):
