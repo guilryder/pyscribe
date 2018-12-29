@@ -104,8 +104,6 @@ $header[2][Various]
 
 $para.macro[$text.backslash][before $\ after]
 $para.macro[line.break][before $\ after]
-$para.macro[linebreak.small][Before $linebreak.small After]
-$para.macro[newline.large][Before $newline.large After]
 
 $para.macro[text.backslash][before$text.backslash^after]
 $para.macro[text.colon][before$text.colon^after]

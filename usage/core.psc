@@ -36,18 +36,6 @@ $macro.new[device.size.init.small][$macro.new[device.size.select(if.small,if.lar
 $macro.new[device.size.init.large][$macro.new[device.size.select(if.small,if.large)][$if.large]]
 $macro.call[device.size.init.$device.size]
 
-$macro.new[formatsize.select(if.xhtml,if.latex.small,if.latex.large)][
-  $format.select[
-    $if.xhtml
-  ][
-    $device.size.select[
-      $if.latex.small
-    ][
-      $if.latex.large
-    ]
-  ]
-]
-
 
 ################################################################################
 # Common
@@ -69,9 +57,6 @@ $macro.new[language.name.en][english]
 # Various
 $macro.new[text.backslash][$format.select[^\][\textbackslash{}]]
 $macro.new[text.colon][$format.select[^:][\string^:]]
-
-$macro.new[linebreak.small][$formatsize.select[][$\][]]
-$macro.new[newline.large][$formatsize.select[][][$newline]]
 
 $macro.new[roman.smallcaps(number)][
   $fmt.smallcaps[$case.lower[$roman[$number]]]
