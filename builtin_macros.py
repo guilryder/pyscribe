@@ -546,6 +546,16 @@ def IfEq(executor, unused_call_node, a, b, then_block, else_block):
     executor.ExecuteNodes(else_block)
 
 
+# Loops
+
+@macro(public_name='repeat', args_signature='count,*contents',
+       text_compatible=True)
+def Repeat(executor, unused_call_node, count, contents):
+  count = _ParseInt(count)
+  for _ in range(count):
+    executor.ExecuteNodes(contents)
+
+
 # Counters
 
 @macro(public_name='counter.create', args_signature='counter_name')
@@ -576,10 +586,7 @@ def CounterCreate(executor, unused_call_node, counter_name):
   def SetCallback(unused_executor, unused_call_node, value):
     """Sets the value of a counter to the given integer."""
     nonlocal counter_value
-    try:
-      counter_value = int(value)
-    except ValueError as e:
-      raise InternalError('invalid integer value: {value}', value=value) from e
+    counter_value = _ParseInt(value)
 
   @macro()
   def IncrCallback(unused_executor, unused_call_node):
@@ -597,3 +604,10 @@ def CounterCreate(executor, unused_call_node, counter_name):
     macro_name = '{counter_name}{suffix}'.format(counter_name=counter_name,
                                                   suffix=name_suffix)
     executor.current_branch.context.AddMacro(macro_name, callback)
+
+
+def _ParseInt(text):
+  try:
+    return int(text)
+  except ValueError as e:
+    raise InternalError('invalid integer value: {value}', value=text) from e

@@ -49,10 +49,10 @@ $macro.new[inside][
   Inside inside inside $\ Inside inside
 ]
 
-$macro.new[repeat(x)][
-  $x$x$x$x$x$x$x$x$x$x
-  $x$x$x$x$x$x$x$x$x$x
-  $x$x$x$x$x$x$x$x$x$x
+$macro.new[repeat.thirty(body)][
+  $repeat[10][$body]
+  $repeat[10][$body]
+  $repeat[10][$body]
 ]
 
 $macro.new[test.typography(contents)][
@@ -96,7 +96,7 @@ $test.typography[
   Lorem... ipsum...dolor <<sit>> amet, consectetur `adipiscing' elit, ``sed do'' eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. $par
 ]
 
-$para.macro[^-][$repeat[beforebeforebefore$-afterafterafter^ ]]
+$para.macro[^-][$repeat.thirty[beforebeforebefore$-afterafterafter^ ]]
 
 $header[1][$fmt.typewriter[core.psc] macros]
 
@@ -114,8 +114,8 @@ $para.macro[code.nopipe][$code.nopipe[foo@example.com]]
 
 $para.macro[page.new][before $par $page.new $par after]
 $para.macro[page.before.avoid][before $par $page.before.avoid $par after]
-$par $repeat[Before $par]
-$para.macro[page.same][$page.same[$repeat[Inside $par]]]
+$par $repeat.thirty[Before $par]
+$para.macro[page.same][$page.same[$repeat.thirty[Inside $par]]]
 
 $para.macro[image][
   $image[Image alt text][

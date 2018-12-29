@@ -1214,6 +1214,37 @@ class IfEqTest(ExecutionTestCase):
     self.assertExecution('$identity[$if.eq[one][two][yes]]', '')
 
 
+class RepeatTest(ExecutionTestCase):
+
+  def testCountInvalid(self):
+    self.assertExecution(
+        '$repeat[invalid][foo]',
+        messages=['/root:1: $repeat: invalid integer value: invalid'])
+
+  def testCountNegative(self):
+    self.assertExecution('$repeat[-3][foo]', '')
+
+  def testCountZero(self):
+    self.assertExecution('$repeat[0][foo]', '')
+
+  def testCountOne(self):
+    self.assertExecution('$repeat[1][foo]', 'foo')
+
+  def testCountMany(self):
+    self.assertExecution('$repeat[42][foo]', 'foo' * 42)
+
+  def testTextCompatible(self):
+    self.assertExecution('$eval.text[$repeat[2][foo]]', 'foofoo')
+
+  def testSideEffects(self):
+    self.assertExecution(
+        (
+            '$counter.create[index]',
+            '$repeat[3][$index.incr $index]',
+        ),
+        ' 1 2 3')
+
+
 class CounterTest(ExecutionTestCase):
 
   def testCreate_overwritesExisting(self):
