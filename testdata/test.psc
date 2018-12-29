@@ -114,8 +114,8 @@ $para.macro[code.nopipe][$code.nopipe[foo@example.com]]
 
 $para.macro[page.new][before $par $page.new $par after]
 $para.macro[page.before.avoid][before $par $page.before.avoid $par after]
-$par $repeat[Before $par^ ]
-$para.macro[page.same][$page.same[$repeat[Inside $par^ ]]]
+$par $repeat[Before $par]
+$para.macro[page.same][$page.same[$repeat[Inside $par]]]
 
 $para.macro[image][
   $image[Image alt text][

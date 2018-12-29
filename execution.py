@@ -239,48 +239,64 @@ class Branch(metaclass=ABCMeta):
     """
 
 
-class TextBranch(Branch):
+class AbstractSimpleBranch(Branch):
   """
-  Branch for plain-text.
+  Branch that renders into linear content.
+
+  The branch is a tree of leaves and sub-branches.
 
   Fields:
-    __outputs: (string|Branch list) The text nodes and sub-branches of branch.
-    __text_accu: (StringIO) The current text accumulator of the branch.
-      Used to merge consecutive text nodes created by AppendText.
+    __nodes: (leaf|Branch list) The content leaves and sub-branches of branch.
+      Invariant: the last element is always _current_leaf.
+    _current_leaf: (leaf) The last leaf of the branch.
+  """
+
+  def __init__(self, *args, **kwargs):
+    super(AbstractSimpleBranch, self).__init__(*args, **kwargs)
+    self.__nodes = []
+    self.__AppendLeaf()
+
+  @abstractmethod
+  def _CreateLeaf(self):
+    """Returns a new, blank leaf node."""
+
+  def __AppendLeaf(self):
+    self._current_leaf = self._CreateLeaf()
+    self.__nodes.append(self._current_leaf)
+
+  def _AppendSubBranch(self, sub_branch):
+    self.__nodes.append(sub_branch)
+    self.__AppendLeaf()
+
+  def _IterLeaves(self):
+    for node in self.__nodes:
+      if isinstance(node, AbstractSimpleBranch):
+        yield from node._IterLeaves()
+      else:
+        yield node
+
+
+class TextBranch(AbstractSimpleBranch):
+  """
+  Branch for plain-text.
   """
 
   type_name = 'text'
 
-  def __init__(self, *args, **kwargs):
-    super(TextBranch, self).__init__(*args, **kwargs)
-    self.__outputs = []
-    self.__text_accu = io.StringIO()
+  def _CreateLeaf(self):
+    return io.StringIO()
 
   def AppendText(self, text):
-    self.__text_accu.write(text)
-
-  def __FlushText(self):
-    """Flushes the text accumulator to the branch."""
-    text = self.__text_accu.getvalue()
-    if text:
-      self.__outputs.append(text)
-      self.__text_accu.seek(0)
-      self.__text_accu.truncate()
+    self._current_leaf.write(text)
 
   def CreateSubBranch(self):
     return TextBranch(parent=self)
 
-  def _AppendSubBranch(self, sub_branch):
-    self.__FlushText()
-    self.__outputs.append(sub_branch)
-
   def _Render(self, writer):
-    self.__FlushText()
-    for output in self.__outputs:
-      if isinstance(output, str):
-        writer.write(output)
-      else:
-        output._Render(writer)
+    for leaf in self._IterLeaves():
+      writer.write(leaf.getvalue())
+      # Safety check: prevent future access to the leaf.
+      leaf.close()
 
 
 class AbstractFileSystem:  # pylint: disable=no-member

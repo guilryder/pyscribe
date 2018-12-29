@@ -490,6 +490,7 @@ $macro.new[root.open.latex][
   $macro.new[typo.set(typo.name)][]
 
   # Latex helpers
+  $macro.new[latex.cmd(name)][$name$latex.sep]
   $macro.new[latex.env(name,contents)][
     \begin{$name}
       $newline
@@ -546,7 +547,7 @@ $macro.new[root.open.latex][
     $cmd.name{$contents}
   ]
   $macro.new[fmt.tex(cmd.name,contents)][
-    {$cmd.name^ $contents}
+    {$latex.cmd[$cmd.name]$contents}
   ]
   $latex.macro.new[number][\nombre]
 
@@ -567,7 +568,7 @@ $macro.new[root.open.latex][
   # Lists
   $latex.env.new.para[list.itemize][itemize]
   $latex.env.new.para[list.enumerate][enumerate]
-  $macro.new[list.item(contents)][\item $contents]
+  $macro.new[list.item(contents)][$latex.cmd[\item]$contents]
 
   # Links
   $macro.new[hyperlink(url,contents)][
@@ -579,11 +580,11 @@ $macro.new[root.open.latex][
 
   # Various
 
-  $macro.new[\][\\]
-  $macro.new[line.break][\newline ]
-  $macro.new[par][\par ]
+  $macro.new[\][$latex.cmd[\\]]
+  $macro.new[line.break][$latex.cmd[\newline]]
+  $macro.new[par][$latex.cmd[\par]]
 
-  $macro.new[page.new][\newpage]
+  $macro.new[page.new][$latex.cmd[\newpage]]
   $macro.new[page.before.avoid][\nopagebreak^[4^]]
   $latex.env.new[page.same][samepage]
 
