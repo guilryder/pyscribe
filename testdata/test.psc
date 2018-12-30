@@ -260,4 +260,24 @@ $para.macro[footnotes.flush][Before $footnotes.flush After]
 $para.macro[footnotes.add][Footnote five$footnotes.add[Footnote five contents.]]
 ][]
 
+$format.select[
+# Xhtml
+$header[2][Xhtml]
+
+$css.inline[
+  .red {
+    color: red;
+  }
+
+  /* Special characters: ' " ` '' < > ? : ! */
+]
+
+$para.macro[para.css.custom][
+  $para.css.custom[block,autopara=p][red][contents]
+]
+
+][
+# Latex
+]
+
 ]

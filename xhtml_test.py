@@ -359,6 +359,34 @@ class StructureExecutionTest(XhtmlExecutionTestCase):
                 '--></style>',
             ), '<p>My &amp; body</p>'))
 
+  def testStyle_includedCssFile(self):
+    self.assertExecution(
+        {
+            '/root': (
+                '$branch.write[head][',
+                  '$tag.open[style][para]',
+                  '$tag.body.raw[$include.text[dummy.css]]',
+                  '$tag.close[style]',
+                ']',
+                'test',
+            ),
+            '/dummy.css': '\n'.join((
+                'p { margin: 0; }',
+                '',
+                'img { border: 0; }',
+                '/* Special characters: \' " ` \'\' < > ? : ! */',
+            )),
+        },
+        self.__MakeExpected(
+            (
+                '<style><!--',
+                'p { margin: 0; }',
+                '',
+                'img { border: 0; }',
+                '/* Special characters: \' " ` \'\' < > ? : ! */',
+                '--></style>',
+            ), '<p>test</p>'))
+
 
 class NeutralTypographyTest(XhtmlExecutionTestCase):
 
@@ -1337,6 +1365,73 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
                 '<span>two</span>'
             '</div>'
         ))
+
+
+class TagBodyRawTest(XhtmlExecutionTestCase):
+
+  def testSimple(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.body.raw[inside]',
+            '$tag.close[div]',
+        ),
+        '<div>inside</div>')
+
+  def testPreservesNewlinesInsideOnly(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              '$tag.body.raw[',
+                '\n'.join((
+                    '',
+                    'line 1',
+                    'line 2',
+                    '',
+                    '',
+                    'line 3',
+                    '',
+                )),
+              ']',
+            '$tag.close[div]',
+        ),
+        (
+            '<div>line 1',
+            'line 2',
+            '',
+            '',
+            'line 3</div>',
+        ))
+
+  def testHonorsTypography_charsOnlyNotSpacing(self):
+    self.assertExecution(
+        (
+            '$typo.set[french]',
+            '$tag.open[div][block]',
+              '$tag.body.raw[',
+                SPECIAL_CHARS,
+              ']',
+            '$tag.close[div]',
+        ),
+        '<div>{}</div>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['english']))
+
+  def testPreservesExactSpacingInside(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              'before$tag.body.raw[^\xa0^ ^ inside^ \xa0^ ]after',
+            '$tag.close[div]',
+        ),
+        '<div>before\xa0  inside \xa0 after</div>')
+
+  def testPreservesTypographySpacingAround(self):
+    self.assertExecution(
+        (
+            '$tag.open[div][block]',
+              'before \xa0  $tag.body.raw[inside]  after',
+            '$tag.close[div]',
+        ),
+        '<div>before\xa0inside after</div>')
 
 
 class TagAttrSetTest(XhtmlExecutionTestCase):

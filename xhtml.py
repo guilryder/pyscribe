@@ -208,6 +208,16 @@ class XhtmlBranch(execution.Branch):
   typography = property(GetTypography, SetTypography,
                         doc='(Typography) The typography rules.')
 
+  def AppendRawText(self, text):
+    """
+    Appends plain text.
+
+    Ignores typography and paragraph detection.
+    """
+    self.__text_accu.append(self.__text_sep)
+    self.__text_accu.append(text)
+    self.__line_tail = self.__text_sep = ''
+
   def AppendText(self, text):
     paras = self.__AUTO_PARA_DELIMITER.split(text)
 
@@ -866,6 +876,16 @@ class Macros:
       tag: The name of the tag to close.
     """
     executor.current_branch.CloseTag(tag)
+
+  @staticmethod
+  @macro(public_name='tag.body.raw', args_signature='text')
+  def TagBodyRaw(executor, unused_call_node, text):
+    """
+    Appends raw text to the current tag body.
+
+    Ignores typography and paragraph detection.
+    """
+    executor.current_branch.AppendRawText(text)
 
   @staticmethod
   @macro(public_name='tag.delete.ifempty', args_signature='target')

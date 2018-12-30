@@ -3,6 +3,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
+<style type="text/css"><!--
+.red {
+color: red;
+}
+
+/* Special characters: ' " ` ” < > ? : ! */
+--></style>
 <link rel="stylesheet" type="text/css" href="../usage/core.css"/>
 <title>Test Title</title>
 <meta name="author" content="Test Author"/>
@@ -21,7 +28,8 @@
 <p class="toc2"><a href="#header7">E)   Vertical spacing</a></p>
 <p class="toc2"><a href="#header8">F)   Lists</a></p>
 <p class="toc2"><a href="#header9">G)   Links</a></p>
-<p class="toc2"><a href="#header13">H)   Footnotes flushing</a></p></div>
+<p class="toc2"><a href="#header13">H)   Footnotes flushing</a></p>
+<p class="toc2"><a href="#header16">I)   Xhtml</a></p></div>
 <p id="ref-dummy-target">Used as link target</p>
 <h1 id="header1">I   Typography</h1>
 <p>Special characters : % &amp; _ $ #</p>
@@ -231,5 +239,8 @@ French typography: contents <br/></p>
 <p>$footnotes.add : Footnote five <a id="fnl15" href="#fnc15">[1]</a></p>
 <div class="footnotes"><hr/>
 <p><a id="fnc15" href="#fnl15">[1]</a> Footnote five contents.</p></div>
+<h2 id="header16">I)   Xhtml</h2>
+<p>$para.css.custom :</p>
+<div class="red"><p>contents</p></div>
 </body>
 </html>

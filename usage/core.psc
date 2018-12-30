@@ -174,18 +174,17 @@ $macro.new[root.open.xhtml][
   # <style tyle="text/css">...</style>
   $macro.new[css.inline(css.contents)][
     $branch.write[style][
-      $typo.set[neutral]
-      $macro.new[par][]
       $tag[style][para][
         $tag.attr.set[current][type][text/css]
-        $css.contents
+        $tag.body.raw[$css.contents]
       ]
     ]
   ]
 
   # <head> contents
   $branch.write[head][
-    $branch.create.sub[style]$newline
+    $branch.create.sub[style]
+    $branch.write[style][$typo.set[neutral]]
     $branch.append[style]
   ]
   $css.file[$file.output2core[core.css]]
