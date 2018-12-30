@@ -3,9 +3,9 @@ $$whitespace.skip
 $include[$dir.lib/core]
 
 ################################################################################
-# XHTML
+# HTML
 
-$macro.wrap[root.open.xhtml][][
+$macro.wrap[root.open.html][][
   # Cover
   $macro.new[page.title][
     $para.center[
@@ -261,8 +261,8 @@ $para.macro[footnotes.add][Footnote five$footnotes.add[Footnote five contents.]]
 ][]
 
 $format.select[
-# Xhtml
-$header[2][Xhtml]
+# HTML
+$header[2][HTML]
 
 $css.inline[
   .red {

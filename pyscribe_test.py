@@ -142,8 +142,8 @@ class MainTest(EndToEndTestCase):
     self.assertOutput('Format: ')
 
   def testCustomOutputFormat(self):
-    self.Execute('format.psc --format xhtml')
-    self.assertOutput('Format: xhtml')
+    self.Execute('format.psc --format html')
+    self.assertOutput('Format: html')
 
   def testDefines(self):
     self.inputs['/cur/defines.psc'] = self.__Output('$one,$two,$three,$a.b')
@@ -157,8 +157,8 @@ class MainTest(EndToEndTestCase):
                   self.GetStdFile('err'))
 
   def testOutputFormatOverwritesDefines(self):
-    self.Execute('format.psc --format xhtml -d output.format=ignored')
-    self.assertOutput('Format: xhtml')
+    self.Execute('format.psc --format html -d output.format=ignored')
+    self.assertOutput('Format: html')
 
   def testConstants(self):
     constants = {
@@ -178,12 +178,12 @@ class MainTest(EndToEndTestCase):
 # Command-line to generated output file basename.
 GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
   ('hello.psc --format=latex', 'Hello.tex'),
-  ('hello.psc --format=xhtml', 'Hello.html'),
-  ('hello.psc --format=xhtml'
+  ('hello.psc --format=html', 'Hello.html'),
+  ('hello.psc --format=html'
       ' -d inline=1'
       ' -d core.css.filename=small.css'
       ' -d out.filename=Hello-inline', 'Hello-inline.html'),
-  ('test.psc --format=xhtml', 'Test.html'),
+  ('test.psc --format=html', 'Test.html'),
   ('test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
 

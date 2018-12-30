@@ -3,8 +3,8 @@ $$whitespace.skip
 $macro.new[file.output2source(path)][$dir.source.rel.output/$path]
 $macro.new[file.output2core(path)][$dir.lib.rel.output/$path]
 
-$macro.new[format.init.xhtml][$macro.new[format.select(if.xhtml,if.latex)][$if.xhtml]]
-$macro.new[format.init.latex][$macro.new[format.select(if.xhtml,if.latex)][$if.latex]]
+$macro.new[format.init.html][$macro.new[format.select(if.html,if.latex)][$if.html]]
+$macro.new[format.init.latex][$macro.new[format.select(if.html,if.latex)][$if.latex]]
 $macro.call[format.init.$output.format]
 
 
@@ -71,10 +71,10 @@ $macro.new[no][$format.select[n$fmt.superscript[o]][\no{}]]
 $macro.new[No][$format.select[N$fmt.superscript[o]][\No{}]]
 
 # Text formatting
-$macro.new[fmt.macro.new(macro.name,xhtml.macro,xhtml.arg,latex.macro,latex.arg)][
+$macro.new[fmt.macro.new(macro.name,html.macro,html.arg,latex.macro,latex.arg)][
   $macro.new[$macro.name(contents)][
     $format.select[
-      $macro.call[$xhtml.macro][$xhtml.arg][$contents]
+      $macro.call[$html.macro][$html.arg][$contents]
     ][
       $macro.call[$latex.macro][$latex.arg][$contents]
     ]
@@ -139,16 +139,16 @@ $macro.new[page.toc.append(contents)][
 
 
 ################################################################################
-# XHTML
+# HTML
 
-$macro.new[output.filename.xhtml(basename)][$basename^.html]
-$macro.new[root.branch.type.xhtml][xhtml]
+$macro.new[output.filename.html(basename)][$basename^.html]
+$macro.new[root.branch.type.html][html]
 
 $if.def[core.css.filename][][
   $macro.new[core.css.filename][$file.output2core[core.css]]
 ]
 
-$macro.new[root.open.xhtml][
+$macro.new[root.open.html][
   # Helpers
   $macro.new[tag(name,level,contents)][$tag.open[$name][$level]$contents$tag.close[$name]]
   $macro.new[tag.empty(name,level)][$tag[$name][$level][]]
@@ -451,7 +451,7 @@ $macro.new[root.open.xhtml][
   $macro.new[code.nopipe(contents)][$fmt.typewriter[$contents]]
 ]
 
-$macro.new[root.close.xhtml][
+$macro.new[root.close.html][
   $footnotes.flush
 ]
 

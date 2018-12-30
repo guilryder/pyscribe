@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 
 from xml import etree
 
-from xhtml import *
+from html import *
 from testutils import *
 
 
@@ -52,7 +52,7 @@ class AppendTextToXmlTest(TestCase):
     initial_xml_string = '<root>' + initial_xml_string + '</root>'
     expected_xml_string = '<root>' + expected_xml_string + '</root>'
     tree = ParseXml(initial_xml_string)
-    XhtmlBranch._AppendTextToXml(text, tree.find('//tail'), tree.find('//text'))
+    HtmlBranch._AppendTextToXml(text, tree.find('//tail'), tree.find('//text'))
     self.assertTextEqual(XmlToString(tree),
                          expected_xml_string,
                          'output mismatch')
@@ -83,7 +83,7 @@ class InlineXmlElementTest(TestCase):
 
   def check(self, initial_xml_string, expected_xml_string):
     tree = ParseXml(initial_xml_string)
-    XhtmlBranch(parent=None)._InlineXmlElement(tree.find('//inline'))
+    HtmlBranch(parent=None)._InlineXmlElement(tree.find('//inline'))
     self.assertTextEqual(XmlToString(tree), expected_xml_string)
 
   def testEmptyAlone(self):
@@ -112,11 +112,11 @@ class InlineXmlElementTest(TestCase):
       self.check('<root><inline attr="value">inside</inline></root>', '')
 
 
-class XhtmlBranchTest(BranchTestCase):
+class HtmlBranchTest(BranchTestCase):
 
   def setUp(self):
-    super(XhtmlBranchTest, self).setUp()
-    self.branch = XhtmlBranch(parent=None)
+    super(HtmlBranchTest, self).setUp()
+    self.branch = HtmlBranch(parent=None)
 
   def assertRender(self, expected_xml_string):
     with self.FakeOutputFile() as writer:
@@ -185,14 +185,14 @@ class XhtmlBranchTest(BranchTestCase):
     self.assertRender('<p>a\xa0\xa0b\xa0\xa0c\xa0d\xa0e</p>')
 
 
-class XhtmlExecutionTestCase(ExecutionTestCase):
+class HtmlExecutionTestCase(ExecutionTestCase):
 
   @classmethod
   def MakeExpectedString(cls, text):
     return MakeExpectedXmlString(text)
 
   def GetExecutionBranch(self, executor):
-    return self.CreateBranch(executor, XhtmlBranch)
+    return self.CreateBranch(executor, HtmlBranch)
 
   def assertExecutionOutput(self, actual, expected, msg):
     # If possible, strip out the stub to clarify error messages.
@@ -203,10 +203,10 @@ class XhtmlExecutionTestCase(ExecutionTestCase):
     self.assertTextEqual(actual, self.MakeExpectedString(expected), msg)
 
 
-class GlobalExecutionTest(XhtmlExecutionTestCase):
+class GlobalExecutionTest(HtmlExecutionTestCase):
 
   def testBranchType(self):
-    self.assertExecution('$identity[$branch.type]', '<p>xhtml</p>')
+    self.assertExecution('$identity[$branch.type]', '<p>html</p>')
 
   def testPara_simple(self):
     self.assertExecution(
@@ -321,7 +321,7 @@ class GlobalExecutionTest(XhtmlExecutionTestCase):
         '<p>roota {} rootb</p>'.format(included + SPECIAL_CHARS_AS_HTML))
 
 
-class StructureExecutionTest(XhtmlExecutionTestCase):
+class StructureExecutionTest(HtmlExecutionTestCase):
 
   @classmethod
   def MakeExpectedString(cls, text):
@@ -388,7 +388,7 @@ class StructureExecutionTest(XhtmlExecutionTestCase):
             ), '<p>test</p>'))
 
 
-class NeutralTypographyTest(XhtmlExecutionTestCase):
+class NeutralTypographyTest(HtmlExecutionTestCase):
 
   def InputHook(self, text):
     return '$typo.set[neutral]' + text
@@ -466,7 +466,7 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
         '<p>a\xa0\xa0\xa0</p>')
 
 
-class EnglishTypographyTest(XhtmlExecutionTestCase):
+class EnglishTypographyTest(HtmlExecutionTestCase):
 
   typo = EnglishTypography
 
@@ -638,7 +638,7 @@ class EnglishTypographyTest(XhtmlExecutionTestCase):
         '<p>a\xa0\xa0\xa0</p>')
 
 
-class FrenchTypographyTest(XhtmlExecutionTestCase):
+class FrenchTypographyTest(HtmlExecutionTestCase):
 
   typo = FrenchTypography
 
@@ -810,7 +810,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
         '<p>a\xa0\xa0\xa0</p>')
 
 
-class SimpleMacrosTest(XhtmlExecutionTestCase):
+class SimpleMacrosTest(HtmlExecutionTestCase):
 
   def testPar_success(self):
     self.assertExecution(
@@ -887,7 +887,7 @@ class SimpleMacrosTest(XhtmlExecutionTestCase):
         messages=['/root:1: $typo.number: invalid integer: \u20133'])
 
 
-class TagOpenCloseTest(XhtmlExecutionTestCase):
+class TagOpenCloseTest(HtmlExecutionTestCase):
 
   def testOnce(self):
     self.assertExecution(
@@ -1086,7 +1086,7 @@ class TagOpenCloseTest(XhtmlExecutionTestCase):
                   'with attributes: <p class="test"></p>'])
 
 
-class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
+class TagDeleteIfEmptyTest(HtmlExecutionTestCase):
 
   def testCompletelyEmpty(self):
     self.assertExecution(
@@ -1367,7 +1367,7 @@ class TagDeleteIfEmptyTest(XhtmlExecutionTestCase):
         ))
 
 
-class TagBodyRawTest(XhtmlExecutionTestCase):
+class TagBodyRawTest(HtmlExecutionTestCase):
 
   def testSimple(self):
     self.assertExecution(
@@ -1434,7 +1434,7 @@ class TagBodyRawTest(XhtmlExecutionTestCase):
         '<div>before\xa0inside after</div>')
 
 
-class TagAttrSetTest(XhtmlExecutionTestCase):
+class TagAttrSetTest(HtmlExecutionTestCase):
 
   def testSimple(self):
     self.assertExecution(
@@ -1510,7 +1510,7 @@ class TagAttrSetTest(XhtmlExecutionTestCase):
         messages=['/root:1: $tag.attr.set: no element found for target: <div>'])
 
 
-class ParTest(XhtmlExecutionTestCase):
+class ParTest(HtmlExecutionTestCase):
 
   def testCloseAndOpen(self):
     self.assertExecution(
@@ -1535,7 +1535,7 @@ class ParTest(XhtmlExecutionTestCase):
         messages=['/root:1: $par: unable to open a new paragraph'])
 
 
-class TagClassAddTest(XhtmlExecutionTestCase):
+class TagClassAddTest(HtmlExecutionTestCase):
 
   def testOnce(self):
     self.assertExecution(

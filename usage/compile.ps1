@@ -34,7 +34,7 @@ begin {
   if ($PyScribe) { $operation = "$operation PyScribe" }
   if ($View) { $operation = "$operation View" }
   switch ($Format) {
-    "xhtml" {
+    "html" {
       if ($Epub) { $operation = "$operation Epub" }
       if ($Mobi) { $operation = "$operation Mobi" }
     }
@@ -60,7 +60,7 @@ process {
 
     Push-Location $outDir
     switch ($Format) {
-      "xhtml" {
+      "html" {
         if ($PyScribe -and $View) {
           & ".\${basename}.html"
         }

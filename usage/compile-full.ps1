@@ -1,12 +1,12 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 Param(
   [Bool]$PyScribe = $true,
-  [Nullable[Bool]]$Xhtml = $null,
-  [Bool]$Epub = $false,  # forces -Xhtml:1
-  [Bool]$Mobi = $false,  # forces -Xhtml:1
+  [Nullable[Bool]]$Html = $null,
+  [Bool]$Epub = $false,  # forces -Html:1
+  [Bool]$Mobi = $false,  # forces -Html:1
   [Nullable[Bool]]$Latex = $null,
   [Bool]$Pdf = $false,  # forces -Latex:1
-  [Bool]$AllText = $false,  # equivalent to -Latex:1 -Xhtml:1
+  [Bool]$AllText = $false,  # equivalent to -Html:1 -Latex:1
   [Bool]$View = $false,
   [String[]]$DefaultFiles,
   [Parameter(Position=0, ValueFromRemainingArguments)] $Files)
@@ -22,18 +22,18 @@ if (!$Files) {
 
 # Apply the parameter value implications.
 if ($AllText) {
-  $Xhtml = $true
+  $Html = $true
   $Latex = $true
 }
-if ($Xhtml -eq $null) {
-  $Xhtml = $Epub -or $Mobi
+if ($Html -eq $null) {
+  $Html = $Epub -or $Mobi
 }
 if ($Latex -eq $null) {
   $Latex = $Pdf
 }
 
-if ($Xhtml) {
-  & $compile -Format:xhtml -View:$View -PyScribe:$PyScribe `
+if ($Html) {
+  & $compile -Format:html -View:$View -PyScribe:$PyScribe `
       -Epub:$Epub -Mobi:$Mobi -Files:$Files
 }
 

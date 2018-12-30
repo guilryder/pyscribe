@@ -916,7 +916,7 @@ class BranchCreateTest(ExecutionTestCase):
         '$branch.create.root[invalid][new][output]',
         messages=['/root:1: $branch.create.root: ' +
                   'unknown branch type: invalid;' +
-                  ' expected one of: latex, text, xhtml'])
+                  ' expected one of: html, latex, text'])
 
   def testRoot_duplicateBranchName(self):
     self.assertExecution(

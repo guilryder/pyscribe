@@ -85,12 +85,12 @@ TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True, is_auto=True)
 TagLevel.INLINE = TagLevel('inline', is_inline=True)
 
 
-class XhtmlBranch(execution.Branch):
+class HtmlBranch(execution.Branch):
   """
   Branch for HTML.
 
   Fields:
-    sub_branches: (XhtmlBranch list) The direct sub-branches of this branch.
+    sub_branches: (HtmlBranch list) The direct sub-branches of this branch.
     __typography: (Typography|None) The typography set for this branch;
       if None, inherits the typography of the parent branch.
     __typography_context: (ExecutionContext) The context containing the macros
@@ -146,10 +146,10 @@ class XhtmlBranch(execution.Branch):
   __AUTO_PARA_TAG_DEFAULT = 'p'
   __TAG_TARGET_REGEXP = re.compile(r'\A\<(?P<tag>.+)\>\Z')
 
-  type_name = 'xhtml'
+  type_name = 'html'
 
   def __init__(self, *args, **kwargs):
-    super(XhtmlBranch, self).__init__(*args, **kwargs)
+    super(HtmlBranch, self).__init__(*args, **kwargs)
     parent = self.parent
     self.sub_branches = []
 
@@ -173,7 +173,7 @@ class XhtmlBranch(execution.Branch):
       self.__root_elem = etree.SubElement(self.__tree.getroot(), 'body')
 
       # Create a sub-branch for the <head>.
-      self.__head_branch = XhtmlBranch(parent=self, name='head')
+      self.__head_branch = HtmlBranch(parent=self, name='head')
       self.__tree.find('head').append(self.__head_branch.__root_elem)
       self.__head_branch.attached = True
     else:
@@ -524,7 +524,7 @@ class XhtmlBranch(execution.Branch):
     action(elem_info.elem)
 
   def CreateSubBranch(self):
-    return XhtmlBranch(parent=self)
+    return HtmlBranch(parent=self)
 
   def _AppendSubBranch(self, sub_branch):
     self.__FlushText()

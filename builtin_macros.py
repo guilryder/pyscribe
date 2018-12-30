@@ -314,13 +314,13 @@ def _LookupNonBuiltinMacro(executor, macro_name, verb):
 
 # Branches
 
+import html  # pylint: disable=wrong-import-position
 import latex  # pylint: disable=wrong-import-position
-import xhtml  # pylint: disable=wrong-import-position
 
 __BRANCH_CLASSES = (
-    TextBranch,
+    html.HtmlBranch,
     latex.LatexBranch,
-    xhtml.XhtmlBranch,
+    TextBranch,
 )
 BRANCH_TYPES = {branch_class.type_name: branch_class
                 for branch_class in __BRANCH_CLASSES}
