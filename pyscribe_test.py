@@ -4,6 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 from argparse import ArgumentParser
+import collections
 import shlex
 import sys
 
@@ -175,10 +176,12 @@ class MainTest(EndToEndTestCase):
 
 
 # Command-line to generated output file basename.
-GOLDEN_TEST_DEFINITIONS = {
-  'test.psc --format=xhtml': 'Test.html',
-  'test.psc --format=latex': 'Test.tex',
-}
+GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
+  ('hello.psc --format=latex', 'Hello.tex'),
+  ('hello.psc --format=xhtml', 'Hello.html'),
+  ('test.psc --format=xhtml', 'Test.html'),
+  ('test.psc --format=latex', 'Test.tex'),
+))
 
 class GoldenTest(EndToEndTestCase):
 
