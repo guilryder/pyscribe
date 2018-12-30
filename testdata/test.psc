@@ -1,5 +1,5 @@
 #!/usr/bin/env pyscribe
-$$whitespace.preserve
+$$whitespace.skip
 $include[$dir.lib/core]
 
 ################################################################################
@@ -27,24 +27,28 @@ $macro.wrap[root.open.xhtml][][
 $macro.wrap[root.open.latex][][
   # Cover
   $macro.new[page.title][
+$$whitespace.preserve
     \makeatletter
-    \begin{document}
     \begin{center}
       {\LARGE \@maintitle \par}
     \end{center}
     \makeatother
+$$whitespace.skip
   ]
 
   # Headers
   $headers.config.chaptersandsections.latex
 
   # Various
-  \newcommand\scripttext^[1^]{{\fontfamily{pzc}\selectfont\large^#1}}$newline
+  $preamble.append.section[
+    \newcommand\scripttext^[1^]{{\fontfamily{pzc}\selectfont\large^#1}}
+  ]
 ]
 
 ################################################################################
 # Testing
 
+$$whitespace.preserve
 $macro.new[inside][
   Inside inside inside $\ Inside inside
 ]
@@ -70,6 +74,7 @@ $macro.new[para.macro.typography(macro.name,contents)][
     $test.typography[contents $\]
   ]
 ]
+$$whitespace.skip
 
 
 $macro.new[book.title][Test Title]
@@ -79,6 +84,7 @@ $macro.new[book.language][fr]
 $macro.new[latex.class.options][demo]
 
 $root.create[Test][
+$$whitespace.preserve
 $page.title
 $page.new
 

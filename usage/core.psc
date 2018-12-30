@@ -35,6 +35,7 @@ $macro.new[metadata.all.set][
   $metadata.title.set[$book.title]
   $metadata.author.set[$book.author]
   $metadata.language.set[$book.language]
+  $format.select[][$preamble.append[$newline]]
   $typo.set[$book.typo]
 ]
 # Default typography: derived from the language.
@@ -139,8 +140,8 @@ $macro.new[root.open.xhtml][
   $macro.new[tag.empty(name,level)][$tag[$name][$level][]]
 
   # <head> tags
-  $macro.new[head.append(content)][
-    $branch.write[head][$content$newline]
+  $macro.new[head.append(contents)][
+    $branch.write[head][$contents$newline]
   ]
   # <link rel="stylesheet" type="text/css" href="..."/>
   $macro.new[css.file(css.filename)][
@@ -415,7 +416,7 @@ $macro.new[root.open.xhtml][
 
   $macro.new[page.new][$tag.class.add[previous][page-after]]
   $macro.new[page.before.avoid][$tag.class.add[previous][page-after-avoid]]
-  $macro.new[page.same(content)][$para.css[page-same][$content]]
+  $macro.new[page.same(contents)][$para.css[page-same][$contents]]
 
   $macro.new[image(alt.text,image.file.noext,ext.html,css.class,width.latex)][
     $tag[img][inline][
@@ -441,19 +442,23 @@ $macro.new[root.branch.type.latex][latex]
 $macro.new[latex.class.options][]
 
 $macro.new[root.open.latex][
-  # Latex class options: set 'ebook' in small mode, append the custom options.
-  # Omit the brackets if no options.
-  \documentclass$if.eq[$latex.class.options][][][^[$latex.class.options^]]{pyscribe}$newline
+  $branch.create.sub[preamble]
+  $macro.new[preamble.append(contents)][
+    $branch.write[preamble][$contents]
+  ]
+  $macro.new[preamble.append.section(contents)][
+    $preamble.append[$contents$newline$newline]
+  ]
 
   # Metadata
   $macro.new[metadata.title.set(title)][
-    \titleset{$title}$newline
+    $preamble.append[\titleset{$title}$newline]
   ]
   $macro.new[metadata.author.set(author)][
-    \authorset{$author}$newline
+    $preamble.append[\authorset{$author}$newline]
   ]
   $macro.new[metadata.language.set(language.code)][
-    \languageset{$macro.call[language.name.$language.code]}$newline
+    $preamble.append[\languageset{$macro.call[language.name.$language.code]}$newline]
   ]
   $macro.new[typo.set(typo.name)][]
 
@@ -562,11 +567,18 @@ $macro.new[root.open.latex][
   ]
 
   $macro.new[code.nopipe(contents)][\verb|$contents|]
+
+  # Latex header
+
+  # Class options: set 'ebook' in small mode, append the custom options.
+  # Omit the brackets if no options.
+  \documentclass$if.eq[$latex.class.options][][][^[$latex.class.options^]]{pyscribe}$newline
+  $branch.append[preamble]
+  \begin{document}$newline
 ]
 
 $macro.new[root.close.latex][
   $newline
   $newline
-  \end{document}
-  $newline
+  \end{document}$newline
 ]
