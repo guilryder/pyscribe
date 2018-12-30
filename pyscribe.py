@@ -5,6 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import argparse
 import sys
+import traceback
 
 from execution import PYSCRIBE_EXT, Executor, FileSystem
 import log
@@ -54,15 +55,14 @@ class Main:
                         default=[], action='append', type=ParseDefine,
                         help='set a macro in the root context')
     parser.add_argument('--error_format', metavar='FORMAT',
-                        dest='logger_format',
+                        dest='error_format',
                         default='simple',
                         choices=sorted(log.Logger.FORMATS),
-                        help='error reporting format, used to set the ' +
-                             '$output.format variable; default: %(default)s')
+                        help='error reporting format; default: %(default)s')
     parser.add_argument('-f', '--format', metavar='FORMAT',
                         dest='output_format',
                         default='',
-                        help='output format')
+                        help='format to render into; sets $output.format')
     parser.add_argument('-o', '--output', metavar='DIR',
                         dest='output_dir',
                         default=self.__current_dir,
@@ -80,7 +80,7 @@ class Main:
     self.__fs.makedirs(args.output_dir, exist_ok=True)
 
     # Logger
-    self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.logger_format],
+    self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.error_format],
                                err_file=self.__fs.stderr,
                                info_file=args.info_file)
 
@@ -116,6 +116,8 @@ class Main:
       executor.ExecuteFile(resolved_path)
       executor.RenderBranches()
     except log.FatalError:
+      if args.error_format == 'python':
+        traceback.print_exc(file=fs.stderr)
       sys.exit(1)
 
 

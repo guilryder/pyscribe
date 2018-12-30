@@ -121,17 +121,19 @@ class MainTest(EndToEndTestCase):
     self.assertEqual(self.fs.GetOutputs(),
                      {'/custom/output.txt': 'Hello, World!'})
 
-  def testExecutionError(self):
+  def testExecutionError_simpleErrorFormat(self):
     self.Execute('error.psc', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
                      '/cur/error.psc:1: macro not found: $invalid')
     self.assertEqual(self.fs.GetOutputs(), {})
 
-  def testCustomErrorFormat(self):
+  def testExecutionError_pythonErrorFormat(self):
     self.Execute('error.psc --error_format python', expect_failure=True)
-    self.assertEqual(self.GetStdFile('err'),
-                     'File "/cur/error.psc", line 1\n' +
-                     '    macro not found: $invalid')
+    error_log = self.GetStdFile('err')
+    self.assertIn('File "/cur/error.psc", line 1\n' +
+                  '    macro not found: $invalid',
+                  error_log)
+    self.assertIn('log.FatalError', error_log)
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testDefaultOutputFormat(self):
