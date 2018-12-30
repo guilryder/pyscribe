@@ -1,0 +1,7 @@
+body {
+  color: red;
+}
+
+p:first-letter {
+  border: 2px solid blue;
+}

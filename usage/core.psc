@@ -144,6 +144,10 @@ $macro.new[page.toc.append(contents)][
 $macro.new[output.filename.xhtml(basename)][$basename^.html]
 $macro.new[root.branch.type.xhtml][xhtml]
 
+$if.def[core.css.filename][][
+  $macro.new[core.css.filename][$file.output2core[core.css]]
+]
+
 $macro.new[root.open.xhtml][
   # Helpers
   $macro.new[tag(name,level,contents)][$tag.open[$name][$level]$contents$tag.close[$name]]
@@ -206,7 +210,7 @@ $macro.new[root.open.xhtml][
     $branch.write[style][$typo.set[neutral]]
     $branch.append[style]
   ]
-  $css.file[$file.output2core[core.css]]
+  $if.eq[$core.css.filename][][][$css.file[$core.css.filename]]
 
   # Metadata
   $macro.new[metadata.title.set(title)][

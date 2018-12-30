@@ -179,6 +179,10 @@ class MainTest(EndToEndTestCase):
 GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
   ('hello.psc --format=latex', 'Hello.tex'),
   ('hello.psc --format=xhtml', 'Hello.html'),
+  ('hello.psc --format=xhtml'
+      ' -d inline=1'
+      ' -d core.css.filename=small.css'
+      ' -d out.filename=Hello-inline', 'Hello-inline.html'),
   ('test.psc --format=xhtml', 'Test.html'),
   ('test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
