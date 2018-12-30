@@ -328,6 +328,10 @@ class StructureExecutionTest(XhtmlExecutionTestCase):
     return MakeExpectedXmlString(text,
                                  prefix=_STUB_PREFIX1, suffix=_STUB_SUFFIX)
 
+  @staticmethod
+  def __MakeExpected(header_lines, footer):
+    return ''.join(('\n'.join(header_lines), '\n', _STUB_PREFIX2, footer))
+
   def testHeadBranch(self):
     self.assertExecution(
         (
@@ -335,11 +339,8 @@ class StructureExecutionTest(XhtmlExecutionTestCase):
               '$tag.open[title][para]My Title$tag.close[title]',
             ']',
             'My body',
-        ), (
-            '<title>My Title</title>\n'
-        ) + _STUB_PREFIX2 + (
-            '<p>My body</p>'
-        ))
+        ),
+        self.__MakeExpected(('<title>My Title</title>',), '<p>My body</p>'))
 
   def testStyle_notEscaped(self):
     self.assertExecution(
@@ -349,14 +350,14 @@ class StructureExecutionTest(XhtmlExecutionTestCase):
               '$tag.open[style][para]h1 > div { "blah" }$tag.close[style]',
             ']',
             'My & body',
-        ), (
-            '<title>My &amp; Title</title>\n'
-            '<style><!--\n'
-            'h1 > div { "blah" }\n'
-            '--></style>\n'
-        ) + _STUB_PREFIX2 + (
-            '<p>My &amp; body</p>'
-        ))
+        ),
+        self.__MakeExpected(
+            (
+                '<title>My &amp; Title</title>',
+                '<style><!--',
+                'h1 > div { "blah" }',
+                '--></style>',
+            ), '<p>My &amp; body</p>'))
 
 
 class NeutralTypographyTest(XhtmlExecutionTestCase):
@@ -385,20 +386,7 @@ class NeutralTypographyTest(XhtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(' '.join((
-            "% &amp; _ $ $ # #",
-            "a\xa0b",
-            "n\xado",
-            "–c—",
-            "d…",
-            "«e»",
-            "« f »",
-            "`g'h' 'g`h`",
-            "“i”j” ”k“l“",
-            "“`m”'",
-            "n ! o: p ; q?",
-            "r!:;?",
-        ))))
+        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['neutral']))
 
   def testPunctuationDouble_keepsSpaces(self):
     self.assertExecution(
@@ -498,20 +486,7 @@ class EnglishTypographyTest(XhtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(' '.join((
-            "% &amp; _ $ $ # #",
-            "a\xa0b",
-            "n\xado",
-            "–c—",
-            "d…",
-            "«e»",
-            "« f »",
-            "‘g’h’ ’g‘h‘",
-            "“i”j” ”k“l“",
-            "“‘m”’",
-            "n ! o: p ; q?",
-            "r!:;?",
-        ))))
+        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['english']))
 
   def testPunctuationDouble_preservesSpaces(self):
     self.assertExecution(
@@ -683,20 +658,7 @@ class FrenchTypographyTest(XhtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(' '.join((
-            "% &amp; _ $ $ # #",
-            "a\xa0b",
-            "n\xado",
-            "–c—",
-            "d…",
-            "«\xa0e\xa0»",
-            "«\xa0f\xa0»",
-            "‘g’h’ ’g‘h‘",
-            "“i”j” ”k“l“",
-            "“‘m”’",
-            "n\xa0! o\xa0: p\xa0; q\xa0?",
-            "r\xa0!:;?",
-        ))))
+        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['french']))
 
   def testPunctuationDouble_convertsSpaces(self):
     self.assertExecution(

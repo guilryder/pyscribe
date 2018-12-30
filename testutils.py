@@ -40,6 +40,50 @@ SPECIAL_CHARS_AS_HTML = (
     SPECIAL_CHARS.replace('&', '&amp;')
                  .replace('<', '&lt;')
                  .replace('>', '&gt;'))
+TYPO_TO_SPECIAL_CHARS_AS_HTML = {
+    'neutral': ' '.join((
+        "% &amp; _ $ $ # #",
+        "a\xa0b",
+        "n\xado",
+        "–c—",
+        "d…",
+        "«e»",
+        "« f »",
+        "`g'h' 'g`h`",
+        "“i”j” ”k“l“",
+        "“`m”'",
+        "n ! o: p ; q?",
+        "r!:;?",
+    )),
+    'english': ' '.join((
+        "% &amp; _ $ $ # #",
+        "a\xa0b",
+        "n\xado",
+        "–c—",
+        "d…",
+        "«e»",
+        "« f »",
+        "‘g’h’ ’g‘h‘",
+        "“i”j” ”k“l“",
+        "“‘m”’",
+        "n ! o: p ; q?",
+        "r!:;?",
+    )),
+    'french': ' '.join((
+        "% &amp; _ $ $ # #",
+        "a\xa0b",
+        "n\xado",
+        "–c—",
+        "d…",
+        "«\xa0e\xa0»",
+        "«\xa0f\xa0»",
+        "‘g’h’ ’g‘h‘",
+        "“i”j” ”k“l“",
+        "“‘m”’",
+        "n\xa0! o\xa0: p\xa0; q\xa0?",
+        "r\xa0!:;?",
+    )),
+}
 
 FAKE_PYSCRIBE_DIR = '/pyscribe/'
 REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')
