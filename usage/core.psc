@@ -28,16 +28,6 @@ $macro.new[root.open.hook][
 
 
 ################################################################################
-# Device size
-# $device.size = 'small' (default) or 'large'
-
-$if.def[device.size][][$macro.new[device.size][small]]
-$macro.new[device.size.init.small][$macro.new[device.size.select(if.small,if.large)][$if.small]]
-$macro.new[device.size.init.large][$macro.new[device.size.select(if.small,if.large)][$if.large]]
-$macro.call[device.size.init.$device.size]
-
-
-################################################################################
 # Common
 
 # Metadata
@@ -446,21 +436,14 @@ $macro.new[root.close.xhtml][
 ################################################################################
 # Latex
 
-$macro.new[output.filename.latex(basename)][$basename^ -^ $device.size^.tex]
+$macro.new[output.filename.latex(basename)][$basename^.tex]
 $macro.new[root.branch.type.latex][latex]
 $macro.new[latex.class.options][]
 
 $macro.new[root.open.latex][
   # Latex class options: set 'ebook' in small mode, append the custom options.
-  # Avoid unnecessary commas like [ebook,] and empty option blocks [].
-  $macro.new[latex.class.options.all][
-    $device.size.select[
-        ebook$if.eq[$latex.class.options][][][,$latex.class.options]
-      ][
-        $latex.class.options
-      ]
-  ]
-  \documentclass$if.eq[$latex.class.options.all][][][^[$latex.class.options.all^]]{pyscribe}$newline
+  # Omit the brackets if no options.
+  \documentclass$if.eq[$latex.class.options][][][^[$latex.class.options^]]{pyscribe}$newline
 
   # Metadata
   $macro.new[metadata.title.set(title)][

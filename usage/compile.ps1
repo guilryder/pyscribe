@@ -1,7 +1,6 @@
 [CmdletBinding(SupportsShouldProcess = $true)]
 Param(
   [String]$Format = "latex",
-  [String]$Size = "large",
   [Bool]$View = $false,
   [Bool]$PyScribe = $true,
   [Bool]$Epub = $false,
@@ -31,7 +30,7 @@ begin {
       $ExtraArgs
   }
 
-  $operation = "compile $Format $Size"
+  $operation = "compile $Format"
   if ($PyScribe) { $operation = "$operation PyScribe" }
   if ($View) { $operation = "$operation View" }
   switch ($Format) {
@@ -52,13 +51,11 @@ process {
       continue
     }
 
-    $basenamesize = "${basename} - ${Size}"
-
     echo ""
-    echo "### Processing ${filename} - format: $Format - size: $Size"
+    echo "### Processing ${filename} - format: $Format"
     if ($PyScribe) {
       echo "Compiling PyScribe source..."
-      & $pyscribeScript --output=$outDir --format=$Format -d device.size=$Size "$filename"
+      & $pyscribeScript --output=$outDir --format=$Format "$filename"
     }
 
     Push-Location $outDir
@@ -78,11 +75,11 @@ process {
       }
       "latex" {
         if ($Pdf) {
-          echo "Compiling ${basenamesize}.tex to PDF..."
-          texify --batch --pdf --clean --quiet "${basenamesize}.tex"
+          echo "Compiling ${basename}.tex to PDF..."
+          texify --batch --pdf --clean --quiet "${basename}.tex"
         }
-        if ($Pdf -and $View -and (Test-Path "${basenamesize}.pdf")) {
-          & ".\${basenamesize}.pdf"
+        if ($Pdf -and $View -and (Test-Path "${basename}.pdf")) {
+          & ".\${basename}.pdf"
         }
       }
     }

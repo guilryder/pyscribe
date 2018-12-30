@@ -175,8 +175,7 @@ class MainTest(EndToEndTestCase):
 # Command-line to generated output file basename.
 GOLDEN_TEST_DEFINITIONS = {
   'test.psc --format=xhtml': 'Test.html',
-  'test.psc --format=latex': 'Test - small.tex',
-  'test.psc --format=latex -d device.size=large': 'Test - large.tex',
+  'test.psc --format=latex': 'Test.tex',
 }
 
 class GoldenTest(EndToEndTestCase):

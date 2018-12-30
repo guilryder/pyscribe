@@ -7,7 +7,6 @@ Param(
   [Nullable[Bool]]$Latex = $null,
   [Bool]$Pdf = $false,  # forces -Latex:1
   [Bool]$AllText = $false,  # equivalent to -Latex:1 -Xhtml:1
-  [String[]]$Sizes = @("small", "large"),
   [Bool]$View = $false,
   [String[]]$DefaultFiles,
   [Parameter(Position=0, ValueFromRemainingArguments)] $Files)
@@ -39,8 +38,6 @@ if ($Xhtml) {
 }
 
 if ($Latex) {
-  foreach ($size in $Sizes) {
-    & $compile -Format:latex -Size:$size -View:$View -PyScribe:$PyScribe `
-        -Pdf:$Pdf -Files:$Files
-  }
+  & $compile -Format:latex -View:$View -PyScribe:$PyScribe `
+      -Pdf:$Pdf -Files:$Files
 }
