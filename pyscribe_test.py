@@ -180,7 +180,7 @@ GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
   ('hello.psc --format=latex', 'Hello.tex'),
   ('hello.psc --format=xhtml', 'Hello.html'),
   ('test.psc --format=xhtml', 'Test.html'),
-  ('test.psc --format=latex', 'Test.tex'),
+  ('test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
 
 class GoldenTest(EndToEndTestCase):

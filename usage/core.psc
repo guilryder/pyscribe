@@ -30,6 +30,16 @@ $macro.new[root.open.hook][
 ################################################################################
 # Common
 
+# Inline mode: embeds external files whenever possible instead of linking to
+# them, to make the output file more self-contained.
+# Typical use case: inlining *.css files.
+$if.def[inline][][$macro.new[inline][0]]
+$if.eq[$inline][1][
+  $macro.new[inline.select(if.inline,if.linked)][$if.inline]
+][
+  $macro.new[inline.select(if.inline,if.linked)][$if.linked]
+]
+
 # Metadata
 $macro.new[metadata.all.set][
   $metadata.title.set[$book.title]
@@ -144,7 +154,7 @@ $macro.new[root.open.xhtml][
     $branch.write[head][$contents$newline]
   ]
   # <link rel="stylesheet" type="text/css" href="..."/>
-  $macro.new[css.file(css.filename)][
+  $macro.new[css.file.link(css.filename)][
     $head.append[
       $tag[link][para][
         $tag.attr.set[current][rel][stylesheet]
@@ -178,6 +188,15 @@ $macro.new[root.open.xhtml][
         $tag.attr.set[current][type][text/css]
         $tag.body.raw[$css.contents]
       ]
+    ]
+  ]
+
+  # CSS file inclusion/linking.
+  $macro.new[css.file(css.filename)][
+    $inline.select[
+      $css.inline[$include.text[$dir.output/$css.filename]]
+    ][
+      $css.file.link[$css.filename]
     ]
   ]
 
