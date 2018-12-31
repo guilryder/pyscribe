@@ -27,13 +27,9 @@ $macro.wrap[root.open.html][][
 $macro.wrap[root.open.latex][][
   # Cover
   $macro.new[page.title][
-$$whitespace.preserve
-    \makeatletter
-    \begin{center}
-      {\LARGE \@maintitle \par}
-    \end{center}
-    \makeatother
-$$whitespace.skip
+    $latex.env[center][
+      $fmt.size.p2[$book.title $par]
+    ]
   ]
 
   # Headers
@@ -49,14 +45,13 @@ $$whitespace.skip
 # Testing
 
 $$whitespace.preserve
-$macro.new[inside][
-  Inside inside inside $\ Inside inside
+
+$macro.new[repeat.30(body)][
+  $repeat[3][$repeat[10][$body]]
 ]
 
-$macro.new[repeat.thirty(body)][
-  $repeat[10][$body]
-  $repeat[10][$body]
-  $repeat[10][$body]
+$macro.new[repeat.2lines(body)][
+  $repeat[2][$repeat[10][$body] $\]
 ]
 
 $macro.new[test.typography(contents)][
@@ -66,14 +61,10 @@ $macro.new[test.typography(contents)][
 ]
 
 $macro.new[para.macro(macro.name,contents)][
-  $par$text.dollar$macro.name: $contents
+  $par$medskip
+  $fmt.typewriter[$text.dollar$macro.name]^ $contents
 ]
 
-$macro.new[para.macro.typography(macro.name,contents)][
-  $para.macro[$macro.name][
-    $test.typography[contents $\]
-  ]
-]
 $$whitespace.skip
 
 
@@ -96,13 +87,13 @@ $format.select[
 
 $header[1][Typography]
 
-Special characters: % & _ $text.dollar $text.hash
+Special characters: % & $text.backslash _ $text.dollar $text.hash © ® ™
 
 $test.typography[
   Lorem... ipsum...dolor <<sit>> amet, consectetur `adipiscing' elit, ``sed do'' eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. $par
 ]
 
-$para.macro[^-][$repeat.thirty[beforebeforebefore$-afterafterafter^ ]]
+$para.macro[^-][$repeat.30[beforebeforebefore$-afterafterafter^ ]]
 
 $header[1][$fmt.typewriter[core.psc] macros]
 
@@ -113,13 +104,13 @@ $para.macro[line.break][before $\ after]
 
 $para.macro[text.backslash][before$text.backslash^after]
 $para.macro[text.colon][before$text.colon^after]
-$para.macro[roman.smallcaps][Louis~$roman.smallcaps[14], Roi-Soleil]
+$para.macro[roman.smallcaps][14 = $roman.smallcaps[14] = XIV]
 $para.macro[code.nopipe][$code.nopipe[foo@example.com]]
 
 $para.macro[page.new][before $par $page.new $par after]
 $para.macro[page.before.avoid][before $par $page.before.avoid $par after]
-$par $repeat.thirty[Before $par]
-$para.macro[page.same][$page.same[$repeat.thirty[Inside $par]]]
+$par $repeat.30[Before $par]
+$para.macro[page.same][$page.same[$repeat.30[Inside $par]]]
 
 $para.macro[image][
   $image[Image alt text][
@@ -161,16 +152,21 @@ $para.macro.text.formatting[fmt.size.p2]
 $para.macro.text.formatting[fmt.size.p3]
 $para.macro.text.formatting[fmt.size.p4]
 
-$para.macro.typography[number][
-  separator $number[12]
-  separator $number[-12.3]
-  separator $number[1234567.8901]
-  separator $number[-1234567.8901]
-  separator $number[1234567,8901]
-  separator $number[+1234567,8901]
+$para.macro[number][
+  $\ $test.typography[
+    separator $number[12]
+    separator $number[-12.3]
+    separator $number[1234567.8901]
+    separator $number[-1234567.8901]
+    separator $number[1234567,8901]
+    separator $number[+1234567,8901]
+    $\
+  ]
 ]
 
 $header[2][Paragraph formatting]
+
+$macro.new[inside][$repeat.2lines[Inside^ ]]
 
 $macro.new[para.macro.para.formatting(macro.name)][
   $para.macro[$macro.name][
@@ -184,9 +180,14 @@ $macro.new[para.macro.para.prefix(macro.name)][
   ]
 ]
 
-$para.macro.para.formatting[para.center]
-$para.macro.para.formatting[para.flushleft]
-$para.macro.para.formatting[para.flushright]
+$para.center[$repeat.2lines[$text.dollar^para.center^ ]
+$para.flushleft[$repeat.2lines[$text.dollar^para.left^ ]
+$para.flushright[$repeat.2lines[$text.dollar^para.right^ ]
+$para.center[$repeat.2lines[$text.dollar^para.center^ ]
+$para.flushleft[$repeat.2lines[$text.dollar^para.left^ ]
+$para.flushright[$repeat.2lines[$text.dollar^para.right^ ]
+]]]]]]
+
 $para.macro.para.formatting[para.bold]
 $para.macro.para.formatting[para.italic]
 $para.macro.para.formatting[para.sansserif]
@@ -270,7 +271,7 @@ $$text.macros.off
     color: red;
   }
 
-  /* Special characters: ' " ` `` '' < > ? : ! */ # ignored
+  /* Special characters: ' " ` `` '' \ ^^ < > ? : ! */ # ignored
 ]$$text.macros.on
 
 

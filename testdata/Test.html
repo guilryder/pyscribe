@@ -8,7 +8,7 @@
 color: red;
 }
 
-/* Special characters: ' " ` `` '' < > ? : ! */
+/* Special characters: ' " ` `` '' \ ^ < > ? : ! */
 --></style>
 <link rel="stylesheet" type="text/css" href="../usage/core.css"/>
 <title>Test Title</title>
@@ -32,25 +32,23 @@ color: red;
 <p class="toc2"><a href="#header16">I)   HTML</a></p></div>
 <p id="ref-dummy-target">Used as link target</p>
 <h1 id="header1">I   Typography</h1>
-<p>Special characters : % &amp; _ $ #</p>
+<p>Special characters : % &amp; \ _ $ # © ® ™</p>
 <p>Neutral typography : Lorem… ipsum…dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua.</p>
 <p>English typography: Lorem… ipsum…dolor «sit» amet, consectetur ‘adipiscing’ elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua.</p>
-<p>French typography: Lorem… ipsum…dolor « sit » amet, consectetur ‘adipiscing’ elit, “sed do” eiusmod ! tempor : incididunt ; ut ? labore !? et dolore magna aliqua.</p>
-<p>$- : beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter 
-beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter 
-beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter</p>
+<p class="medskip">French typography: Lorem… ipsum…dolor « sit » amet, consectetur ‘adipiscing’ elit, “sed do” eiusmod ! tempor : incididunt ; ut ? labore !? et dolore magna aliqua.</p>
+<p><span class="typewriter">$-</span> beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter</p>
 <h1 id="header2">II   <span class="typewriter">core.psc</span> macros</h1>
-<h2 id="header3">A)   Various</h2>
-<p>$\ : before <br/> after</p>
-<p>$line.break : before <br/> after</p>
-<p>$text.backslash : before\after</p>
-<p>$text.colon : before:after</p>
-<p>$roman.smallcaps : Louis <span class="smallcaps">xiv</span>, Roi-Soleil</p>
-<p>$code.nopipe : <span class="typewriter">foo@example.com</span></p>
-<p class="page-after">$page.new : before</p>
+<h2 id="header3" class="medskip">A)   Various</h2>
+<p class="medskip"><span class="typewriter">$\</span> before <br/> after</p>
+<p class="medskip"><span class="typewriter">$line.break</span> before <br/> after</p>
+<p class="medskip"><span class="typewriter">$text.backslash</span> before\after</p>
+<p class="medskip"><span class="typewriter">$text.colon</span> before:after</p>
+<p class="medskip"><span class="typewriter">$roman.smallcaps</span> 14 = <span class="smallcaps">xiv</span> = XIV</p>
+<p class="medskip"><span class="typewriter">$code.nopipe</span> <span class="typewriter">foo@example.com</span></p>
+<p class="page-after"><span class="typewriter">$page.new</span> before</p>
+<p class="medskip">after</p>
+<p class="page-after-avoid"><span class="typewriter">$page.before.avoid</span> before</p>
 <p>after</p>
-<p class="page-after-avoid">$page.before.avoid : before</p>
-<p>after</p>
 <p>Before</p>
 <p>Before</p>
 <p>Before</p>
@@ -80,9 +78,9 @@ beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebe
 <p>Before</p>
 <p>Before</p>
 <p>Before</p>
-<p>Before</p>
-<p>$page.same :</p>
-<div class="page-same"><p>Inside</p>
+<p class="medskip">Before</p>
+<p><span class="typewriter">$page.same</span></p>
+<div class="page-same medskip"><p>Inside</p>
 <p>Inside</p>
 <p>Inside</p>
 <p>Inside</p>
@@ -112,88 +110,106 @@ beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebe
 <p>Inside</p>
 <p>Inside</p>
 <p>Inside</p></div>
-<p>$image : <img alt="Image alt text" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA&#10;AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==.png"/></p>
-<h2 id="header4">B)   Abbreviations</h2>
-<p>$ier : Le 1<sup>er</sup> élément.</p>
-<p>$iere : La 1<sup>re</sup> chose.</p>
-<p>$ieme : Le 3<sup>e</sup> élément.</p>
-<p>$no : Le n<sup>o</sup>7 est ici.</p>
-<p>$No : n<sup>o</sup>7</p>
-<h2 id="header5">C)   Text formatting</h2>
-<p>$fmt.bold : <b>one
+<p><span class="typewriter">$image</span> <img alt="Image alt text" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA&#10;AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==.png"/></p>
+<h2 id="header4" class="medskip">B)   Abbreviations</h2>
+<p class="medskip"><span class="typewriter">$ier</span> Le 1<sup>er</sup> élément.</p>
+<p class="medskip"><span class="typewriter">$iere</span> La 1<sup>re</sup> chose.</p>
+<p class="medskip"><span class="typewriter">$ieme</span> Le 3<sup>e</sup> élément.</p>
+<p class="medskip"><span class="typewriter">$no</span> Le n<sup>o</sup>7 est ici.</p>
+<p><span class="typewriter">$No</span> n<sup>o</sup>7</p>
+<h2 id="header5" class="medskip">C)   Text formatting</h2>
+<p class="medskip"><span class="typewriter">$fmt.bold</span> <b>one
  <b>two
  <b>three</b></b></b></p>
-<p>$fmt.italic : <i>one
+<p class="medskip"><span class="typewriter">$fmt.italic</span> <i>one
  <i>two
  <i>three</i></i></i></p>
-<p>$fmt.sansserif : <span class="sansserif">one
+<p class="medskip"><span class="typewriter">$fmt.sansserif</span> <span class="sansserif">one
  <span class="sansserif">two
  <span class="sansserif">three</span></span></span></p>
-<p>$fmt.script : <span class="script">one
+<p class="medskip"><span class="typewriter">$fmt.script</span> <span class="script">one
  <span class="script">two
  <span class="script">three</span></span></span></p>
-<p>$fmt.smallcaps : <span class="smallcaps">one
+<p class="medskip"><span class="typewriter">$fmt.smallcaps</span> <span class="smallcaps">one
  <span class="smallcaps">two
  <span class="smallcaps">three</span></span></span></p>
-<p>$fmt.strikeout : <s>one
+<p class="medskip"><span class="typewriter">$fmt.strikeout</span> <s>one
  <s>two
  <s>three</s></s></s></p>
-<p>$fmt.typewriter : <span class="typewriter">one
+<p class="medskip"><span class="typewriter">$fmt.typewriter</span> <span class="typewriter">one
  <span class="typewriter">two
  <span class="typewriter">three</span></span></span></p>
-<p>$fmt.subscript : <sub>one
+<p class="medskip"><span class="typewriter">$fmt.subscript</span> <sub>one
  <sub>two
  <sub>three</sub></sub></sub></p>
-<p>$fmt.superscript : <sup>one
+<p class="medskip"><span class="typewriter">$fmt.superscript</span> <sup>one
  <sup>two
  <sup>three</sup></sup></sup> M<sup>me</sup> Durand</p>
-<p>$fmt.typewriter : <span class="typewriter">one
+<p class="medskip"><span class="typewriter">$fmt.typewriter</span> <span class="typewriter">one
  <span class="typewriter">two
  <span class="typewriter">three</span></span></span></p>
-<p>$fmt.underline : <u>one
+<p class="medskip"><span class="typewriter">$fmt.underline</span> <u>one
  <u>two
  <u>three</u></u></u></p>
-<p>$fmt.size.p1 : <span class="sizep1">one
+<p class="medskip"><span class="typewriter">$fmt.size.p1</span> <span class="sizep1">one
  <span class="sizep1">two
  <span class="sizep1">three</span></span></span></p>
-<p>$fmt.size.p2 : <span class="sizep2">one
+<p class="medskip"><span class="typewriter">$fmt.size.p2</span> <span class="sizep2">one
  <span class="sizep2">two
  <span class="sizep2">three</span></span></span></p>
-<p>$fmt.size.p3 : <span class="sizep3">one
+<p class="medskip"><span class="typewriter">$fmt.size.p3</span> <span class="sizep3">one
  <span class="sizep3">two
  <span class="sizep3">three</span></span></span></p>
-<p>$fmt.size.p4 : <span class="sizep4">one
+<p class="medskip"><span class="typewriter">$fmt.size.p4</span> <span class="sizep4">one
  <span class="sizep4">two
  <span class="sizep4">three</span></span></span></p>
-<p>$number : Neutral typography : contents <br/>
-English typography: contents <br/>
-French typography: contents <br/></p>
+<p><span class="typewriter">$number</span> <br/> Neutral typography : separator 12
+separator -12.3
+separator 1234567.8901
+separator -1234567.8901
+separator 1234567,8901
+separator +1234567,8901
+<br/>
+English typography: separator 12
+separator –12.3
+separator 1,234,567.890,1
+separator –1,234,567.890,1
+separator 1,234,567,890,1
+separator +1,234,567,890,1
+<br/>
+French typography: separator 12
+separator –12.3
+separator 1 234 567.890 1
+separator –1 234 567.890 1
+separator 1 234 567,890 1
+separator +1 234 567,890 1
+<br/></p>
 <h2 id="header6">D)   Paragraph formatting</h2>
-<p>$para.center :</p>
-<div class="center"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.flushleft :</p>
-<div class="flushleft"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.flushright :</p>
-<div class="flushright"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.bold :</p>
-<div class="bold"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.italic :</p>
-<div class="italic"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.sansserif :</p>
-<div class="sansserif"><p>Inside inside inside <br/> Inside inside</p></div>
-<p>$para.typewriter :</p>
-<div class="typewriter"><p>Inside inside inside <br/> Inside inside</p></div>
-<p class="noindent">$para.noindent : Inside inside inside <br/> Inside inside</p>
-<p class="nospace-before">$para.nospace.before : Inside inside inside <br/> Inside inside</p>
+<div class="center medskip"><p>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/></p>
+<div class="flushleft"><p>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/></p>
+<div class="flushright"><p>$para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right <br/>$para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right <br/></p>
+<div class="center"><p>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/></p>
+<div class="flushleft"><p>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/></p>
+<div class="flushright"><p>$para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right <br/>$para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right $para.right <br/></p></div></div></div></div></div></div>
+<p><span class="typewriter">$para.bold</span></p>
+<div class="bold medskip"><p>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p></div>
+<p><span class="typewriter">$para.italic</span></p>
+<div class="italic medskip"><p>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p></div>
+<p><span class="typewriter">$para.sansserif</span></p>
+<div class="sansserif medskip"><p>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p></div>
+<p><span class="typewriter">$para.typewriter</span></p>
+<div class="typewriter medskip"><p>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p></div>
+<p class="noindent medskip"><span class="typewriter">$para.noindent</span> Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p>
+<p class="nospace-before"><span class="typewriter">$para.nospace.before</span> Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p>
+<p class="medskip">After</p>
+<p class="nospace-after"><span class="typewriter">$para.nospace.after</span> Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/>Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside <br/></p>
 <p>After</p>
-<p class="nospace-after">$para.nospace.after : Inside inside inside <br/> Inside inside</p>
-<p>After</p>
-<h2 id="header7">E)   Vertical spacing</h2>
-<p class="bigskip">$bigskip : Before</p>
-<p>After</p>
-<p class="medskip">$medskip : Before</p>
-<p>After</p>
-<p class="medskip">$smallskip : Before</p>
+<h2 id="header7" class="medskip">E)   Vertical spacing</h2>
+<p class="bigskip"><span class="typewriter">$bigskip</span> Before</p>
+<p class="medskip">After</p>
+<p class="medskip"><span class="typewriter">$medskip</span> Before</p>
+<p class="medskip">After</p>
+<p class="medskip"><span class="typewriter">$smallskip</span> Before</p>
 <p>After</p>
 <h2 id="header8">F)   Lists</h2>
 <ul><li>One
@@ -217,30 +233,30 @@ French typography: contents <br/></p>
 <li>Three Two Two</li></ul></li>
 
 <li>Three Three</li></ul></li></ul>
-<h2 id="header9">G)   Links</h2>
-<p>$hyperlink : <a href="https://example.org">hyperlink caption</a></p>
-<p><a href="#ref-dummy-target">Links to the target above.</a></p>
-<p>$footnotes.add : Before <a id="fnl10" href="#fnc10">[1]</a> after.</p>
-<h3>1.   Header level 3</h3>
-<p>$footnotes.add : Foonote two <a id="fnl11" href="#fnc11">[2]</a></p>
-<h3>2.   Header level 3 again</h3>
-<p>$footnotes.add : Foonote three <a id="fnl12" href="#fnc12">[3]</a></p>
+<h2 id="header9" class="medskip">G)   Links</h2>
+<p><span class="typewriter">$hyperlink</span> <a href="https://example.org">hyperlink caption</a></p>
+<p class="medskip"><a href="#ref-dummy-target">Links to the target above.</a></p>
+<p><span class="typewriter">$footnotes.add</span> Before <a id="fnl10" href="#fnc10">[1]</a> after.</p>
+<h3 class="medskip">1.   Header level 3</h3>
+<p><span class="typewriter">$footnotes.add</span> Foonote two <a id="fnl11" href="#fnc11">[2]</a></p>
+<h3 class="medskip">2.   Header level 3 again</h3>
+<p><span class="typewriter">$footnotes.add</span> Foonote three <a id="fnl12" href="#fnc12">[3]</a></p>
 <div class="footnotes"><hr/>
 <p><a id="fnc10" href="#fnl10">[1]</a> Footnote contents.</p>
 <p><a id="fnc11" href="#fnl11">[2]</a> Foonote two contents.</p>
 <p><a id="fnc12" href="#fnl12">[3]</a> Foonote three contents.</p></div>
 <h2 id="header13">H)   Footnotes flushing</h2>
-<p>Footnotes flushed after header level 2.</p>
-<p>$footnotes.add : Footnote four <a id="fnl14" href="#fnc14">[1]</a> restarts from 1.</p>
-<p>$footnotes.flush : Before</p>
+<p class="medskip">Footnotes flushed after header level 2.</p>
+<p class="medskip"><span class="typewriter">$footnotes.add</span> Footnote four <a id="fnl14" href="#fnc14">[1]</a> restarts from 1.</p>
+<p><span class="typewriter">$footnotes.flush</span> Before</p>
 <div class="footnotes"><hr/>
 <p><a id="fnc14" href="#fnl14">[1]</a> Footnote four contents.</p></div>
-<p>After</p>
-<p>$footnotes.add : Footnote five <a id="fnl15" href="#fnc15">[1]</a></p>
+<p class="medskip">After</p>
+<p><span class="typewriter">$footnotes.add</span> Footnote five <a id="fnl15" href="#fnc15">[1]</a></p>
 <div class="footnotes"><hr/>
 <p><a id="fnc15" href="#fnl15">[1]</a> Footnote five contents.</p></div>
-<h2 id="header16">I)   HTML</h2>
-<p>$para.css.custom :</p>
+<h2 id="header16" class="medskip">I)   HTML</h2>
+<p><span class="typewriter">$para.css.custom</span></p>
 <div class="red"><p>contents</p></div>
 </body>
 </html>

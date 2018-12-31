@@ -6,12 +6,9 @@
 \languageset{french}
 
 \begin{document}
-\makeatletter
 \begin{center}
-{\LARGE \@maintitle \par}
+{\Large Test Title\par}
 \end{center}
-\makeatother
-
 \newpage
 
 \renewcommand\contentsname{Sommaire}
@@ -22,104 +19,148 @@
 
 \chapter{Typography}
 
-Special characters: \% \& \_ \$ \#
+Special characters: \% \& \textbackslash{} \_ \$ \# © ® ™
 
 Neutral typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
 English typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
 French typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
 
-\par\$-: beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
-beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
-beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
+\par\medskip
+\texttt{\$-} beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
 
 \chapter{\texttt{core.psc} macros}
 
 \section{Various}
 
-\par\$\textbackslash{}: before \\ after
-\par\$line.break: before \\ after
+\par\medskip
+\texttt{\$\textbackslash{}} before \\ after
+\par\medskip
+\texttt{\$line.break} before \\ after
 
-\par\$text.backslash: before\textbackslash{}after
-\par\$text.colon: before\string:after
-\par\$roman.smallcaps: Louis~\textsc{xiv}, Roi-Soleil
-\par\$code.nopipe: \verb|foo@example.com|
+\par\medskip
+\texttt{\$text.backslash} before\textbackslash{}after
+\par\medskip
+\texttt{\$text.colon} before\string:after
+\par\medskip
+\texttt{\$roman.smallcaps} 14 = \textsc{xiv} = XIV
+\par\medskip
+\texttt{\$code.nopipe} \verb|foo@example.com|
 
-\par\$page.new: before \par \newpage \par after
-\par\$page.before.avoid: before \par \nopagebreak[4] \par after
-\par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par
-Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par
-Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par
-\par\$page.same: \begin{samepage}
-Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par
-Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par
-Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par
+\par\medskip
+\texttt{\$page.new} before \par \newpage \par after
+\par\medskip
+\texttt{\$page.before.avoid} before \par \nopagebreak[4] \par after
+\par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par
+\par\medskip
+\texttt{\$page.same} \begin{samepage}
+Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par
 \end{samepage}
 
-\par\$image: \ifx\pdfoutput\undefined\else
+\par\medskip
+\texttt{\$image} \ifx\pdfoutput\undefined\else
 \includegraphics[width=.5\linewidth,draft]{non-existing-image}
 
 
 \section{Abbreviations}
 
-\par\$ier: Le 1\ier{} élément.
-\par\$iere: La 1\iere{} chose.
-\par\$ieme: Le 3\ieme{} élément.
-\par\$no: Le \no{}7 est ici.
-\par\$No: \no{}7
+\par\medskip
+\texttt{\$ier} Le 1\ier{} élément.
+\par\medskip
+\texttt{\$iere} La 1\iere{} chose.
+\par\medskip
+\texttt{\$ieme} Le 3\ieme{} élément.
+\par\medskip
+\texttt{\$no} Le \no{}7 est ici.
+\par\medskip
+\texttt{\$No} \no{}7
 
 \section{Text formatting}
 
 
 
-\par\$fmt.bold:  \textbf{one
+\par\medskip
+\texttt{\$fmt.bold}  \textbf{one
  \textbf{two
  \textbf{three}}}
-\par\$fmt.italic:  \textit{one
+\par\medskip
+\texttt{\$fmt.italic}  \textit{one
  \textit{two
  \textit{three}}}
-\par\$fmt.sansserif:  \textsf{one
+\par\medskip
+\texttt{\$fmt.sansserif}  \textsf{one
  \textsf{two
  \textsf{three}}}
-\par\$fmt.script:  \scripttext{one
+\par\medskip
+\texttt{\$fmt.script}  \scripttext{one
  \scripttext{two
  \scripttext{three}}}
-\par\$fmt.smallcaps:  \textsc{one
+\par\medskip
+\texttt{\$fmt.smallcaps}  \textsc{one
  \textsc{two
  \textsc{three}}}
-\par\$fmt.strikeout:  \sout{one
+\par\medskip
+\texttt{\$fmt.strikeout}  \sout{one
  \sout{two
  \sout{three}}}
-\par\$fmt.typewriter:  \texttt{one
+\par\medskip
+\texttt{\$fmt.typewriter}  \texttt{one
  \texttt{two
  \texttt{three}}}
-\par\$fmt.subscript:  \textsubscript{one
+\par\medskip
+\texttt{\$fmt.subscript}  \textsubscript{one
  \textsubscript{two
  \textsubscript{three}}}
-\par\$fmt.superscript:  \textsuperscript{one
+\par\medskip
+\texttt{\$fmt.superscript}  \textsuperscript{one
  \textsuperscript{two
  \textsuperscript{three}}} M\textsuperscript{me} Durand
-\par\$fmt.typewriter:  \texttt{one
+\par\medskip
+\texttt{\$fmt.typewriter}  \texttt{one
  \texttt{two
  \texttt{three}}}
-\par\$fmt.underline:  \underline{one
+\par\medskip
+\texttt{\$fmt.underline}  \underline{one
  \underline{two
  \underline{three}}}
-\par\$fmt.size.p1:  {\large one
+\par\medskip
+\texttt{\$fmt.size.p1}  {\large one
  {\large two
  {\large three}}}
-\par\$fmt.size.p2:  {\Large one
+\par\medskip
+\texttt{\$fmt.size.p2}  {\Large one
  {\Large two
  {\Large three}}}
-\par\$fmt.size.p3:  {\LARGE one
+\par\medskip
+\texttt{\$fmt.size.p3}  {\LARGE one
  {\LARGE two
  {\LARGE three}}}
-\par\$fmt.size.p4:  {\Huge one
+\par\medskip
+\texttt{\$fmt.size.p4}  {\Huge one
  {\Huge two
  {\Huge three}}}
 
-\par\$number: Neutral typography: contents \\
-English typography: contents \\
-French typography: contents \\
+\par\medskip
+\texttt{\$number} \\ Neutral typography: separator \nombre{12}
+separator \nombre{-12.3}
+separator \nombre{1234567.8901}
+separator \nombre{-1234567.8901}
+separator \nombre{1234567,8901}
+separator \nombre{+1234567,8901}
+\\
+English typography: separator \nombre{12}
+separator \nombre{-12.3}
+separator \nombre{1234567.8901}
+separator \nombre{-1234567.8901}
+separator \nombre{1234567,8901}
+separator \nombre{+1234567,8901}
+\\
+French typography: separator \nombre{12}
+separator \nombre{-12.3}
+separator \nombre{1234567.8901}
+separator \nombre{-1234567.8901}
+separator \nombre{1234567,8901}
+separator \nombre{+1234567,8901}
+\\
 
 \section{Paragraph formatting}
 
@@ -127,29 +168,48 @@ French typography: contents \\
 
 
 
-\par\$para.center: \par{\centering
-Inside inside inside \\ Inside inside\par}
-\par\$para.flushleft: \par{\raggedright
-Inside inside inside \\ Inside inside\par}
-\par\$para.flushright: \par{\raggedleft
-Inside inside inside \\ Inside inside\par}
-\par\$para.bold: \par{\bfseries
-Inside inside inside \\ Inside inside\par}
-\par\$para.italic: \par{\itshape
-Inside inside inside \\ Inside inside\par}
-\par\$para.sansserif: \par{\sf
-Inside inside inside \\ Inside inside\par}
-\par\$para.typewriter: \par{\ttfamily
-Inside inside inside \\ Inside inside\par}
-\par\$para.noindent: \noindent Inside inside inside \\ Inside inside
-\par\$para.nospace.before: \vspace{-\parskip}Inside inside inside \\ Inside inside\par After \par
-\par\$para.nospace.after: \vspace{-\parskip}Inside inside inside \\ Inside inside\par After \par
+
+
+\par{\centering
+\$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center  \\ \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center  \\
+\par{\raggedright
+\$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left  \\ \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left  \\
+\par{\raggedleft
+\$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right  \\ \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right  \\
+\par{\centering
+\$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center  \\ \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center \$para.center  \\
+\par{\raggedright
+\$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left  \\ \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left \$para.left  \\
+\par{\raggedleft
+\$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right  \\ \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right \$para.right  \\ \par}\par}\par}\par}\par}\par}
+
+\par\medskip
+\texttt{\$para.bold} \par{\bfseries
+Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par}
+\par\medskip
+\texttt{\$para.italic} \par{\itshape
+Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par}
+\par\medskip
+\texttt{\$para.sansserif} \par{\sf
+Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par}
+\par\medskip
+\texttt{\$para.typewriter} \par{\ttfamily
+Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par}
+\par\medskip
+\texttt{\$para.noindent} \noindent Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\
+\par\medskip
+\texttt{\$para.nospace.before} \vspace{-\parskip}Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par After \par
+\par\medskip
+\texttt{\$para.nospace.after} \vspace{-\parskip}Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ Inside Inside Inside Inside Inside Inside Inside Inside Inside Inside  \\ \par After \par
 
 \section{Vertical spacing}
 
-\par\$bigskip: Before\par \bigskip After
-\par\$medskip: Before\par \medskip After
-\par\$smallskip: Before\par \medskip After
+\par\medskip
+\texttt{\$bigskip} Before\par \bigskip After
+\par\medskip
+\texttt{\$medskip} Before\par \medskip After
+\par\medskip
+\texttt{\$smallskip} Before\par \medskip After
 
 \section{Lists}
 
@@ -179,17 +239,21 @@ Inside inside inside \\ Inside inside\par}
 
 \section{Links}
 
-\par\$hyperlink: \href{https://example.org}{hyperlink caption}
+\par\medskip
+\texttt{\$hyperlink} \href{https://example.org}{hyperlink caption}
 
 Reference targets not supported in LaTeX mode.
 
-\par\$footnotes.add: Before\footnote{Footnote contents.} after.
+\par\medskip
+\texttt{\$footnotes.add} Before\footnote{Footnote contents.} after.
 
 \subsection{Header level 3}
-\par\$footnotes.add: Foonote two\footnote{Foonote two contents.}
+\par\medskip
+\texttt{\$footnotes.add} Foonote two\footnote{Foonote two contents.}
 
 \subsection{Header level 3 again}
-\par\$footnotes.add: Foonote three\footnote{Foonote three contents.}
+\par\medskip
+\texttt{\$footnotes.add} Foonote three\footnote{Foonote three contents.}
 
 
 
