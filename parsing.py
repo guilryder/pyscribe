@@ -151,14 +151,20 @@ class ParsingContext:
 
 _RULE_METHOD_NAME_PATTERN = re.compile('Rule(?P<name>.+)')
 
-def rule(regexp, text_macro=False):
+_RULE_TYPE_REGULAR = 1 << 0
+_RULE_TYPE_SPECIAL_CHAR_LATEX = 1 << 1
+_RULE_TYPE_SPECIAL_CHAR_OTHER = 1 << 2
+
+_RULE_TYPES_ALL = ~0
+
+def rule(regexp, rule_type=_RULE_TYPE_REGULAR):
   """Decorator for rule methods; see RegexpParser."""
   def wrapper(func):
     name_match = _RULE_METHOD_NAME_PATTERN.match(func.__name__)
     assert name_match is not None, 'Invalid @rule function name: ' + func.name
     func.rule_name = name_match.group('name')
     func.regexp = regexp
-    func.text_macro = text_macro
+    func.rule_type = rule_type
     return func
   return wrapper
 
@@ -232,23 +238,28 @@ class Lexer:
     input_text_match = self.__GLOBAL_STRIP_REGEXP.match(input_text)
     self.__lineno = 1 + input_text[:input_text_match.start(1)].count('\n')
     self.__skip_spaces = True
-    self.__text_macros_enabled = True
+    self.__enabled_rule_types = _RULE_TYPES_ALL
     self.__input_text = input_text_match.group(1) or ''
 
     self.context = context
     self.__filename = context.filename
     self.__parser = RegexpParser(self)
     self.__tokens = self.__MergeTextTokensSameLine(self.__Parse())
+
+    def SetEnabledRuleTypes(bitset):
+      self.__enabled_rule_types = bitset
+
     self.__preproc_instr_callbacks = {
         'whitespace.preserve': self.__PreprocessWhitespacePreserve,
         'whitespace.skip': self.__PreprocessWhitespaceSkip,
-        'text.macros.on': lambda: self.__SetTextMacrosEnabled(True),
-        'text.macros.off': lambda: self.__SetTextMacrosEnabled(False),
+        'special.chars.escape.all': lambda: SetEnabledRuleTypes(
+            _RULE_TYPES_ALL),
+        'special.chars.escape.none': lambda: SetEnabledRuleTypes(
+            _RULE_TYPE_REGULAR),
+        'special.chars.latex.mode': lambda: SetEnabledRuleTypes(
+            _RULE_TYPE_REGULAR | _RULE_TYPE_SPECIAL_CHAR_OTHER),
     }
     self.__text_processor = self.__TextProcessorPreserveWhitespace
-
-  def __SetTextMacrosEnabled(self, value):
-    self.__text_macros_enabled = value
 
   def __iter__(self):
     """Returns the tokens iterator."""
@@ -304,14 +315,14 @@ class Lexer:
         yield from self.__text_processor(text_before)
         self.__skip_spaces = (text_before and text_before[-1] == '\n')
       if rule_callable is not None:
-        if rule_callable.text_macro and not self.__text_macros_enabled:
-          yield Token(TOKEN_TEXT, self.__lineno, matched_text)
-        else:
+        if self.__enabled_rule_types & rule_callable.rule_type:
           token = rule_callable(matched_text)
           if isinstance(token, Iterable):
             yield from token
           elif token is not None:
             yield token
+        else:
+          yield Token(TOKEN_TEXT, self.__lineno, matched_text)
 
   def __TextProcessorPreserveWhitespace(self, text):
     """
@@ -439,23 +450,27 @@ class Lexer:
 
   # Special characters
 
-  @rule(r'%', text_macro=True)
+  @rule(r'%', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RulePercent(self, _):
     return self.__MacroToken('text.percent')
 
-  @rule(r'&', text_macro=True)
+  @rule(r'&', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleAmpersand(self, _):
     return self.__MacroToken('text.ampersand')
 
-  @rule(r'_', text_macro=True)
+  @rule(r'\\', rule_type=_RULE_TYPE_SPECIAL_CHAR_LATEX)
+  def RuleBackslash(self, _):
+    return self.__MacroToken('text.backslash')
+
+  @rule(r'_', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleUnderscore(self, _):
     return self.__MacroToken('text.underscore')
 
-  @rule(r'~', text_macro=True)
+  @rule(r'~', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleNonBreakingSpace(self, _):
     return self.__MacroToken('text.nbsp')
 
-  @rule(r'-{2,}', text_macro=True)
+  @rule(r'-{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleDashes(self, value):
     length = len(value)
     if length == 2:
@@ -466,42 +481,42 @@ class Lexer:
       return Token(TOKEN_TEXT, self.__lineno, value)
     return self.__MacroToken('text.dash.' + dash_name)
 
-  @rule(r'\.{3,}', text_macro=True)
+  @rule(r'\.{3,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleEllipsis(self, value):
     if len(value) == 3:
       return self.__MacroToken('text.ellipsis')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
-  @rule(r'«|\<{2,}', text_macro=True)
+  @rule(r'«|\<{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleGuillemetOpen(self, value):
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.open')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
-  @rule(r'»|\>{2,}', text_macro=True)
+  @rule(r'»|\>{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleGuillemetClose(self, value):
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.close')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
-  @rule(r"`{1,2}", text_macro=True)
+  @rule(r"`{1,2}", rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleBacktick(self, value):
     if len(value) == 1:
       return self.__MacroToken('text.backtick')
     else:
       return self.__MacroToken('text.quote.open')
 
-  @rule(r"'{1,2}", text_macro=True)
+  @rule(r"'{1,2}", rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleApostrophe(self, value):
     if len(value) == 1:
       return self.__MacroToken('text.apostrophe')
     else:
       return self.__MacroToken('text.quote.close')
 
-  @rule(r'[!:;?]+', text_macro=True)
+  @rule(r'[!:;?]+', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
   def RuleDoublePunctuation(self, value):
     return (
         self.__MacroToken('text.punctuation.double'),

@@ -24,6 +24,7 @@ $macro.wrap[root.open.html][][
 ################################################################################
 # Latex
 
+$$special.chars.latex.mode
 $macro.wrap[root.open.latex][][
   # Cover
   $macro.new[page.title][
@@ -40,6 +41,7 @@ $macro.wrap[root.open.latex][][
     \newcommand\scripttext^[1^]{{\fontfamily{pzc}\selectfont\large^#1}}
   ]
 ]
+$$special.chars.escape.all
 
 ################################################################################
 # Testing
@@ -87,7 +89,7 @@ $format.select[
 
 $header[1][Typography]
 
-Special characters: % & $text.backslash _ $text.dollar $text.hash © ® ™
+Special characters: % & \ $text.caret _ $text.dollar $text.hash © ® ™
 
 $test.typography[
   Lorem... ipsum...dolor <<sit>> amet, consectetur `adipiscing' elit, ``sed do'' eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. $par
@@ -115,7 +117,7 @@ $para.macro[page.same][$page.same[$repeat.30[Inside $par]]]
 $para.macro[image][
   $image[Image alt text][
     $format.select[data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA
-AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==][non-existing-image]][png][][.5\linewidth,draft]
+AAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==][non-existing-image]][png][][.5^\linewidth,draft]
 ]
 
 $header[2][Abbreviations]
@@ -266,13 +268,13 @@ $format.select[
 $header[2][HTML]
 
 $css.inline[
-$$text.macros.off
+$$special.chars.escape.none
   .red {
     color: red;
   }
 
-  /* Special characters: ' " ` `` '' \ ^^ < > ? : ! */ # ignored
-]$$text.macros.on
+  /* Special characters: ' " ` `` '' \ ^^ _ < > ? : ! */ # ignored
+]$$special.chars.escape.all
 
 
 $para.macro[para.css.custom][

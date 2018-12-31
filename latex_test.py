@@ -13,6 +13,9 @@ class LatexEndToEndTest(ExecutionTestCase):
   def GetExecutionBranch(self, executor):
     return self.CreateBranch(executor, LatexBranch)
 
+  def InputHook(self, text):
+    return '$$special.chars.latex.mode\n' + text
+
   def testBranchType(self):
     self.assertExecution('$identity[$branch.type]', 'latex')
 
@@ -25,8 +28,15 @@ class LatexEndToEndTest(ExecutionTestCase):
   def testEscape(self):
     self.assertExecution('^% ^&', '% &')
 
-  def testSpecialChars(self):
-    self.assertExecution(SPECIAL_CHARS, SPECIAL_CHARS_AS_LATEX)
+  def testSpecialChars_escapeAll(self):
+    self.assertExecution(
+        '$$special.chars.escape.all\n' + SPECIAL_CHARS,
+        SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL)
+
+  def testSpecialChars_latexMode(self):
+    self.assertExecution(
+        SPECIAL_CHARS,
+        SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL.replace(r'\textbackslash{}', '\\'))
 
   def testOtherTextMacros(self):
     self.assertExecution(OTHER_TEXT_MACROS, OTHER_TEXT_MACROS_AS_LATEX)

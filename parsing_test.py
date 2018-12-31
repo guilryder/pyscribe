@@ -119,7 +119,8 @@ class PeekableIteratorTest(TestCase):
 class ParsingTest(TestCase):
 
   __KNOWN_INSTRUCTIONS = (
-      '$$text.macros.off, $$text.macros.on, '
+      '$$special.chars.escape.all, $$special.chars.escape.none, '
+      '$$special.chars.latex.mode, '
       '$$whitespace.preserve, $$whitespace.skip')
 
   def assertParsing(self, input_text, output=None, messages=(),
@@ -206,9 +207,6 @@ class ParsingTest(TestCase):
   def testEscapeSpecialCharacters(self):
     self.assertParsing("^% ^& ^~ ^-- ^-^-- ^... ^« ^» ^<< ^>> ^' ^!^:^;^?",
                        '"% & ~ -- --- ... \xab \xbb << >> \' !:;?"')
-
-  def testBackslashNoEscape(self):
-    self.assertParsing('text\\', r"'text\\'")
 
   def testWhitespacePreserve(self):
     self.assertParsing(
@@ -311,20 +309,27 @@ class ParsingTest(TestCase):
   def testWhitespace_preserveByDefault(self):
     self.assertParsing('a\nb', r"'a\n''b'")
 
-  def testTextMacrosOnOff(self):
+  def testSpecialChars_mix(self):
     self.assertParsing(
         '\n'.join((
-            '%',  # on
-            '$$text.macros.off',
-            '%',  # off
-            '$$text.macros.off',
-            '%',  # off
-            '$$text.macros.on',
-            '%',  # on
-            '$$text.macros.on',
-            '%',  # on
+            r'\%',  # escape all
+            '$$special.chars.escape.all',
+            r'\%$$special.chars.latex.mode\%',  # escape all then latex mode
+            '$$special.chars.escape.none',
+            r'\%',  # escape none
         )),
-        r"$text.percent'\n''%\n''%\n'$text.percent'\n'$text.percent")
+        [
+            CallNode(loc('root', 1), 'text.backslash', []),
+            CallNode(loc('root', 1), 'text.percent', []),
+            TextNode(loc('root', 1), '\n'),
+            CallNode(loc('root', 3), 'text.backslash', []),
+            CallNode(loc('root', 3), 'text.percent', []),
+            TextNode(loc('root', 3), '\\'),
+            CallNode(loc('root', 3), 'text.percent', []),
+            TextNode(loc('root', 3), '\n'),
+            TextNode(loc('root', 5), '\\'),
+            TextNode(loc('root', 5), '%'),
+        ])
 
   def testPreProcessing_unknownInstruction(self):
     self.assertParsing(
@@ -517,12 +522,12 @@ class ParsingTest(TestCase):
             "$text.punctuation.double['!']",
         )))
 
-  def testSpecialChars_textMacrosOn(self):
-    self.assertParsing(SPECIAL_CHARS, SPECIAL_CHARS_AS_PARSING_TEXT_MACROS_ON)
+  def testSpecialChars_escapeAll(self):
+    self.assertParsing(SPECIAL_CHARS, SPECIAL_CHARS_AS_PARSING_ESCAPE_ALL)
 
-  def testSpecialChars_textMacrosOff(self):
+  def testSpecialChars_escapeNone(self):
     self.assertParsing(
-        '$$text.macros.off\n' + SPECIAL_CHARS,
+        '$$special.chars.escape.none\n' + SPECIAL_CHARS,
         '"{}"'.format(SPECIAL_CHARS_AS_RAW_TEXT.replace('\\', '\\\\')))
 
   def testNoValidToken(self):

@@ -116,6 +116,8 @@ class LatexBranch(AbstractSimpleBranch):
 class Macros:
   TextPercent = AppendTextMacro('text.percent', r'\%', )
   TextAmpersand = AppendTextMacro('text.ampersand', r'\&')
+  TextBackslash = AppendTextMacro('text.backslash', r'\textbackslash{}')
+  TextCaret = AppendTextMacro('text.caret', r'\string^')
   TextUnderscore = AppendTextMacro('text.underscore', r'\_')
   TextDollar = AppendTextMacro('text.dollar', r'\$')
   TextHash = AppendTextMacro('text.hash', r'\#')
