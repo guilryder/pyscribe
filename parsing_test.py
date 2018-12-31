@@ -118,6 +118,9 @@ class PeekableIteratorTest(TestCase):
 
 class ParsingTest(TestCase):
 
+  __KNOWN_INSTRUCTIONS = (
+      '$$whitespace.preserve, $$whitespace.skip')
+
   def assertParsing(self, input_text, output=None, messages=(),
                     fatal_error=None, filename=Filename('root', '/cur')):
     # By default, expect a fatal error if log messages are expected.
@@ -311,15 +314,13 @@ class ParsingTest(TestCase):
     self.assertParsing(
         'before$$invalid\nafter',
         messages=["root:1: unknown pre-processing instruction: '$$invalid'\n" +
-                  "known instructions: $$whitespace.preserve, " +
-                  "$$whitespace.skip"])
+                  "known instructions: " + self.__KNOWN_INSTRUCTIONS])
 
   def testPreprocessing_emptyInstruction(self):
     self.assertParsing(
         '$$ $dummy',
         messages=["root:1: unknown pre-processing instruction: '$$'\n" +
-                  "known instructions: $$whitespace.preserve, " +
-                  "$$whitespace.skip"])
+                  "known instructions: " + self.__KNOWN_INSTRUCTIONS])
 
   def testMacro_noArgs(self):
     self.assertParsing('before $name after', r"'before '$name' after'")

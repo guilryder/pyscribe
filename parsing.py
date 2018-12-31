@@ -3,6 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
+import collections
 import inspect
 import itertools
 import re
@@ -148,38 +149,46 @@ class ParsingContext:
     return self.logger.LogLocation(*args, **kwargs)
 
 
+_RULE_METHOD_NAME_PATTERN = re.compile('Rule(?P<name>.+)')
+
+def rule(regexp):
+  """Decorator for rule methods; see RegexpParser."""
+  def wrapper(func):
+    name_match = _RULE_METHOD_NAME_PATTERN.match(func.__name__)
+    assert name_match is not None, 'Invalid @rule function name: ' + func.name
+    func.rule_name = name_match.group('name')
+    func.regexp = regexp
+    return func
+  return wrapper
+
+
 class RegexpParser:
   """
   Regexp-based parser.
 
-  Creates a parsing rule for each method starting with 'Rule' in an object.
-  The docstring of the method is expected to be a regexp.
+  Creates a parsing rule for each method of an object decorated with @rule.
+
+  Fields:
+    __rules: ((name, method) OrderedDict)
   """
 
   def __init__(self, rules_container):
     """
     Args:
-      rules_container: (object) The object that contains the rules.
-        Each rule must be prefixed with 'Rule' and have a regexp as docstring.
+      rules_container: (object) The object that contains the @rule methods.
     """
 
-    # Retrieve the rules from the container.
-    self.__rules = {}
-    rules = []  # (name, pattern) list
-    rule_pattern = re.compile('Rule(?P<name>.+)')
-    for symbol_name, symbol in inspect.getmembers(rules_container):
-      rule_match = rule_pattern.match(symbol_name)
-      if rule_match is not None:
-        rule_name = rule_match.group('name')
-        rule_regexp = symbol.__doc__
-        assert rule_regexp is not None, 'Regexp missing in ' + symbol_name
-        rules.append((rule_name, rule_regexp))
-        self.__rules[rule_name] = symbol
+    # Retrieve the rules from the container, sorted alphabetically.
+    self.__rules = collections.OrderedDict((
+        (rule.rule_name, rule)
+        for _, rule in inspect.getmembers(rules_container,
+                                          lambda mem: hasattr(mem, 'rule_name'))
+    ))
 
     # Compute the aggregate regexp for all rules.
     full_pattern = '|'.join(
-        '(?P<{name}>{pattern})'.format(name=name, pattern=pattern)
-        for name, pattern in rules)
+        '(?P<{0.rule_name}>{0.regexp})'.format(rule)
+        for rule in self.__rules.values())
     self.__regexp = re.compile(full_pattern, re.MULTILINE)
 
   def Parse(self, input_text):
@@ -354,31 +363,31 @@ class Lexer:
       self.__lineno += text.count('\n')
       self.__skip_spaces = (text[-1] == '\n')
 
+  @rule(r'[ \t]*\#.*(?:\n\s*|\Z)')
   def RuleComment(self, value):
-    r'[ \t]*\#.*(?:\n\s*|\Z)'
     self.__UpdateLineno(value)
     return None
 
+  @rule(r'\^.')
   def RuleEscape(self, value):
-    r'\^.'
     self.__skip_spaces = False
     return Token(TOKEN_TEXT, self.__lineno, value[1:])
 
+  @rule(r'\[\s*')
   def RuleLbracket(self, value):
-    r'\[\s*'
     token = Token(TOKEN_LBRACKET, self.__lineno, '[')
     self.__UpdateLineno(value)
     return token
 
+  @rule(r'\s*\]')
   def RuleRbracket(self, value):
-    r'\s*\]'
     self.__UpdateLineno(value)
     return Token(TOKEN_RBRACKET, self.__lineno, value)
 
   # Pre-processing statement
 
+  @rule(r'\$\$[a-zA-Z0-9._]*\n?')
   def RulePreProcessingInstruction(self, value):
-    r'\$\$[a-zA-Z0-9._]*\n?'
     preproc_instr_name = value[2:].strip()
     preproc_instr_callback = \
         self.__preproc_instr_callbacks.get(preproc_instr_name)
@@ -403,6 +412,7 @@ class Lexer:
 
   # Macro
 
+  @rule(r'\$' + MACRO_NAME_PATTERN)
   def RuleMacro(self, value):
     macro_name = value[1:]
     if VALID_MACRO_NAME_REGEXP.match(macro_name) is None:
@@ -410,34 +420,33 @@ class Lexer:
     token = self.__MacroToken(value[1:])
     self.__skip_spaces |= self.__text_processor.skip_whitespace_after_macro
     return token
-  RuleMacro.__doc__ = r'\$' + MACRO_NAME_PATTERN
 
+  @rule(r'\$(?:[^$]\S{,9}|\Z)')
   def RuleMacroInvalid(self, value):
-    r'\$(?:[^$]\S{,9}|\Z)'
     raise self.context.MakeFatalError(self.__Location(),
                                       "invalid macro name: '{name}'",
                                       name=value)
 
   # Special characters
 
+  @rule(r'%')
   def RulePercent(self, _):
-    r'%'
     return self.__MacroToken('text.percent')
 
+  @rule(r'&')
   def RuleAmpersand(self, _):
-    r'&'
     return self.__MacroToken('text.ampersand')
 
+  @rule(r'_')
   def RuleUnderscore(self, _):
-    r'_'
     return self.__MacroToken('text.underscore')
 
+  @rule(r'~')
   def RuleNonBreakingSpace(self, _):
-    r'~'
     return self.__MacroToken('text.nbsp')
 
+  @rule(r'-{2,}')
   def RuleDashes(self, value):
-    r'-{2,}'
     length = len(value)
     if length == 2:
       dash_name = 'en'
@@ -447,43 +456,43 @@ class Lexer:
       return Token(TOKEN_TEXT, self.__lineno, value)
     return self.__MacroToken('text.dash.' + dash_name)
 
+  @rule(r'\.{3,}')
   def RuleEllipsis(self, value):
-    r'\.{3,}'
     if len(value) == 3:
       return self.__MacroToken('text.ellipsis')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
+  @rule(r'«|\<{2,}')
   def RuleGuillemetOpen(self, value):
-    r'«|\<{2,}'
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.open')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
+  @rule(r'»|\>{2,}')
   def RuleGuillemetClose(self, value):
-    r'»|\>{2,}'
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.close')
     else:
       return Token(TOKEN_TEXT, self.__lineno, value)
 
+  @rule(r"`{1,2}")
   def RuleBacktick(self, value):
-    r"`{1,2}"
     if len(value) == 1:
       return self.__MacroToken('text.backtick')
     else:
       return self.__MacroToken('text.quote.open')
 
+  @rule(r"'{1,2}")
   def RuleApostrophe(self, value):
-    r"'{1,2}"
     if len(value) == 1:
       return self.__MacroToken('text.apostrophe')
     else:
       return self.__MacroToken('text.quote.close')
 
+  @rule(r'[!:;?]+')
   def RuleDoublePunctuation(self, value):
-    r'[!:;?]+'
     return (
         self.__MacroToken('text.punctuation.double'),
         self.RuleLbracket('['),
