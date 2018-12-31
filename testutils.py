@@ -133,6 +133,8 @@ class FakeFileSystem(execution.AbstractFileSystem):
     self.stderr = io.StringIO()
     self.created_dirs = set()
 
+  basename = staticmethod(os.path.basename)
+
   @classmethod
   def dirname(cls, path):
     return cls.MakeUnix(os.path.dirname(path))

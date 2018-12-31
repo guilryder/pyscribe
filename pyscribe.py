@@ -7,6 +7,7 @@ import argparse
 import sys
 import traceback
 
+from branch_macros import BRANCH_TYPES
 from execution import PYSCRIBE_EXT, Executor, FileSystem
 import log
 
@@ -60,9 +61,11 @@ class Main:
                         choices=sorted(log.Logger.FORMATS),
                         help='error reporting format; default: %(default)s')
     parser.add_argument('-f', '--format', metavar='FORMAT',
-                        dest='output_format',
-                        default='',
-                        help='format to render into; sets $output.format')
+                        dest='format',
+                        default='html',
+                        choices=sorted(BRANCH_TYPES),
+                        help='format to render into; sets $format; '
+                             'default: %(default)s')
     parser.add_argument('-o', '--output', metavar='DIR',
                         dest='output_dir',
                         default=self.__current_dir,
@@ -86,7 +89,7 @@ class Main:
 
     # Constants
     self.__constants = dict(args.defines)
-    self.__constants['output.format'] = args.output_format
+    self.__constants['format'] = args.format
 
     self.__args = args
 
@@ -136,7 +139,8 @@ def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
   """
   lib_dir = fs.MakeAbsolute(cur_dir, lib_dir)
   out_dir = fs.MakeAbsolute(cur_dir, out_dir)
-  source_dir = fs.MakeAbsolute(cur_dir, fs.dirname(input_filename))
+  input_dir = fs.MakeAbsolute(cur_dir, fs.dirname(input_filename))
+  input_basename = fs.basename(input_filename)
 
   def MakeRelativeToOutDir(abs_path):
     return fs.relpath(abs_path, out_dir)
@@ -144,8 +148,10 @@ def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
       'dir.lib': lib_dir,
       'dir.lib.rel.output': MakeRelativeToOutDir(lib_dir),
       'dir.output': out_dir,
-      'dir.source': source_dir,
-      'dir.source.rel.output': MakeRelativeToOutDir(source_dir),
+      'dir.input': input_dir,
+      'dir.input.rel.output': MakeRelativeToOutDir(input_dir),
+      'file.input.basename': input_basename,
+      'file.input.basename.noext': fs.splitext(input_basename)[0],
   }
 
   return {name: fs.MakeUnix(value) for name, value in constants.items()}

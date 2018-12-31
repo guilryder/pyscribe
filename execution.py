@@ -125,6 +125,7 @@ class AbstractFileSystem:  # pylint: disable=no-member
 class FileSystem(AbstractFileSystem):
   stdout = sys.stdout
   stderr = sys.stderr
+  basename = staticmethod(os.path.basename)
   dirname = staticmethod(os.path.dirname)
   getcwd = staticmethod(os.getcwd)
   join = staticmethod(os.path.join)

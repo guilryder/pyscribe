@@ -83,7 +83,7 @@ $macro.new[book.language][fr]
 
 $macro.new[latex.class.options][demo]
 
-$root.create[Test][
+$root.create[
 $$whitespace.preserve
 $page.title
 $page.new

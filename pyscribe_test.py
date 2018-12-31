@@ -70,7 +70,7 @@ class MainTest(EndToEndTestCase):
     super(MainTest, self).setUp()
     self.inputs.update({
         '/cur/input.psc': self.__Output('Hello, World!'),
-        '/cur/format.psc': self.__Output('Format: $output.format'),
+        '/cur/format.psc': self.__Output('Format: $format'),
         '/cur/error.psc': '$invalid',
     })
 
@@ -137,13 +137,18 @@ class MainTest(EndToEndTestCase):
     self.assertIn('log.FatalError', error_log)
     self.assertEqual(self.fs.GetOutputs(), {})
 
-  def testDefaultOutputFormat(self):
+  def testOutputFormat_default(self):
     self.Execute('format.psc')
-    self.assertOutput('Format: ')
-
-  def testCustomOutputFormat(self):
-    self.Execute('format.psc --format html')
     self.assertOutput('Format: html')
+
+  def testOutputFormat_custom(self):
+    self.Execute('format.psc --format latex')
+    self.assertOutput('Format: latex')
+
+  def testOutputFormat_invalid(self):
+    self.Execute('format.psc --format invalid', expect_failure=True)
+    self.assertIn('--format', self.GetStdFile('err'))
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testDefines(self):
     self.inputs['/cur/defines.psc'] = self.__Output('$one,$two,$three,$a.b')
@@ -157,7 +162,7 @@ class MainTest(EndToEndTestCase):
                   self.GetStdFile('err'))
 
   def testOutputFormatOverwritesDefines(self):
-    self.Execute('format.psc --format html -d output.format=ignored')
+    self.Execute('format.psc --format html -d format=ignored')
     self.assertOutput('Format: html')
 
   def testConstants(self):
@@ -165,8 +170,10 @@ class MainTest(EndToEndTestCase):
         'dir.lib': '/pyscribe/usage',
         'dir.lib.rel.output': '../pyscribe/usage',
         'dir.output': '/cur',
-        'dir.source': '/cur',
-        'dir.source.rel.output': '.',
+        'dir.input': '/cur',
+        'dir.input.rel.output': '.',
+        'file.input.basename': 'constants.psc',
+        'file.input.basename.noext': 'constants',
     }
     self.inputs['/cur/constants.psc'] = \
         self.__Output(', '.join('{0}=${0}'.format(name) for name in constants))
@@ -177,14 +184,14 @@ class MainTest(EndToEndTestCase):
 
 # Command-line to generated output file basename.
 GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
-  ('hello.psc --format=latex', 'Hello.tex'),
-  ('hello.psc --format=html', 'Hello.html'),
-  ('hello.psc --format=html'
+  ('Hello.psc --format=latex', 'Hello.tex'),
+  ('Hello.psc --format=html', 'Hello.html'),
+  ('Hello.psc --format=html'
       ' -d inline=1'
       ' -d core.css.filename=small.css'
-      ' -d out.filename=Hello-inline', 'Hello-inline.html'),
-  ('test.psc --format=html', 'Test.html'),
-  ('test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
+      ' -d root.basename=Hello-inline', 'Hello-inline.html'),
+  ('Test.psc --format=html', 'Test.html'),
+  ('Test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
 
 class GoldenTest(EndToEndTestCase):
@@ -214,13 +221,15 @@ class ComputePathConstantsTest(TestCase):
                         cur_dir='/root/current/ignored',
                         lib_dir='/pyscribe/usage',
                         out_dir='/root/output',
-                        input_filename='/root/input/sub/file.psc'),
+                        input_filename='/root/input/sub/file.abc.psc'),
                      {
                         'dir.lib': '/pyscribe/usage',
                         'dir.lib.rel.output': '../../pyscribe/usage',
                         'dir.output': '/root/output',
-                        'dir.source': '/root/input/sub',
-                        'dir.source.rel.output': '../input/sub',
+                        'dir.input': '/root/input/sub',
+                        'dir.input.rel.output': '../input/sub',
+                        'file.input.basename': 'file.abc.psc',
+                        'file.input.basename.noext': 'file.abc',
                      })
 
   def testRelativeInputPaths(self):
@@ -229,13 +238,15 @@ class ComputePathConstantsTest(TestCase):
                         cur_dir='/root/current',
                         lib_dir='..',
                         out_dir='output',
-                        input_filename='file.psc'),
+                        input_filename='file.abc.psc'),
                      {
                         'dir.lib': '/root',
                         'dir.lib.rel.output': '../..',
                         'dir.output': '/root/current/output',
-                        'dir.source': '/root/current',
-                        'dir.source.rel.output': '..',
+                        'dir.input': '/root/current',
+                        'dir.input.rel.output': '..',
+                        'file.input.basename': 'file.abc.psc',
+                        'file.input.basename.noext': 'file.abc',
                      })
 
 

@@ -1,24 +1,50 @@
 $$whitespace.skip
 
-$macro.new[file.output2source(path)][$dir.source.rel.output/$path]
+################################################################################
+# Initialization
+
+$macro.new[file.output2input(path)][$dir.input.rel.output/$path]
 $macro.new[file.output2core(path)][$dir.lib.rel.output/$path]
 
+# Inline mode: embeds external files whenever possible instead of linking to
+# them, to make the output file more self-contained.
+# Typical use case: inlining *.css files.
+# Usage: $inline.select[if inline mode][if not inline mode]
+$if.def[inline][][$macro.new[inline][0]]
+$if.eq[$inline][1][
+  $macro.new[inline.select(if.inline,if.linked)][$if.inline]
+][
+  $macro.new[inline.select(if.inline,if.linked)][$if.linked]
+]
+
+# Validates the output format.
+# Usage: $format.select[if html][if latex]
 $macro.new[format.init.html][$macro.new[format.select(if.html,if.latex)][$if.html]]
 $macro.new[format.init.latex][$macro.new[format.select(if.html,if.latex)][$if.latex]]
-$macro.call[format.init.$output.format]
+$macro.call[format.init.$format]
 
 
-$macro.new[root.create(basename,contents)][
-  $branch.create.root[$macro.call[root.branch.type.$output.format]][root][
-    $macro.call[output.filename.$output.format][$basename]
+################################################################################
+# Root branch
+
+# Basename of the branch that $root.create creates, without extension.
+# Defaults to the input file basename.
+$if.def[root.basename][][
+  $macro.new[root.basename][$file.input.basename.noext]
+]
+
+# Creates the default root branch writing into $root.basename,
+# with the file extension that matches $format.
+$macro.new[root.create(contents)][
+  $branch.create.root[$macro.call[root.branch.type.$format]][root][
+    $macro.call[output.filename.$format][$root.basename]
   ]
-  $macro.new[root.basename][$basename]
 
   $branch.write[root][
-    $macro.call[root.open.$output.format]
+    $macro.call[root.open.$format]
     $root.open.hook
     $contents
-    $macro.call[root.close.$output.format]
+    $macro.call[root.close.$format]
   ]
 ]
 
@@ -29,16 +55,6 @@ $macro.new[root.open.hook][
 
 ################################################################################
 # Common
-
-# Inline mode: embeds external files whenever possible instead of linking to
-# them, to make the output file more self-contained.
-# Typical use case: inlining *.css files.
-$if.def[inline][][$macro.new[inline][0]]
-$if.eq[$inline][1][
-  $macro.new[inline.select(if.inline,if.linked)][$if.inline]
-][
-  $macro.new[inline.select(if.inline,if.linked)][$if.linked]
-]
 
 # Metadata
 $macro.new[metadata.all.set][
