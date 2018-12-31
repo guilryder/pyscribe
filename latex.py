@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import io
 
-import execution
+from branches import AbstractSimpleBranch
 from macros import *
 
 
@@ -82,7 +82,7 @@ class LatexWriter:
       self.AppendSep()
 
 
-class LatexBranch(execution.AbstractSimpleBranch):
+class LatexBranch(AbstractSimpleBranch):
   """
   Branch for LaTeX code.
   """

@@ -9,6 +9,7 @@ import re
 from lxml import etree
 # pylint: disable=len-as-condition
 
+from branches import Branch
 import execution
 from log import InternalError
 from macros import *
@@ -85,7 +86,7 @@ TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True, is_auto=True)
 TagLevel.INLINE = TagLevel('inline', is_inline=True)
 
 
-class HtmlBranch(execution.Branch):
+class HtmlBranch(Branch):
   """
   Branch for HTML.
 
@@ -752,7 +753,7 @@ class NeutralTypography(Typography):
   """Language-neutral typography rules."""
 
   name = 'neutral'
-  macros_container = __import__('builtin_macros').SpecialCharacters
+  macros_container = __import__('core_macros').SpecialCharacters
 
   @staticmethod
   def FormatNumber(number):

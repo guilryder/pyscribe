@@ -172,6 +172,15 @@ def GetPublicMacros(container):
   return container.public_macros
 
 
+def GetPublicMacrosContainers():
+  """Returns all public, built-in macros containers."""
+  import core_macros
+  return (
+      core_macros, core_macros.SpecialCharacters,
+      __import__('branch_macros'),
+      __import__('builtin_macros'))
+
+
 def ExecuteCallback(nodes, call_context=None, **kwargs):
   """
   Creates a macro callback that executes the given nodes.
