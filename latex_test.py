@@ -25,23 +25,11 @@ class LatexEndToEndTest(ExecutionTestCase):
   def testEscape(self):
     self.assertExecution('^% ^&', '% &')
 
-  def testAllSpecialChars(self):
-    self.assertExecution(
-        SPECIAL_CHARS,
-        ' '.join((
-            "\\% \\& \\_ $ \\$ # \\#",
-            "a~b",
-            "n\\-o",
-            "--c---",
-            r"d\dots{}",
-            "«e»",
-            "« f »",
-            "`g'h' 'g`h`",
-            "“i”j” ”k“l“",
-            "“`m”'",
-            "n ! o: p ; q?",
-            "r!:;?",
-        )))
+  def testSpecialChars(self):
+    self.assertExecution(SPECIAL_CHARS, SPECIAL_CHARS_AS_LATEX)
+
+  def testOtherTextMacros(self):
+    self.assertExecution(OTHER_TEXT_MACROS, OTHER_TEXT_MACROS_AS_LATEX)
 
   def testLatexSep_beforeWhitelistedChars_noop(self):
     self.assertExecution(

@@ -22,10 +22,11 @@ def loc(display_path, lineno, dir_path='/cur'):
 
 TEST_LOCATION = loc('file.txt', 42)
 TEST_UNICODE = 'Îñţérñåţîöñåļîžåţîöñ'
+
 SPECIAL_CHARS = ' '.join((
-    "% & _ ^$ $text.dollar ^# $text.hash",
+    r"| / \ ^^ ^$ ^#",  # no text macro for these
+    "% & _",
     "a~b",
-    "n$-o",
     "--c---",
     "d...",
     "<<e>>",
@@ -36,17 +37,54 @@ SPECIAL_CHARS = ' '.join((
     "n ! o: p ; q?",
     "r!:;?",
 ))
+SPECIAL_CHARS_AS_RAW_TEXT = SPECIAL_CHARS.replace(' ^', ' ')
+SPECIAL_CHARS_AFTER_TEXT_MACROS = ' '.join((
+    r"| / \ ^ $ #",
+    "% & _",
+    "a\xa0b",
+    "–c—",
+    "d…",
+    "«e»",
+    "« f »",
+    "`g'h' 'g`h`",
+    "“i”j” ”k“l“",
+    "“`m”'",
+    "n ! o: p ; q?",
+    "r!:;?",
+))
+SPECIAL_CHARS_AS_PARSING_TEXT_MACROS_ON = ' '.join((
+    "'| / \\\\ ^ $ #",
+    "'$text.percent' '$text.ampersand' '$text.underscore'",
+    "a'$text.nbsp'b",
+    "'$text.dash.en'c'$text.dash.em'",
+    "d'$text.ellipsis'",
+    "'$text.guillemet.open'e'$text.guillemet.close'",
+    "'$text.guillemet.open' f '$text.guillemet.close'",
+    "'$text.backtick'g'$text.apostrophe'h'$text.apostrophe'",
+    "'$text.apostrophe'g'$text.backtick'h'$text.backtick'",
+    "'$text.quote.open'i'$text.quote.close'j'$text.quote.close'",
+    "'$text.quote.close'k'$text.quote.open'l'$text.quote.open'",
+    "'$text.quote.open$text.backtick'm'$text.quote.close$text.apostrophe'",
+    "n '$text.punctuation.double['!']'",
+    "o'$text.punctuation.double[':']'",
+    "p '$text.punctuation.double[';']'",
+    "q'$text.punctuation.double['?']'",
+    "r'$text.punctuation.double['!:;?']",
+))
 SPECIAL_CHARS_AS_HTML = (
     SPECIAL_CHARS.replace('&', '&amp;')
                  .replace('<', '&lt;')
                  .replace('>', '&gt;'))
+SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT = ' '.join((
+    r"| / \ ^ $ #",
+    "% &amp; _",
+    "a\xa0b",
+    "–c—",
+    "d…",
+))
 TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     'neutral': ' '.join((
-        "% &amp; _ $ $ # #",
-        "a\xa0b",
-        "n\xado",
-        "–c—",
-        "d…",
+        SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
         "«e»",
         "« f »",
         "`g'h' 'g`h`",
@@ -56,11 +94,7 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
         "r!:;?",
     )),
     'english': ' '.join((
-        "% &amp; _ $ $ # #",
-        "a\xa0b",
-        "n\xado",
-        "–c—",
-        "d…",
+        SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
         "«e»",
         "« f »",
         "‘g’h’ ’g‘h‘",
@@ -70,11 +104,7 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
         "r!:;?",
     )),
     'french': ' '.join((
-        "% &amp; _ $ $ # #",
-        "a\xa0b",
-        "n\xado",
-        "–c—",
-        "d…",
+        SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
         "«\xa0e\xa0»",
         "«\xa0f\xa0»",
         "‘g’h’ ’g‘h‘",
@@ -84,6 +114,31 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
         "r\xa0!:;?",
     )),
 }
+SPECIAL_CHARS_AS_LATEX = ' '.join((
+    r"| / \ ^ $ #",
+    r"\% \& \_",
+    "a~b",
+    "--c---",
+    r"d\dots{}",
+    "«e»",
+    "« f »",
+    "`g'h' 'g`h`",
+    "“i”j” ”k“l“",
+    "“`m”'",
+    "n ! o: p ; q?",
+    "r!:;?",
+))
+
+OTHER_TEXT_MACROS = ' '.join((
+    '$text.ampersand',
+    '$text.dollar',
+    '$text.hash',
+    'A$text.nbsp^B',
+    'C$-D',
+))
+OTHER_TEXT_MACROS_AS_TEXT = "& $ # A\xa0B C\xadD"
+OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # A\xa0B C\xadD"
+OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# A~B C\-D'
 
 FAKE_PYSCRIBE_DIR = '/pyscribe/'
 REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')

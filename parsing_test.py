@@ -119,6 +119,7 @@ class PeekableIteratorTest(TestCase):
 class ParsingTest(TestCase):
 
   __KNOWN_INSTRUCTIONS = (
+      '$$text.macros.off, $$text.macros.on, '
       '$$whitespace.preserve, $$whitespace.skip')
 
   def assertParsing(self, input_text, output=None, messages=(),
@@ -309,6 +310,21 @@ class ParsingTest(TestCase):
 
   def testWhitespace_preserveByDefault(self):
     self.assertParsing('a\nb', r"'a\n''b'")
+
+  def testTextMacrosOnOff(self):
+    self.assertParsing(
+        '\n'.join((
+            '%',  # on
+            '$$text.macros.off',
+            '%',  # off
+            '$$text.macros.off',
+            '%',  # off
+            '$$text.macros.on',
+            '%',  # on
+            '$$text.macros.on',
+            '%',  # on
+        )),
+        r"$text.percent'\n''%\n''%\n'$text.percent'\n'$text.percent")
 
   def testPreProcessing_unknownInstruction(self):
     self.assertParsing(
@@ -501,30 +517,14 @@ class ParsingTest(TestCase):
             "$text.punctuation.double['!']",
         )))
 
-  def testAllSpecialChars(self):
+  def testSpecialChars_textMacrosOn(self):
+    self.assertParsing(SPECIAL_CHARS, SPECIAL_CHARS_AS_PARSING_TEXT_MACROS_ON)
+
+  def testSpecialChars_textMacrosOff(self):
     self.assertParsing(
-        SPECIAL_CHARS,
-        ' '.join((
-            "$text.percent' '$text.ampersand' '$text.underscore'",
-            "$ '$text.dollar' # '$text.hash'",
-            "a'$text.nbsp'b",
-            "n'$-'o",
-            "'$text.dash.en'c'$text.dash.em'",
-            "d'$text.ellipsis'",
-            "'$text.guillemet.open'e'$text.guillemet.close'",
-            "'$text.guillemet.open' f '$text.guillemet.close'",
-            "'$text.backtick'g'$text.apostrophe'h'$text.apostrophe'",
-            "'$text.apostrophe'g'$text.backtick'h'$text.backtick'",
-            "'$text.quote.open'i'$text.quote.close'j'$text.quote.close'",
-            "'$text.quote.close'k'$text.quote.open'l'$text.quote.open'",
-            "'$text.quote.open$text.backtick'm" +
-                "'$text.quote.close$text.apostrophe'",
-            "n '$text.punctuation.double['!']'",
-            "o'$text.punctuation.double[':']'",
-            "p '$text.punctuation.double[';']'",
-            "q'$text.punctuation.double['?']'",
-            "r'$text.punctuation.double['!:;?']",
-        )))
+        '$$text.macros.off\n' + SPECIAL_CHARS,
+        '"{}"'.format(SPECIAL_CHARS_AS_RAW_TEXT.replace('\\', '\\\\')))
+
   def testNoValidToken(self):
     self.assertParsing(
         '$macro[',

@@ -265,12 +265,14 @@ $format.select[
 $header[2][HTML]
 
 $css.inline[
+$$text.macros.off
   .red {
     color: red;
   }
 
-  /* Special characters: ' " ` '' < > ? : ! */
-]
+  /* Special characters: ' " ` `` '' < > ? : ! */ # ignored
+]$$text.macros.on
+
 
 $para.macro[para.css.custom][
   $para.css.custom[block,autopara=p][red][contents]

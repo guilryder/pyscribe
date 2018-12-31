@@ -12,23 +12,11 @@ from testutils import *
 
 class SpecialCharsTest(ExecutionTestCase):
 
-  def testAll(self):
-    self.assertExecution(
-        SPECIAL_CHARS,
-        ' '.join((
-            "% & _ $ $ # #",
-            "a\xa0b",
-            "n\xado",
-            "–c—",
-            "d…",
-            "«e»",
-            "« f »",
-            "`g'h' 'g`h`",
-            "“i”j” ”k“l“",
-            "“`m”'",
-            "n ! o: p ; q?",
-            "r!:;?",
-        )))
+  def testRawSpecialChars(self):
+    self.assertExecution(SPECIAL_CHARS, SPECIAL_CHARS_AFTER_TEXT_MACROS)
+
+  def testTextMacros(self):
+    self.assertExecution(OTHER_TEXT_MACROS, OTHER_TEXT_MACROS_AS_TEXT)
 
   def testSoftHyphenAlias(self):
     self.assertExecution(
