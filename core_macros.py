@@ -13,25 +13,23 @@ from parsing import CallNode
 
 class SpecialCharacters:
 
-  TextPercent = StaticAppendTextCallback('%', public_name='text.percent')
-  TextAmpersand = StaticAppendTextCallback('&', public_name='text.ampersand')
-  TextUnderscore = StaticAppendTextCallback('_', public_name='text.underscore')
-  TextDollar = StaticAppendTextCallback('$', public_name='text.dollar')
-  TextHash = StaticAppendTextCallback('#', public_name='text.hash')
-  TextNbsp = StaticAppendTextCallback('\xa0', public_name='text.nbsp')
-  TextSoftHyphen = StaticAppendTextCallback('­', public_name='text.softhyphen')
-  TextDashEn = StaticAppendTextCallback('–', public_name='text.dash.en')
-  TextDashEm = StaticAppendTextCallback('—', public_name='text.dash.em')
-  TextEllipsis = StaticAppendTextCallback('…', public_name='text.ellipsis')
-  TextGuillemetOpen = \
-      StaticAppendTextCallback('«', public_name='text.guillemet.open')
-  TextGuillemetClose = \
-      StaticAppendTextCallback('»', public_name='text.guillemet.close')
-  TextBacktick = StaticAppendTextCallback("`", public_name='text.backtick')
-  TextApostrophe = StaticAppendTextCallback("'", public_name='text.apostrophe')
-  TextQuoteOpen = StaticAppendTextCallback('“', public_name='text.quote.open')
-  TextQuoteClose = StaticAppendTextCallback('”', public_name='text.quote.close')
-  Newline = StaticAppendTextCallback('\n', public_name='newline')
+  TextPercent = AppendTextMacro('text.percent', '%')
+  TextAmpersand = AppendTextMacro('text.ampersand', '&')
+  TextUnderscore = AppendTextMacro('text.underscore', '_')
+  TextDollar = AppendTextMacro('text.dollar', '$')
+  TextHash = AppendTextMacro('text.hash', '#')
+  TextNbsp = AppendTextMacro('text.nbsp', '\xa0')
+  TextSoftHyphen = AppendTextMacro('text.softhyphen', '­')
+  TextDashEn = AppendTextMacro('text.dash.en', '–')
+  TextDashEm = AppendTextMacro('text.dash.em', '—')
+  TextEllipsis = AppendTextMacro('text.ellipsis', '…')
+  TextGuillemetOpen = AppendTextMacro('text.guillemet.open', '«')
+  TextGuillemetClose = AppendTextMacro('text.guillemet.close', '»')
+  TextBacktick = AppendTextMacro('text.backtick', "`")
+  TextApostrophe = AppendTextMacro('text.apostrophe', "'")
+  TextQuoteOpen = AppendTextMacro('text.quote.open', '“')
+  TextQuoteClose = AppendTextMacro('text.quote.close', '”')
+  Newline = AppendTextMacro('newline', '\n')
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents',

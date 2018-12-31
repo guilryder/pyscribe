@@ -769,8 +769,8 @@ class EnglishTypography(Typography):
   def FormatNumber(number):
     return Typography.FormatNumberCustom(number, ',')
 
-  TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
-  TextApostrophe = StaticAppendTextCallback("’", public_name='text.apostrophe')
+  TextBacktick = AppendTextMacro('text.backtick', "‘")
+  TextApostrophe = AppendTextMacro('text.apostrophe', "’")
 
 
 class FrenchTypography(Typography):
@@ -782,8 +782,8 @@ class FrenchTypography(Typography):
   def FormatNumber(number):  # pylint: disable=arguments-differ
     return Typography.FormatNumberCustom(number, NBSP)
 
-  TextBacktick = StaticAppendTextCallback("‘", public_name='text.backtick')
-  TextApostrophe = StaticAppendTextCallback("’", public_name='text.apostrophe')
+  TextBacktick = AppendTextMacro('text.backtick', "‘")
+  TextApostrophe = AppendTextMacro('text.apostrophe', "’")
 
   @staticmethod
   @macro(public_name='text.guillemet.open')

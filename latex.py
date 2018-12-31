@@ -114,19 +114,16 @@ class LatexBranch(AbstractSimpleBranch):
 
 
 class Macros:
-  TextPercent = StaticAppendTextCallback(r'\%', public_name='text.percent')
-  TextAmpersand = StaticAppendTextCallback(r'\&', public_name='text.ampersand')
-  TextUnderscore = \
-      StaticAppendTextCallback(r'\_', public_name='text.underscore')
-  TextDollar = StaticAppendTextCallback(r'\$', public_name='text.dollar')
-  TextHash = StaticAppendTextCallback(r'\#', public_name='text.hash')
-  TextNbsp = StaticAppendTextCallback('~', public_name='text.nbsp')
-  TextSoftHyphen = \
-      StaticAppendTextCallback(r'\-', public_name='text.softhyphen')
-  TextDashEn = StaticAppendTextCallback('--', public_name='text.dash.en')
-  TextDashEm = StaticAppendTextCallback('---', public_name='text.dash.em')
-  TextEllipsis = \
-      StaticAppendTextCallback(r'\dots{}', public_name='text.ellipsis')
+  TextPercent = AppendTextMacro('text.percent', r'\%', )
+  TextAmpersand = AppendTextMacro('text.ampersand', r'\&')
+  TextUnderscore = AppendTextMacro('text.underscore', r'\_')
+  TextDollar = AppendTextMacro('text.dollar', r'\$')
+  TextHash = AppendTextMacro('text.hash', r'\#')
+  TextNbsp = AppendTextMacro('text.nbsp', '~')
+  TextSoftHyphen = AppendTextMacro('text.softhyphen', r'\-')
+  TextDashEn = AppendTextMacro('text.dash.en', '--')
+  TextDashEm = AppendTextMacro('text.dash.em', '---')
+  TextEllipsis = AppendTextMacro('text.ellipsis', r'\dots{}')
 
   @staticmethod
   @macro(public_name='latex.sep')

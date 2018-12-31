@@ -210,5 +210,8 @@ def AppendTextCallback(text, **kwargs):
     executor.AppendText(text)
   return MacroCallback
 
-def StaticAppendTextCallback(text, **kwargs):
-  return staticmethod(AppendTextCallback(text, **kwargs))
+def AppendTextMacro(public_name, text):
+  """
+  Creates a method to define a macro that writes the given text.
+  """
+  return staticmethod(AppendTextCallback(text, public_name=public_name))
