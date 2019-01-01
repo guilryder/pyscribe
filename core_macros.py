@@ -15,6 +15,8 @@ class SpecialCharacters:
 
   TextPercent = AppendTextMacro('text.percent', '%')
   TextAmpersand = AppendTextMacro('text.ampersand', '&')
+  TextBackslash = AppendTextMacro('text.backslash', '\\')
+  TextCaret = AppendTextMacro('text.caret', '^')
   TextUnderscore = AppendTextMacro('text.underscore', '_')
   TextDollar = AppendTextMacro('text.dollar', '$')
   TextHash = AppendTextMacro('text.hash', '#')
@@ -47,6 +49,11 @@ class SpecialCharacters:
 @macro(public_name='empty', text_compatible=True)
 def Empty(unused_executor, unused_call_node):
   pass
+
+
+@macro(public_name='eval.text', args_signature='text', text_compatible=True)
+def EvalText(executor, unused_call_node, text):
+  executor.AppendText(text)
 
 
 @macro(public_name='log', args_signature='message', text_compatible=True)

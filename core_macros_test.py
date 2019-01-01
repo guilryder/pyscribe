@@ -38,6 +38,24 @@ class EmptyTest(ExecutionTestCase):
   def testText(self):
     self.assertExecution('$macro.new[name$empty][inside]$name', 'inside')
 
+  def testTextCompatible(self):
+    self.assertExecution('$eval.text[$empty]', '')
+
+
+class EvalTextTest(ExecutionTestCase):
+
+  def testText(self):
+    self.assertExecution('$eval.text[inside $text.hash]', 'inside #')
+
+  def testNotText(self):
+    self.assertExecution(
+        '$eval.text[$identity[foo]]',
+        messages=['/root:1: $identity: text-incompatible macro call',
+                  '  /root:1: $eval.text'])
+
+  def testTextCompatibleRecursively(self):
+    self.assertExecution('$eval.text[$eval.text[inside]]', 'inside')
+
 
 class LogTest(ExecutionTestCase):
 

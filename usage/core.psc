@@ -1,4 +1,5 @@
 $$whitespace.skip
+$$special.chars.latex.mode
 
 ################################################################################
 # Initialization
@@ -56,6 +57,8 @@ $macro.new[root.open.hook][
 ################################################################################
 # Common
 
+$macro.new[identity(contents)][$contents]
+
 # Metadata
 $macro.new[metadata.all.set][
   $metadata.title.set[$book.title]
@@ -72,7 +75,6 @@ $macro.new[language.name.fr][french]
 $macro.new[language.name.en][english]
 
 # Various
-$macro.new[text.backslash][$format.select[^\][\textbackslash{}]]
 $macro.new[text.colon][$format.select[^:][\string^:]]
 
 $macro.new[roman.smallcaps(number)][
@@ -230,7 +232,7 @@ $macro.new[root.open.html][
 
   # Metadata
   $macro.new[metadata.title.set(title)][
-    $head.append[$tag[title][block][$title]]
+    $head.append[$tag[title][block][$eval.text[$title]]]
   ]
   $macro.new[metadata.author.set(author)][
     $head.meta.name[author][$author]
@@ -490,10 +492,10 @@ $macro.new[root.open.latex][
 
   # Metadata
   $macro.new[metadata.title.set(title)][
-    $preamble.append[\titleset{$title}$newline]
+    $preamble.append[\titleset{$eval.text[$title]}$newline]
   ]
   $macro.new[metadata.author.set(author)][
-    $preamble.append[\authorset{$author}$newline]
+    $preamble.append[\authorset{$eval.text[$author]}$newline]
   ]
   $macro.new[metadata.language.set(language.code)][
     $preamble.append[\languageset{$macro.call[language.name.$language.code]}$newline]
@@ -503,10 +505,11 @@ $macro.new[root.open.latex][
   # Latex helpers
   $macro.new[latex.cmd(name)][$name$latex.sep]
   $macro.new[latex.env(name,contents)][
+    $latex.env.custom[$name][$newline$contents]
+  ]
+  $macro.new[latex.env.custom(name,contents)][
     \begin{$name}
-      $newline
-      $contents
-      $newline
+      $contents$newline
     \end{$name}
   ]
   $macro.new[latex.env.new(macro.name,env.name)][

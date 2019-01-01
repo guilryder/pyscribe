@@ -24,8 +24,8 @@ TEST_LOCATION = loc('file.txt', 42)
 TEST_UNICODE = 'Îñţérñåţîöñåļîžåţîöñ'
 
 SPECIAL_CHARS = ' '.join((
-    r"| / \ ^^ ^$ ^#",  # no text macro for these
-    "% & _",
+    "| / ^^ ^$ ^#",  # no text macro for these
+    r"% & \ _",
     "a~b",
     "--c---",
     "d...",
@@ -39,8 +39,8 @@ SPECIAL_CHARS = ' '.join((
 ))
 SPECIAL_CHARS_AS_RAW_TEXT = SPECIAL_CHARS.replace(' ^', ' ')
 SPECIAL_CHARS_AFTER_TEXT_MACROS = ' '.join((
-    r"| / \ ^ $ #",
-    "% & _",
+    "| / ^ $ #",
+    r"% & \ _",
     "a\xa0b",
     "–c—",
     "d…",
@@ -52,9 +52,9 @@ SPECIAL_CHARS_AFTER_TEXT_MACROS = ' '.join((
     "n ! o: p ; q?",
     "r!:;?",
 ))
-SPECIAL_CHARS_AS_PARSING_TEXT_MACROS_ON = ' '.join((
-    "'| / \\\\ ^ $ #",
-    "'$text.percent' '$text.ampersand' '$text.underscore'",
+SPECIAL_CHARS_AS_PARSING_ESCAPE_ALL = ' '.join((
+    "'| / ^ $ #",
+    "'$text.percent' '$text.ampersand' '$text.backslash' '$text.underscore'",
     "a'$text.nbsp'b",
     "'$text.dash.en'c'$text.dash.em'",
     "d'$text.ellipsis'",
@@ -76,8 +76,8 @@ SPECIAL_CHARS_AS_HTML = (
                  .replace('<', '&lt;')
                  .replace('>', '&gt;'))
 SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT = ' '.join((
-    r"| / \ ^ $ #",
-    "% &amp; _",
+    "| / ^ $ #",
+    r"% &amp; \ _",
     "a\xa0b",
     "–c—",
     "d…",
@@ -85,6 +85,7 @@ SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT = ' '.join((
 TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     'neutral': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
+
         "«e»",
         "« f »",
         "`g'h' 'g`h`",
@@ -95,6 +96,7 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     )),
     'english': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
+
         "«e»",
         "« f »",
         "‘g’h’ ’g‘h‘",
@@ -105,6 +107,7 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     )),
     'french': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
+
         "«\xa0e\xa0»",
         "«\xa0f\xa0»",
         "‘g’h’ ’g‘h‘",
@@ -114,9 +117,9 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
         "r\xa0!:;?",
     )),
 }
-SPECIAL_CHARS_AS_LATEX = ' '.join((
-    r"| / \ ^ $ #",
-    r"\% \& \_",
+SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL = ' '.join((
+    "| / ^ $ #",
+    r"\% \& \textbackslash{} \_",
     "a~b",
     "--c---",
     r"d\dots{}",
@@ -133,12 +136,13 @@ OTHER_TEXT_MACROS = ' '.join((
     '$text.ampersand',
     '$text.dollar',
     '$text.hash',
+    '$text.caret',
     'A$text.nbsp^B',
     'C$-D',
 ))
-OTHER_TEXT_MACROS_AS_TEXT = "& $ # A\xa0B C\xadD"
-OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # A\xa0B C\xadD"
-OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# A~B C\-D'
+OTHER_TEXT_MACROS_AS_TEXT = "& $ # ^ A\xa0B C\xadD"
+OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # ^ A\xa0B C\xadD"
+OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\-D'
 
 FAKE_PYSCRIBE_DIR = '/pyscribe/'
 REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')
@@ -325,11 +329,6 @@ class ExecutionTestCase(TestCase):
   @macro(public_name='identity', args_signature='*contents')
   def IdentityMacro(executor, unused_call_node, contents):
     executor.ExecuteNodes(contents)
-
-  @staticmethod
-  @macro(public_name='eval.text', args_signature='text', text_compatible=True)
-  def EvalTextMacro(executor, unused_call_node, text):
-    executor.AppendText(text)
 
   def setUp(self):
     super(ExecutionTestCase, self).setUp()
