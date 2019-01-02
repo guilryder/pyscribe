@@ -88,7 +88,7 @@ class MainTest(EndToEndTestCase):
 
   def testHelp(self):
     self.Execute('--help', expect_failure=True)
-    self.assertIn('usage', self.GetStdFile('err'))
+    self.assertIn('positional arguments', self.GetStdFile('err'))
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testSimple(self):
@@ -193,10 +193,14 @@ class MainTest(EndToEndTestCase):
                   self.GetStdFile('err'))
     self.assertEqual(self.fs.GetOutputs(), {})
 
+  def testLibDir_custom(self):
+    self.inputs['/cur/dummy.psc'] = self.__Output('$dir.lib')
+    self.Execute('dummy.psc --lib-dir dir/sub')
+    self.assertOutput('/cur/dummy.out', 'dir/sub')
+
   def testConstants(self):
     constants = {
-        'dir.lib': '/pyscribe/usage',
-        'dir.lib.rel.output': '../pyscribe/usage',
+        'dir.lib': '/pyscribe/lib',
         'dir.output': '/cur',
         'dir.input': '/cur',
         'dir.input.rel.output': '.',
@@ -213,14 +217,15 @@ class MainTest(EndToEndTestCase):
 
 
 # Command-line to generated output file basename.
+_DEFAULT_HTML_FLAGS = ' -d core.css.filename=../lib/core.css'
 GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
   ('Hello.psc --format=latex', 'Hello.tex'),
-  ('Hello.psc --format=html', 'Hello.html'),
+  ('Hello.psc --format=html' + _DEFAULT_HTML_FLAGS, 'Hello.html'),
   ('Hello.psc --format=html'
       ' -d inline=1'
       ' -d core.css.filename=small.css'
       ' -p Hello-inline', 'Hello-inline.html'),
-  ('Test.psc --format=html', 'Test.html'),
+  ('Test.psc --format=html' + _DEFAULT_HTML_FLAGS, 'Test.html'),
   ('Test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
 
@@ -249,13 +254,12 @@ class ComputePathConstantsTest(TestCase):
     self.assertEqual(pyscribe._ComputePathConstants(
                         fs=self.GetFileSystem({}),
                         current_dir='/root/current/ignored',
-                        lib_dir='/pyscribe/usage',
+                        lib_dir='/pyscribe/lib',
                         output_dir='/root/output',
                         input_path='/root/input/sub/file.abc.psc',
                         output_basename_prefix='outbn'),
                      {
-                        'dir.lib': '/pyscribe/usage',
-                        'dir.lib.rel.output': '../../pyscribe/usage',
+                        'dir.lib': '/pyscribe/lib',
                         'dir.output': '/root/output',
                         'dir.input': '/root/input/sub',
                         'dir.input.rel.output': '../input/sub',
@@ -273,8 +277,7 @@ class ComputePathConstantsTest(TestCase):
                         input_path='/root/current/file.abc.psc',
                         output_basename_prefix=''),
                      {
-                        'dir.lib': '/root',
-                        'dir.lib.rel.output': '../..',
+                        'dir.lib': '..',
                         'dir.output': '/root/current/output',
                         'dir.input': '/root/current',
                         'dir.input.rel.output': '..',

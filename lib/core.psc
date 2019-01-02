@@ -2,16 +2,27 @@ $$whitespace.skip
 $$special.chars.latex.mode
 
 ################################################################################
-# Initialization
+# Core helpers
 
 $macro.new[file.output2input(path)][$dir.input.rel.output/$path]
-$macro.new[file.output2core(path)][$dir.lib.rel.output/$path]
+
+$macro.new[identity(contents)][$contents]
+
+$macro.new[macro.new.default(name,body.default)][
+  $if.def[$name][][
+    $macro.new[$name()][$body.default]
+  ]
+]
+
+
+################################################################################
+# Initialization
 
 # Inline mode: embeds external files whenever possible instead of linking to
 # them, to make the output file more self-contained.
 # Typical use case: inlining *.css files.
 # Usage: $inline.select[if inline mode][if not inline mode]
-$if.def[inline][][$macro.new[inline][0]]
+$macro.new.default[inline][0]
 $if.eq[$inline][1][
   $macro.new[inline.select(if.inline,if.linked)][$if.inline]
 ][
@@ -50,8 +61,6 @@ $macro.new[root.open.hook][
 
 ################################################################################
 # Common
-
-$macro.new[identity(contents)][$contents]
 
 # Metadata
 $macro.new[metadata.all.set][
@@ -156,9 +165,7 @@ $macro.new[page.toc.append(contents)][
 $macro.new[output.ext.html][.html]
 $macro.new[root.branch.type.html][html]
 
-$if.def[core.css.filename][][
-  $macro.new[core.css.filename][$file.output2core[core.css]]
-]
+$macro.new.default[core.css.filename][file:///$dir.lib/core.css]
 
 $macro.new[root.open.html][
   # Helpers

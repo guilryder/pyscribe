@@ -11,13 +11,11 @@ Param(
 begin {
   Set-StrictMode -Version Latest
 
-  $usageDir = Split-Path (Resolve-Path $MyInvocation.MyCommand.Path)
-  $pyscribeDir = Split-Path ($usageDir)
-  $pyscribeScript = Join-Path "$pyscribeDir" "pyscribe.py"
+  $scriptDir = Split-Path (Resolve-Path $MyInvocation.MyCommand.Path)
+  $pyscribeDir = Split-Path $scriptDir
+  $libDir = Join-Path $pyscribeDir "lib"
+  $pyscribeScript = Join-Path $pyscribeDir "pyscribe.py"
   $outDir = "output"
-
-  # Allow using core.cls; relative paths generate warnings.
-  $env:TEXINPUTS="$usageDir;"
 
   function EbookConvert {
     Param(
@@ -76,7 +74,7 @@ process {
       "latex" {
         if ($Pdf) {
           echo "Compiling ${basename}.tex to PDF..."
-          texify --batch --pdf --clean --quiet "${basename}.tex"
+          texify -I $libDir --batch --pdf --clean --quiet "${basename}.tex"
         }
         if ($Pdf -and $View -and (Test-Path "${basename}.pdf")) {
           & ".\${basename}.pdf"

@@ -1,0 +1,15 @@
+#TITLE=PyScribe
+#DELIMITER=[]
+#CONTINUE_QUOTE=y
+#LINECOMMENT=#
+#COMMENTON=<<
+#COMMENTOFF=>>
+#ESCAPE=^
+#CASE=y
+#PREFIX1=$
+
+#KEYWORD=Keywords
+
+#KEYWORD=Separators
+«
+»

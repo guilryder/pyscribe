@@ -87,6 +87,14 @@ class Main:
                         action='store_const', const=None,
                         default=fs.stdout,
                         help='do not print informational messages')
+    parser.add_argument('--lib-dir',
+                        metavar='DIR',
+                        dest='lib_dir',
+                        default=fs.MakeAbsolute(
+                            self.__current_dir,
+                            fs.join(fs.dirname(self.__main_file), 'lib')),
+                        help='library directory, sets $dir.lib; '
+                             'default: %(default)s')
     parser.add_argument('input_filename', metavar='filename',
                         help='root *.psc file to execute')
     args = parser.parse_args(self.__input_args)
@@ -120,7 +128,7 @@ class Main:
         _ComputePathConstants(
               fs=fs,
               current_dir=self.__current_dir,
-              lib_dir=fs.join(fs.dirname(self.__main_file), 'usage'),
+              lib_dir=args.lib_dir,
               output_dir=args.output_dir,
               input_path=input_path,
               output_basename_prefix=args.output_basename_prefix))
@@ -165,21 +173,17 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
   Returns:
     (name string, value string) dict
   """
-  lib_dir = fs.MakeAbsolute(current_dir, lib_dir)
   output_dir = fs.MakeAbsolute(current_dir, output_dir)
   input_dir = fs.dirname(input_path)
   input_basename = fs.basename(input_path)
   input_basename_noext = fs.splitext(input_basename)[0]
   output_basename_prefix = output_basename_prefix or input_basename_noext
 
-  def MakeRelativeToOutDir(abs_path):
-    return fs.relpath(abs_path, output_dir)
   constants = {
       'dir.lib': lib_dir,
-      'dir.lib.rel.output': MakeRelativeToOutDir(lib_dir),
       'dir.output': output_dir,
       'dir.input': input_dir,
-      'dir.input.rel.output': MakeRelativeToOutDir(input_dir),
+      'dir.input.rel.output': fs.relpath(input_dir, output_dir),
       'file.input.basename': input_basename,
       'file.input.basename.noext': input_basename_noext,
       'file.output.basename.prefix': output_basename_prefix,
