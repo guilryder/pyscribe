@@ -41,14 +41,20 @@ class Main:
       __args: The command-line arguments object.
       __logger: The logger to use.
     """
+    fs = self.__fs
     # pylint: disable=attribute-defined-outside-init
     def ParseDefine(value):
       (name, sep, text) = value.partition('=')
       if not sep:
         raise argparse.ArgumentTypeError(
-            'invalid value, expected format: name=text; got: {value}'.format(
-                value=value))
+            'invalid value, expected format: name=text; got: {}'.format(value))
       return (name, text)
+
+    def ValidateBasename(value):
+      if value != fs.basename(value):
+        raise argparse.ArgumentTypeError(
+            'expected basename without separator, got: {}'.format(value))
+      return value
 
     parser = self.__ArgumentParser()
     parser.add_argument('-d', '--define', metavar='NAME=TEXT',
@@ -70,21 +76,24 @@ class Main:
                         dest='output_dir',
                         default=self.__current_dir,
                         help='output directory')
+    parser.add_argument('-p', '--output-basename-prefix', type=ValidateBasename,
+                        metavar='BASENAME',
+                        dest='output_basename_prefix',
+                        default='',
+                        help='basename prefix of the output files; defaults to '
+                             'the input file basename without extension')
     parser.add_argument('-q', '--quiet',
                         dest='info_file',
                         action='store_const', const=None,
-                        default=self.__fs.stdout,
+                        default=fs.stdout,
                         help='do not print informational messages')
     parser.add_argument('input_filename', metavar='filename',
                         help='root *.psc file to execute')
     args = parser.parse_args(self.__input_args)
 
-    # Output directory
-    self.__fs.makedirs(args.output_dir, exist_ok=True)
-
     # Logger
     self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.error_format],
-                               err_file=self.__fs.stderr,
+                               err_file=fs.stderr,
                                info_file=args.info_file)
 
     # Constants
@@ -95,28 +104,44 @@ class Main:
 
   def __Execute(self):
     """Executes the action specified on the command-line."""
-    args = self.__args
     fs = self.__fs
-    out_dir = args.output_dir
-    executor = Executor(out_dir, logger=self.__logger, fs=fs)
-    executor.AddConstants(self.__constants)
+    constants = self.__constants
+    args = self.__args
+
+    # Compute the absolute input file path.
+    input_path = Executor.ResolveFilePathStatic(
+        args.input_filename,
+        abs_directory=self.__current_dir,
+        default_ext=PYSCRIBE_EXT,
+        fs=fs)
+
+    # Compute the path constants based on the input path.
+    constants.update(
+        _ComputePathConstants(
+              fs=fs,
+              current_dir=self.__current_dir,
+              lib_dir=fs.join(fs.dirname(self.__main_file), 'usage'),
+              output_dir=args.output_dir,
+              input_path=input_path,
+              output_basename_prefix=args.output_basename_prefix))
+    output_dir = constants['dir.output']
+    output_path_prefix = \
+        fs.MakeAbsolute(output_dir,
+                        constants['file.output.basename.prefix'])
+
+    # Create the output directory.
+    fs.makedirs(output_dir, exist_ok=True)
+
+    executor = Executor(logger=self.__logger, fs=fs,
+                        current_dir=self.__current_dir,
+                        output_path_prefix=output_path_prefix)
+
+    # Set the constants.
+    executor.AddConstants(constants)
 
     try:
-      # Resolve the input filename.
-      resolved_path = executor.ResolveFilePath(args.input_filename,
-                                               cur_dir=self.__current_dir,
-                                               default_ext=PYSCRIBE_EXT)
-
-      # Set the constants that depend on the input filename.
-      executor.AddConstants(_ComputePathConstants(
-          fs,
-          cur_dir=self.__current_dir,
-          lib_dir=fs.join(fs.dirname(self.__main_file), 'usage'),
-          out_dir=out_dir,
-          input_filename=args.input_filename))
-
       # Load and execute the input file.
-      executor.ExecuteFile(resolved_path)
+      executor.ExecuteFile(input_path)
       executor.RenderBranches()
     except log.FatalError:
       if args.error_format == 'python':
@@ -124,34 +149,40 @@ class Main:
       sys.exit(1)
 
 
-def _ComputePathConstants(fs, cur_dir, lib_dir, out_dir, input_filename):
+def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
+                          input_path, output_basename_prefix):
   """
   Returns the standard constant definitions for files and directories.
 
   Args:
-    cur_dir: (string) The current directory, used to resolve relative paths.
+    current_dir: (string) The current directory, used to resolve relative paths.
     lib_dir: (string) The path to the directory that contains core.psc.
-    out_dir: (string) The path to the output directory.
-    input_filename: (string) The path to the top-level file being executed.
+    output_dir: (string) The path to the output directory.
+    input_path: (string) The absolute path to the top-level file being executed.
+    output_basename_prefix: (string) The basename prefix of all output files.
+      Defaults to the basename of input_filename without extension if empty.
 
   Returns:
     (name string, value string) dict
   """
-  lib_dir = fs.MakeAbsolute(cur_dir, lib_dir)
-  out_dir = fs.MakeAbsolute(cur_dir, out_dir)
-  input_dir = fs.MakeAbsolute(cur_dir, fs.dirname(input_filename))
-  input_basename = fs.basename(input_filename)
+  lib_dir = fs.MakeAbsolute(current_dir, lib_dir)
+  output_dir = fs.MakeAbsolute(current_dir, output_dir)
+  input_dir = fs.dirname(input_path)
+  input_basename = fs.basename(input_path)
+  input_basename_noext = fs.splitext(input_basename)[0]
+  output_basename_prefix = output_basename_prefix or input_basename_noext
 
   def MakeRelativeToOutDir(abs_path):
-    return fs.relpath(abs_path, out_dir)
+    return fs.relpath(abs_path, output_dir)
   constants = {
       'dir.lib': lib_dir,
       'dir.lib.rel.output': MakeRelativeToOutDir(lib_dir),
-      'dir.output': out_dir,
+      'dir.output': output_dir,
       'dir.input': input_dir,
       'dir.input.rel.output': MakeRelativeToOutDir(input_dir),
       'file.input.basename': input_basename,
-      'file.input.basename.noext': fs.splitext(input_basename)[0],
+      'file.input.basename.noext': input_basename_noext,
+      'file.output.basename.prefix': output_basename_prefix,
   }
 
   return {name: fs.MakeUnix(value) for name, value in constants.items()}

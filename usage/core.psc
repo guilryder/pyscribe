@@ -28,17 +28,11 @@ $macro.call[format.init.$format]
 ################################################################################
 # Root branch
 
-# Basename of the branch that $root.create creates, without extension.
-# Defaults to the input file basename.
-$if.def[root.basename][][
-  $macro.new[root.basename][$file.input.basename.noext]
-]
-
-# Creates the default root branch writing into $root.basename,
+# Creates the default root branch writing into $file.output.basename.prefix,
 # with the file extension that matches $format.
 $macro.new[root.create(contents)][
   $branch.create.root[$macro.call[root.branch.type.$format]][root][
-    $macro.call[output.filename.$format][$root.basename]
+    $macro.call[output.ext.$format]
   ]
 
   $branch.write[root][
@@ -159,7 +153,7 @@ $macro.new[page.toc.append(contents)][
 ################################################################################
 # HTML
 
-$macro.new[output.filename.html(basename)][$basename^.html]
+$macro.new[output.ext.html][.html]
 $macro.new[root.branch.type.html][html]
 
 $if.def[core.css.filename][][
@@ -477,7 +471,7 @@ $macro.new[root.close.html][
 ################################################################################
 # Latex
 
-$macro.new[output.filename.latex(basename)][$basename^.tex]
+$macro.new[output.ext.latex][^.tex]
 $macro.new[root.branch.type.latex][latex]
 $macro.new[latex.class.options][]
 

@@ -94,9 +94,9 @@ def IncludeText(executor, call_node, path):
 
 def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
   try:
-    cur_dir = call_node.location.filename.dir_path
+    directory = call_node.location.filename.dir_path
     resolved_path = executor.ResolveFilePath(path,
-                                             cur_dir=cur_dir,
+                                             directory=directory,
                                              default_ext=default_ext)
     resolved_path_handler(resolved_path)
   except IOError as e:

@@ -37,10 +37,10 @@ class BranchCreateTest(ExecutionTestCase):
   def testRoot_text(self):
     self.assertExecution(
         (
-            '$branch.create.root[text][new][out]\n',
+            '$branch.create.root[text][new][.ext]\n',
             '$branch.write[new][one\n\ntwo]\n',
         ),
-        {'/system': '\n', '/output/out': 'one\n\ntwo'})
+        {'/system': '\n', '/output.ext': 'one\n\ntwo'})
 
   def testRoot_unknownType(self):
     self.assertExecution(
@@ -52,51 +52,65 @@ class BranchCreateTest(ExecutionTestCase):
   def testRoot_duplicateBranchName(self):
     self.assertExecution(
         (
-            '$branch.create.root[text][one][a.out]',
-            '$branch.create.root[text][two][b.out]',
-            '$branch.create.root[text][one][c.out]',
+            '$branch.create.root[text][one][.a]',
+            '$branch.create.root[text][two][.b]',
+            '$branch.create.root[text][one][.c]',
         ),
         messages=['/root:3: $branch.create.root: ' +
                   'a branch of this name already exists: one'])
 
-  def testRoot_invalidOutputFilename(self):
-    self.assertExecution(
-        '$branch.create.root[text][one][../output]',
-        messages=["/root:1: $branch.create.root: invalid output file name: " +
-                  "'../output'; must be below the output directory"])
-
-  def testRoot_relativeBelowOutput(self):
+  def testRoot_emptyOutputSuffix(self):
     self.assertExecution(
         (
-            '$branch.create.root[text][new][../output/below]\n',
-            '$branch.write[new][test]\n',
+            '$branch.create.root[text][one][]',
+            '$branch.write[one][inside]',
         ),
-        {'/system': '\n', '/output/below': 'test'})
+        {'/output': 'inside'})
+
+  def testRoot_invalidOutputSuffix_dotPrefixMissing(self):
+    self.assertExecution(
+        '$branch.create.root[text][one][foo.bar]',
+        messages=["/root:1: $branch.create.root: invalid output file name "
+                  "suffix: 'foo.bar'; must be empty or start with a period"])
+
+  def testRoot_invalidOutputSuffix_dirSeparatorInside(self):
+    self.assertExecution(
+        '$branch.create.root[text][one][.foo/bar]',
+        messages=["/root:1: $branch.create.root: invalid output file name "
+                  "suffix: '.foo/bar'; must be a basename "
+                  "(no directory separator)"])
+
+  def testRoot_invalidOutputSuffix_dirSeparatorSuffix(self):
+    self.assertExecution(
+        '$branch.create.root[text][one][.foo/]',
+        messages=["/root:1: $branch.create.root: invalid output file name "
+                  "suffix: '.foo/'; must be a basename "
+                  "(no directory separator)"])
 
   def testRoot_nameRef(self):
     self.assertExecution(
         (
-            '$branch.create.root[text][!new][out]',
+            '$branch.create.root[text][!new][.ext]',
             '$branch.write[$new][inside]',
             '$new',
         ),
-        {'/system': 'auto1', '/output/out': 'inside'})
+        {'/system': 'auto1', '/output.ext': 'inside'})
 
   def testRoot_inheritsCurrentBranch(self):
     self.assertExecution(
         (
             '$macro.new[first][one]',
-            '$branch.create.root[text][new][new]',
+            '$branch.create.root[text][new][.ext]',
             '$macro.new[second][two]',
             '$branch.write[new][$first $second]',
         ),
-        {'/system': '', '/output/new': 'one two'})
+        {'/system': '', '/output.ext': 'one two'})
 
   def testRoot_doesNotInheritsOtherBranches(self):
     self.assertExecution(
         (
-            '$branch.create.root[text][new1][new1]',
-            '$branch.create.root[text][new2][new2]',
+            '$branch.create.root[text][new1][.1]',
+            '$branch.create.root[text][new2][.2]',
             '$branch.write[new1][$macro.new[macro][test]]',
             '$branch.write[new2][',
               '$macro]',

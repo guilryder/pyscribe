@@ -22,7 +22,9 @@ class ExecutorTest(TestCase):
         '/exists-no-ext': '',
     })
     self.logger = FakeLogger()
-    self.executor = Executor(output_dir='output', logger=self.logger, fs=fs)
+    self.executor = Executor(logger=self.logger, fs=fs,
+                             current_dir='/cur',
+                             output_path_prefix='/output')
 
   def testResolveFilePath_resolvesDots(self):
     self.assertEqual(
@@ -38,6 +40,11 @@ class ExecutorTest(TestCase):
     self.assertEqual(
         self.executor.ResolveFilePath('../sibling/file', '/cur/dir'),
         '/cur/sibling/file')
+
+  def testResolveFilePath_relativeCurDir(self):
+    self.assertEqual(
+        self.executor.ResolveFilePath('../sibling/file', 'dir/sub'),
+        '/cur/dir/sibling/file')
 
   def testResolveFilePath_noDefaultExt(self):
     self.assertEqual(
@@ -243,41 +250,51 @@ class ExecutorEndToEndTest(ExecutionTestCase):
                   '  /root:2: $eval.text',
                   '  /root:1: $identity'])
 
-  def testOutputFileOpenedTwice_sameInputPath(self):
+  def testOutputFileOpenedTwice_withoutSuffix(self):
     self.assertExecution(
         (
-            '$branch.create.root[latex][new][foo]',
-            '$branch.create.root[latex][new][foo]',
+            '$branch.create.root[latex][new][]',
+            '$branch.create.root[latex][new][]',
         ),
         messages=['/root:2: $branch.create.root: output file already opened: '
-                  '/output/foo'])
+                  '/output'])
 
-  def testOutputFileOpenedTwice_differentInputPaths(self):
+  def testOutputFileOpenedTwice_withSuffix(self):
     self.assertExecution(
         (
-            '$branch.create.root[latex][new][foo]',
-            '$branch.create.root[latex][new][/output/foo]',
+            '$branch.create.root[latex][new][.foo]',
+            '$branch.create.root[latex][new][.foo]',
         ),
         messages=['/root:2: $branch.create.root: output file already opened: '
-                  '/output/foo'])
+                  '/output.foo'])
+
+  def testOutputFileOverwritesInput(self):
+    self.assertExecution(
+        {
+            '/root': '$include[/output]',
+            '/output.psc': '$branch.create.root[latex][new][.psc]',
+        },
+        messages=['/output.psc:1: $branch.create.root: '
+                  'output file already opened: /output.psc',
+                  '  /root:1: $include'])
 
   def testLatex(self):
     self.assertExecution(
         (
-            '$branch.create.root[latex][new][newtex]',
+            '$branch.create.root[latex][new][.tex]',
             '$branch.write[new][%test&]',
         ),
-        {'/output/newtex': '\\%test\\&'})
+        {'/output.tex': '\\%test\\&'})
 
   def testAllBranchTypes(self):
     for type_name in BRANCH_TYPES:
       executor = self.assertExecution(
           (
-              '$branch.create.root[{}][new][newoutput]'.format(type_name),
+              '$branch.create.root[{}][new][.suffix]'.format(type_name),
               '$branch.write[new][test]',
           ),
           {},
-          expected_infos=['Writing: /output/newoutput'])
+          expected_infos=['Writing: /output.suffix'])
       self.__VerifyBranchType(type_name,
                               executor.branches.get('new').context)
 

@@ -201,6 +201,8 @@ class FakeFileSystem(execution.AbstractFileSystem):
   def getcwd(self):
     return self.cwd
 
+  isabs = staticmethod(os.path.isabs)
+
   @classmethod
   def join(cls, path1, *paths):
     return cls.MakeUnix(os.path.join(path1, *paths))
@@ -406,7 +408,9 @@ class ExecutionTestCase(TestCase):
     fs = self.GetFileSystem(inputs)
 
     logger = FakeLogger()
-    executor = execution.Executor(output_dir='/output', logger=logger, fs=fs)
+    executor = execution.Executor(logger=logger, fs=fs,
+                                  current_dir='/cur',
+                                  output_path_prefix='/output')
     executor.system_branch.writer = fs.open(
         self.GetBranchFilename(executor.system_branch.name), 'wt',
         encoding='utf-8')

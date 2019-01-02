@@ -23,7 +23,7 @@ class EndToEndTestCase(TestCase):
   def GetStdFile(self, name):
     return getattr(self.fs, 'std' + name).getvalue().strip()
 
-  def assertOutput(self, expected_output, expected_filename='/cur/output.txt'):
+  def assertOutput(self, expected_filename, expected_output):
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
                      {expected_filename: expected_output})
@@ -63,7 +63,7 @@ class MainTest(EndToEndTestCase):
 
   @staticmethod
   def __Output(contents):
-    return ('$branch.create.root[text][root][output.txt]' +
+    return ('$branch.create.root[text][root][.out]' +
             '$branch.write[root][' + contents + ']')
 
   def setUp(self):
@@ -93,34 +93,43 @@ class MainTest(EndToEndTestCase):
 
   def testSimple(self):
     self.Execute('input.psc')
-    self.assertOutput('Hello, World!')
+    self.assertOutput('/cur/input.out', 'Hello, World!')
     self.assertEqual(self.GetStdFile('out'),
-                     'Writing: /cur/output.txt')
+                     'Writing: /cur/input.out')
 
   def testSimple_autoExtension(self):
     self.Execute('input')
-    self.assertOutput('Hello, World!')
+    self.assertOutput('/cur/input.out', 'Hello, World!')
 
   def testSimple_quiet(self):
     self.Execute('input.psc -q')
-    self.assertOutput('Hello, World!')
+    self.assertOutput('/cur/input.out', 'Hello, World!')
     self.assertEqual(self.GetStdFile('out'), '')
 
-  def testCustomOutput(self):
+  def testCustomOutput_relative(self):
+    self.Execute('input.psc --output ignored/../custom')
+    self.assertEqual(self.fs.created_dirs, set(['/cur/custom']))
+    self.assertEqual(self.GetStdFile('out'),
+                     'Writing: /cur/custom/input.out')
+    self.assertEqual(self.GetStdFile('err'), '')
+    self.assertEqual(self.fs.GetOutputs(),
+                     {'/cur/custom/input.out': 'Hello, World!'})
+
+  def testCustomOutput_absolute(self):
     self.Execute('input.psc --output /custom')
     self.assertEqual(self.fs.created_dirs, set(['/custom']))
     self.assertEqual(self.GetStdFile('out'),
-                     'Writing: /custom/output.txt')
+                     'Writing: /custom/input.out')
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
-                     {'/custom/output.txt': 'Hello, World!'})
+                     {'/custom/input.out': 'Hello, World!'})
 
   def testCustomOutput_quiet(self):
     self.Execute('input.psc --output /custom --quiet')
     self.assertEqual(self.GetStdFile('out'), '')
     self.assertEqual(self.GetStdFile('err'), '')
     self.assertEqual(self.fs.GetOutputs(),
-                     {'/custom/output.txt': 'Hello, World!'})
+                     {'/custom/input.out': 'Hello, World!'})
 
   def testExecutionError_simpleErrorFormat(self):
     self.Execute('error.psc', expect_failure=True)
@@ -139,11 +148,11 @@ class MainTest(EndToEndTestCase):
 
   def testOutputFormat_default(self):
     self.Execute('format.psc')
-    self.assertOutput('Format: html')
+    self.assertOutput('/cur/format.out', 'Format: html')
 
   def testOutputFormat_custom(self):
     self.Execute('format.psc --format latex')
-    self.assertOutput('Format: latex')
+    self.assertOutput('/cur/format.out', 'Format: latex')
 
   def testOutputFormat_invalid(self):
     self.Execute('format.psc --format invalid', expect_failure=True)
@@ -152,8 +161,8 @@ class MainTest(EndToEndTestCase):
 
   def testDefines(self):
     self.inputs['/cur/defines.psc'] = self.__Output('$one,$two,$three,$a.b')
-    self.Execute('defines.psc -d one=1 -d two=2 -d three= -d two=2bis -d a.b=c')
-    self.assertOutput('1,2bis,,c')
+    self.Execute('defines.psc -d one=1 -d two=2 -d three= -d two=2=2 -d a.b=c')
+    self.assertOutput('/cur/defines.out', '1,2=2,,c')
 
   def testDefinesInvalidFormat(self):
     self.Execute('input.psc -d name', expect_failure=True)
@@ -163,7 +172,26 @@ class MainTest(EndToEndTestCase):
 
   def testOutputFormatOverwritesDefines(self):
     self.Execute('format.psc --format html -d format=ignored')
-    self.assertOutput('Format: html')
+    self.assertOutput('/cur/format.out', 'Format: html')
+
+  def testOutputBasenamePrefix_empty(self):
+    self.inputs['/cur/dummy.psc'] = \
+        self.__Output('$file.output.basename.prefix')
+    self.Execute('dummy.psc -p ""')
+    self.assertOutput('/cur/dummy.out', 'dummy')
+
+  def testOutputBasenamePrefix_notEmpty(self):
+    self.inputs['/cur/dummy.psc'] = \
+        self.__Output('$file.output.basename.prefix')
+    self.Execute('dummy.psc -p custom-output-prefix')
+    self.assertOutput('/cur/custom-output-prefix.out', 'custom-output-prefix')
+
+  def testOutputBasenamePrefix_invalid_dirSeparator(self):
+    self.Execute('dummy.psc -p dir/basename', expect_failure=True)
+    self.assertIn('-p/--output-basename-prefix: expected basename without '
+                  'separator, got: dir/basename',
+                  self.GetStdFile('err'))
+    self.assertEqual(self.fs.GetOutputs(), {})
 
   def testConstants(self):
     constants = {
@@ -174,11 +202,13 @@ class MainTest(EndToEndTestCase):
         'dir.input.rel.output': '.',
         'file.input.basename': 'constants.psc',
         'file.input.basename.noext': 'constants',
+        'file.output.basename.prefix': 'constants',
     }
     self.inputs['/cur/constants.psc'] = \
         self.__Output(', '.join('{0}=${0}'.format(name) for name in constants))
     self.Execute('constants.psc')
-    self.assertOutput(', '.join('{}={}'.format(*constant)
+    self.assertOutput('/cur/constants.out',
+                      ', '.join('{}={}'.format(*constant)
                                 for constant in constants.items()))
 
 
@@ -189,7 +219,7 @@ GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
   ('Hello.psc --format=html'
       ' -d inline=1'
       ' -d core.css.filename=small.css'
-      ' -d root.basename=Hello-inline', 'Hello-inline.html'),
+      ' -p Hello-inline', 'Hello-inline.html'),
   ('Test.psc --format=html', 'Test.html'),
   ('Test.psc --format=latex -d inline=1', 'Test.tex'),  # inline is a noop
 ))
@@ -202,7 +232,7 @@ class GoldenTest(EndToEndTestCase):
     self.Execute(cmdline)
     with self.OpenSourceFile(output_path) as expected_file:
       self.maxDiff = None
-      self.assertOutput(expected_file.read(), expected_filename=output_path)
+      self.assertOutput(output_path, expected_file.read())
 
   @classmethod
   def AddTestMethod(cls, cmdline, output_basename):
@@ -218,10 +248,11 @@ class ComputePathConstantsTest(TestCase):
   def testAbsoluteInputPaths(self):
     self.assertEqual(pyscribe._ComputePathConstants(
                         fs=self.GetFileSystem({}),
-                        cur_dir='/root/current/ignored',
+                        current_dir='/root/current/ignored',
                         lib_dir='/pyscribe/usage',
-                        out_dir='/root/output',
-                        input_filename='/root/input/sub/file.abc.psc'),
+                        output_dir='/root/output',
+                        input_path='/root/input/sub/file.abc.psc',
+                        output_basename_prefix='outbn'),
                      {
                         'dir.lib': '/pyscribe/usage',
                         'dir.lib.rel.output': '../../pyscribe/usage',
@@ -230,15 +261,17 @@ class ComputePathConstantsTest(TestCase):
                         'dir.input.rel.output': '../input/sub',
                         'file.input.basename': 'file.abc.psc',
                         'file.input.basename.noext': 'file.abc',
+                        'file.output.basename.prefix': 'outbn',
                      })
 
   def testRelativeInputPaths(self):
     self.assertEqual(pyscribe._ComputePathConstants(
                         fs=self.GetFileSystem({}),
-                        cur_dir='/root/current',
+                        current_dir='/root/current',
                         lib_dir='..',
-                        out_dir='output',
-                        input_filename='file.abc.psc'),
+                        output_dir='output',
+                        input_path='/root/current/file.abc.psc',
+                        output_basename_prefix=''),
                      {
                         'dir.lib': '/root',
                         'dir.lib.rel.output': '../..',
@@ -247,6 +280,7 @@ class ComputePathConstantsTest(TestCase):
                         'dir.input.rel.output': '..',
                         'file.input.basename': 'file.abc.psc',
                         'file.input.basename.noext': 'file.abc',
+                        'file.output.basename.prefix': 'file.abc',
                      })
 
 

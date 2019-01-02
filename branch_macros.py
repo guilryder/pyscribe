@@ -32,8 +32,9 @@ def BranchWrite(executor, unused_call_node, branch_name, contents):
 
 
 @macro(public_name='branch.create.root',
-       args_signature='branch_type,name_or_ref,filename')
-def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
+       args_signature='branch_type,name_or_ref,filename_suffix')
+def BranchCreateRoot(executor, call_node, branch_type, name_or_ref,
+                     filename_suffix):
   """
   Creates a new root branch.
 
@@ -43,8 +44,9 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
     branch_type: The name of the type of branch to create, see BRANCH_TYPES.
     name_or_ref: The name of the branch to create, or, if prefixed with '!', the
       name of the macro to store the automatically generated branch name into.
-    filename: The name of the file to save the branch to, relative to the output
-      directory.
+    filename_suffix: The path suffix of the file to save the branch to, relative
+      to the output directory concatenated with --output-basename-prefix.
+      Must be empty, or start with a dot and contain no directory separator.
   """
 
   # Parse the branch type.
@@ -59,7 +61,7 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref, filename):
       executor, call_node, name_or_ref,
       lambda: branch_class(parent=None,
                            parent_context=executor.current_branch.context,
-                           writer=executor.GetOutputWriter(filename)))
+                           writer=executor.GetOutputWriter(filename_suffix)))
 
 
 @macro(public_name='branch.create.sub', args_signature='name_or_ref')

@@ -128,6 +128,7 @@ class FileSystem(AbstractFileSystem):
   basename = staticmethod(os.path.basename)
   dirname = staticmethod(os.path.dirname)
   getcwd = staticmethod(os.getcwd)
+  isabs = staticmethod(os.path.isabs)
   join = staticmethod(os.path.join)
   lexists = staticmethod(os.path.lexists)
   makedirs = staticmethod(os.makedirs)
@@ -146,12 +147,12 @@ class Executor:
   2) the branch context: self.current_branch.context
 
   Fields:
-    __output_dir: (string) The path of the parent directory of all output files,
-      possibly relative.
     logger: (Logger) The logger used to print all error messages.
     fs: (FileSystem) The file system abstraction.
-    __writer_filenames: (string set) The full, normalized, possibly relative
-      filenames of the opened writers.
+    __current_dir: (string) The absolute path of the current directory.
+    __output_path_prefix: (string) The absolute path prefix of all output files.
+    opened_paths: (string set) The absolute paths of the readers and writers
+      opened so far.
     system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (Branch list) All root branches, including the system branch.
     current_branch: (Branch) The currently selected branch.
@@ -165,11 +166,15 @@ class Executor:
     __include_stack: (Filename list) The stack of included file names.
   """
 
-  def __init__(self, output_dir, logger, fs=FileSystem()):
-    self.__output_dir = fs.normpath(output_dir)
+  def __init__(self, *, logger, fs=FileSystem(),
+               current_dir, output_path_prefix):
+    assert fs.isabs(current_dir)
+    assert fs.isabs(output_path_prefix)
     self.logger = logger
     self.fs = fs
-    self.__writer_filenames = set()
+    self.__current_dir = current_dir
+    self.__output_path_prefix = output_path_prefix
+    self.opened_paths = set()
     self.system_branch = TextBranch(parent=None, name='system')
     self.branches = {}
     self.root_branches = []
@@ -194,47 +199,74 @@ class Executor:
     for name, value in constants.items():
       context.AddMacro(name, AppendTextCallback(value))
 
-  def GetOutputWriter(self, filename):
+  def GetOutputWriter(self, filename_suffix):
     """
     Creates a writer for the given output file.
 
     Args:
-      filename: (string) The name of the output file, relative to the output
-        directory. If absolute, must be located under the output directory.
+      filename_suffix: The path suffix of the file to write, relative to
+        __output_path_prefix. Must be empty, or start with a dot and contain no
+        directory separator.
     """
     fs = self.fs
 
-    # Compute and validate the full filename, with output directory prefix.
-    # full_filename is relative if __output_dir is relative.
-    full_filename = fs.MakeAbsolute(self.__output_dir, filename)
-    if not full_filename.startswith(fs.join(self.__output_dir, '')):
-      raise InternalError("invalid output file name: '{filename}'; " +
-                          "must be below the output directory",
-                          filename=filename)
-    if full_filename in self.__writer_filenames:
+    # Compute and validate the absolute path.
+    if filename_suffix:
+      if not filename_suffix.startswith('.'):
+        raise InternalError("invalid output file name suffix: '{suffix}'; "
+                            "must be empty or start with a period",
+                            suffix=filename_suffix)
+      if filename_suffix != fs.basename(filename_suffix):
+        raise InternalError("invalid output file name suffix: '{suffix}'; "
+                            "must be a basename (no directory separator)",
+                            suffix=filename_suffix)
+    path = self.__output_path_prefix + filename_suffix
+    if path in self.opened_paths:
       raise InternalError("output file already opened: {filename}",
-                          filename=full_filename)
+                          filename=path)
     self.logger.LogInfo(
-        'Writing: {filename}'.format(filename=full_filename))
+        'Writing: {filename}'.format(filename=path))
 
     # Create the writer.
-    writer = fs.open(full_filename, mode='wt', encoding=ENCODING, newline=None)
-    self.__writer_filenames.add(full_filename)
+    writer = fs.open(path, mode='wt', encoding=ENCODING, newline=None)
+    self.opened_paths.add(path)
     return writer
 
-  def ResolveFilePath(self, path, cur_dir, default_ext=None):
+  def ResolveFilePath(self, path, directory, default_ext=None):
     """
     Normalizes a user-entered, possibly relative file path.
 
     Args:
         path: (string) The path to resolve.
-        cur_dir: (string|None) The full path of the current directory.
-          Used if filename is relative.
+        directory: (string) The path of the directory to resolve path
+          against if it is relative. Can be relative to current_dir.
         default_ext: (string|None) The extension to append to the path if it has
           none and it refers to a non-existing file.
+    Returns: (string)
+      The resolved path, always absolute.
     """
-    fs = self.fs
-    path = fs.MakeAbsolute(cur_dir, path)
+    return self.ResolveFilePathStatic(
+        path,
+        abs_directory=self.fs.join(self.__current_dir, directory),
+        default_ext=default_ext,
+        fs=self.fs)
+
+  @staticmethod
+  def ResolveFilePathStatic(path, *, abs_directory, default_ext=None, fs):
+    """
+    Normalizes a user-entered, possibly relative file path.
+
+    Args:
+        path: (string) The path to resolve.
+        abs_directory: (string|None) The absolute path of the directory to
+          resolve path against if it is relative.
+        default_ext: (string|None) The extension to append to the path if it has
+          none and it refers to a non-existing file.
+    Returns: (string)
+      The resolved path, always absolute.
+    """
+    assert fs.isabs(abs_directory)
+    path = fs.MakeAbsolute(abs_directory, path)
     if default_ext is not None \
         and not fs.splitext(path)[1] and not fs.lexists(path):
       path += default_ext
@@ -245,9 +277,10 @@ class Executor:
     Executes the given PyScribe file.
 
     Args:
-      path: (string) The path of the file to execute.
-        Should be returned by ResolveFilePath.
+      path: (string) The absolute path of the file to execute.
     """
+    assert self.fs.isabs(path)
+    self.opened_paths.add(path)
     filename = Filename(path, self.fs.dirname(path))
     with self.fs.open(path, encoding=ENCODING) as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
