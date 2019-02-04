@@ -14,7 +14,7 @@ import log
 
 class Main:
 
-  def __init__(self, input_args, fs=FileSystem(), main_file=sys.argv[0],
+  def __init__(self, *, input_args=None, fs=FileSystem(), main_file=sys.argv[0],
                ArgumentParser=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__fs = fs
@@ -193,4 +193,4 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
 
 
 if __name__ == '__main__':
-  Main(None).Run()
+  Main().Run()

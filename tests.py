@@ -12,6 +12,7 @@ import glob
 import os
 import shutil
 import shlex
+import subprocess
 import unittest
 import webbrowser
 
@@ -100,9 +101,9 @@ class TestsManager:
 
   def Lint(self):
     """Runs the linter against all source files."""
-    os.system('{python} -m pylint --output-format=parseable {files}'.format(
-        python=sys.executable,
-        files=' '.join(map(shlex.quote, self.__python_files))))
+    subprocess.call(
+        [sys.executable, '-m', 'pylint', '--output-format=parseable'] +
+            list(self.__python_files))
 
   def RegenerateGoldens(self):
     """Regenerates the golden output files under testdata/."""
@@ -113,7 +114,7 @@ class TestsManager:
       full_cmdline = '{python} ../pyscribe.py {cmdline}'.format(
           python=sys.executable, cmdline=cmdline)
       print('Executing: {}'.format(full_cmdline), flush=True)
-      os.system(full_cmdline)
+      subprocess.call(full_cmdline)
 
 
 if __name__ == '__main__':

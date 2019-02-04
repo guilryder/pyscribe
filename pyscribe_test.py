@@ -44,7 +44,7 @@ class EndToEndTestCase(TestCase):
         ArgumentParser.print_help(parser, self.fs.stderr, **kwargs)
 
     args = shlex.split(cmdline)
-    main = pyscribe.Main(args,
+    main = pyscribe.Main(input_args=args,
                          fs=self.fs,
                          main_file=FAKE_PYSCRIBE_DIR + 'pyscribe.py',
                          ArgumentParser=FakeArgumentParser)
