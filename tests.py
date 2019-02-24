@@ -107,10 +107,10 @@ class TestsManager:
 
   def RegenerateGoldens(self):
     """Regenerates the golden output files under testdata/."""
-    print('Switching to: {}'.format(os.getcwd()))
-    os.chdir('testdata')
-    import pyscribe_test
-    for cmdline in pyscribe_test.GOLDEN_TEST_DEFINITIONS:
+    from pyscribe_test import GOLDEN_TEST_DEFINITIONS, TESTDATA_DIR
+    print('Switching to: {}'.format(TESTDATA_DIR))
+    os.chdir(TESTDATA_DIR)
+    for cmdline in GOLDEN_TEST_DEFINITIONS:
       full_cmdline = '{python} ../pyscribe.py {cmdline}'.format(
           python=sys.executable, cmdline=cmdline)
       print('Executing: {}'.format(full_cmdline), flush=True)

@@ -5,6 +5,7 @@
 __author__ = 'Guillaume Ryder'
 
 import collections
+import errno
 import io
 import os
 import unittest
@@ -146,6 +147,7 @@ OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\-D'
 
 FAKE_PYSCRIBE_DIR = '/pyscribe/'
 REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')
+TESTDATA_DIR = os.path.join(REAL_PYSCRIBE_DIR, 'testdata')
 
 
 class FakeLogger(Logger):
@@ -303,7 +305,7 @@ class TestCase(unittest.TestCase):
           elif filename.startswith(FAKE_PYSCRIBE_DIR):
             return self.OpenSourceFile(filename, mode=mode, **kwargs)
           else:
-            raise IOError(2, 'file not found: ' + filename)
+            raise FileNotFoundError(errno.ENOENT, 'file not found: ' + filename)
         elif mode == 'wt':
           # Open an output file.
           assert filename not in fs.__output_writers, \
