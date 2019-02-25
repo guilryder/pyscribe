@@ -135,7 +135,8 @@ class ParsingTest(TestCase):
     input_file = self.FakeInputFile(input_text, newline=None)
     try:
       nodes = ParseFile(input_file, filename, logger=logger)
-    except FatalError:
+    except FatalError as e:
+      logger.LogException(e)
       nodes = None
 
     # Verify the output.
@@ -158,7 +159,7 @@ class ParsingTest(TestCase):
 
   def testReadError(self):
     self.assertParsing(None, messages=[
-        'root:1: unable to read the input file: root\nFake error'])
+        'root:1: unable to read the input file: root\nFake read error'])
 
   def testEmpty(self):
     self.assertParsing('', '')

@@ -2,13 +2,16 @@
 
 __author__ = 'Guillaume Ryder'
 
+import traceback
+
 
 def FormatMessage(message, **kwargs):
   """
   Formats a message.
 
   Args:
-    message: (string) The error message, can be None.
+    message: (string|Exception) The error message, can be None.
+      If an exception, wraps it with str().
       Returned as is if **kwargs is empty, else interpreted as a format.
     **kwargs: (dict) The formatting parameters to apply to the message.
 
@@ -17,11 +20,12 @@ def FormatMessage(message, **kwargs):
   """
   if not message:
     return 'unknown error'
-  if kwargs:
-    message = message.format(**kwargs)
-  elif isinstance(message, InternalError):
-    message = message.message
-  return message
+  elif kwargs:
+    return message.format(**kwargs)
+  elif isinstance(message, Exception):
+    return str(message)
+  else:
+    return message
 
 
 class BaseError(Exception):
@@ -29,12 +33,12 @@ class BaseError(Exception):
   Base class for PyScribe-specific errors.
 
   Fields:
-    message: (string) The error message, never None.
+    message: (string) The error message, possibly with trailing newline.
   """
 
   def __init__(self, message=None, **kwargs):
     super(BaseError, self).__init__()
-    self.message = FormatMessage(message, **kwargs)
+    self.message = FormatMessage(message, **kwargs).rstrip()
 
   def __str__(self):
     return self.message
@@ -121,14 +125,16 @@ class Logger:
                 'line {call_node.location.lineno}, in ${call_node.name}\n'),
   )
 
-  def __init__(self, *, fmt, err_file, info_file):
-    (self.__top_format, self.__stack_frame_format) = fmt
+  def __init__(self, *, fmt, err_file, info_file, fmt_definition=None):
+    self.__fmt = fmt
+    (self.__top_format, self.__stack_frame_format) = \
+        fmt_definition or self.FORMATS[fmt]
     self.__err_file = err_file
     self.__info_file = info_file
 
-  def LogLocation(self, location, message, call_stack=(), **kwargs):
+  def LocationError(self, location, message, call_stack=(), **kwargs):
     """
-    Prints an error message for the given location.
+    Creates a FatalError for the given location.
 
     Args:
       location: (Location) The location of the error.
@@ -137,12 +143,30 @@ class Logger:
       call_stack: (CallNode list) The macro call stack.
       **kwargs: (dict) The formatting parameters to apply to the message.
     """
-    self.__err_file.write(self.__top_format.format(
-        location=location, message=FormatMessage(message, **kwargs)))
-    for call_node in call_stack:
-      self.__err_file.write(self.__stack_frame_format.format(
-          call_node=call_node))
-    return FatalError()
+    return FatalError('{header}{stack}',
+        header=self.__top_format.format(
+            location=location, message=FormatMessage(message, **kwargs)),
+        stack=''.join(self.__stack_frame_format.format(call_node=call_node)
+                      for call_node in call_stack))
+
+  def LogException(self, e, exc_info=None, tb_limit=None):
+    """
+    Prints a log entry for the given exception.
+
+    See traceback.print_exception() for details on exc_info and tb_limit.
+
+    Args:
+      e: (Exception) The exception to log.
+      exc_info: (etype, value, tb) The exception information returned by
+        sys.exc_info(), None if unavailable.
+      tb_limit: (int|None) The maximum number of stacktrace entries to print,
+        None for unlimited.
+    """
+    print(str(e), file=self.__err_file)
+    if exc_info is not None:
+      if self.__fmt == 'python':
+        traceback.print_exception(*exc_info, file=self.__err_file,
+                                  limit=tb_limit)
 
   def LogInfo(self, message):
     """

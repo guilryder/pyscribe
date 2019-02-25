@@ -4,8 +4,10 @@
 __author__ = 'Guillaume Ryder'
 
 from abc import abstractmethod
+import sys
 
 from log import *
+from parsing import CallNode
 from testutils import *
 
 
@@ -22,6 +24,10 @@ class FormatMessageTest(TestCase):
 
   def testMessageAndArgs(self):
     self.assertEqual(FormatMessage('message {blah}', blah='arg'), 'message arg')
+
+  def testException(self):
+    self.assertEqual(FormatMessage(OSError(5, 'Fake', 'file')),
+                     "[Errno 5] Fake: 'file'")
 
 
 class Helpers:
@@ -92,10 +98,23 @@ class LoggerTest(TestCase):
     self.info_file = self.FakeOutputFile()
 
   def __CreateLogger(self, **kwargs):
-    kwargs.setdefault('fmt', Logger.FORMATS['simple'])
+    kwargs.setdefault('fmt', 'simple')
     kwargs.setdefault('err_file', self.err_file)
     kwargs.setdefault('info_file', self.info_file)
     return Logger(**kwargs)
+
+  @staticmethod
+  def __LogMaximalLocationError(logger):
+    e = logger.LocationError(
+        TEST_LOCATION, 'arg={arg}; {number}', arg='value', number=123,
+        call_stack=(
+            CallNode(loc('file1.txt', 1), 'one', []),
+            CallNode(loc('file2.txt', 2), 'two', [])))
+    try:
+      raise RuntimeError('fake error')
+    except RuntimeError:
+      exc_info = sys.exc_info()
+    logger.LogException(e, exc_info=exc_info, tb_limit=0)
 
   def assertOutputs(self, err=(), info=()):
     for file, expected_lines in ((self.err_file, err), (self.info_file, info)):
@@ -103,24 +122,48 @@ class LoggerTest(TestCase):
                        '\n'.join(list(expected_lines) + ['']))
       file.close()
 
-  def testLogLocation_simpleFormat(self):
-    logger = self.__CreateLogger(fmt=Logger.FORMATS['simple'])
-    logger.LogLocation(Location(Filename('file.txt', '/'), 42), 'one')
-    logger.LogLocation(Location(Filename('other.txt', '/'), 27), 'two')
-    self.assertOutputs(err=['file.txt:42: one', 'other.txt:27: two'])
+  def testLocationError_simpleFormat_minimal(self):
+    logger = self.__CreateLogger(fmt='simple')
+    e = logger.LocationError(TEST_LOCATION, 'message')
+    self.assertEqual(e.message, 'file.txt:42: message')
 
-  def testLogLocation_pythonFormat(self):
-    logger = self.__CreateLogger(fmt=Logger.FORMATS['python'])
-    logger.LogLocation(Location(Filename('file.txt', '/'), 42), 'one')
-    logger.LogLocation(Location(Filename('other.txt', '/'), 27), 'two')
-    self.assertOutputs(err=['  File "file.txt", line 42\n    one',
-                            '  File "other.txt", line 27\n    two'])
+  def testLocationError_simpleFormat_maximal(self):
+    logger = self.__CreateLogger(fmt='simple')
+    self.__LogMaximalLocationError(logger)
+    self.assertOutputs(err=[
+        'file.txt:42: arg=value; 123',
+        '  file1.txt:1: $one',
+        '  file2.txt:2: $two',
+    ])
 
-  def testLogLocation_someArgs(self):
-    logger = self.__CreateLogger(fmt=Logger.FORMATS['simple'])
-    logger.LogLocation(TEST_LOCATION, 'arg={arg}; {number}',
-                       arg='value', number=42)
-    self.assertOutputs(err=['file.txt:42: arg=value; 42'])
+  def testLocationError_pythonFormat_minimal(self):
+    logger = self.__CreateLogger(fmt='python')
+    e = logger.LocationError(TEST_LOCATION, 'message')
+    self.assertEqual(e.message, '  File "file.txt", line 42\n'
+                                '    message')
+
+  def testLocationError_pythonFormat_maximal(self):
+    logger = self.__CreateLogger(fmt='python')
+    self.__LogMaximalLocationError(logger)
+    self.assertOutputs(err=[
+        '  File "file.txt", line 42',
+        '    arg=value; 123',
+        '  File "file1.txt", line 1, in $one',
+        '  File "file2.txt", line 2, in $two',
+        'Traceback (most recent call last):',
+        'RuntimeError: fake error',
+    ])
+
+  def testLogException_fromLocationError(self):
+    logger = self.__CreateLogger(fmt='simple')
+    logger.LogException(logger.LocationError(TEST_LOCATION, 'message'))
+    self.assertOutputs(err=['file.txt:42: message'])
+
+  def testLogException_inSequence(self):
+    logger = self.__CreateLogger(fmt='simple')
+    logger.LogException(FatalError('error 1\n'))
+    logger.LogException(FatalError('error 2\n'))
+    self.assertOutputs(err=['error 1', 'error 2'])
 
   def testLogInfo_enabled(self):
     logger = self.__CreateLogger()

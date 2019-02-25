@@ -123,7 +123,7 @@ class IncludeTest(ExecutionTestCase):
     self.assertExecution(
         '$include[404.psc]',
         messages=['/root:1: $include: unable to include "404.psc": ' +
-                  'file not found: /404.psc'])
+                  "[Errno 2] File not found: '/404.psc'"])
 
   def testAutoExtension(self):
     self.assertExecution(
@@ -170,7 +170,7 @@ class IncludeTextTest(ExecutionTestCase):
     self.assertExecution(
         '$include.text[404.txt]',
         messages=['/root:1: $include.text: unable to include "404.txt": ' +
-                  'file not found: /404.txt'])
+                  "[Errno 2] File not found: '/404.txt'"])
 
   def testNoAutoExtension(self):
     self.assertExecution(
@@ -179,7 +179,7 @@ class IncludeTextTest(ExecutionTestCase):
             '/hello.txt': 'Hello, World!',
         },
         messages=['/root:1: $include.text: unable to include "hello": ' +
-                  'file not found: /hello'])
+                  "[Errno 2] File not found: '/hello'"])
 
   def testTextCompatible(self):
     self.assertExecution(

@@ -99,12 +99,9 @@ def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
                                              directory=directory,
                                              default_ext=default_ext)
     resolved_path_handler(resolved_path)
-  except IOError as e:
+  except (OSError, InternalError) as e:
     raise InternalError('unable to include "{path}": {reason}',
-                       path=path, reason=e.strerror) from e
-  except InternalError as e:
-    raise InternalError('unable to include "{path}": {reason}',
-                        path=path, reason=e) from e
+                       path=path, reason=e) from e
 
 
 __SIGNATURE_REGEX = re.compile(

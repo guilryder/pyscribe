@@ -39,12 +39,11 @@ class MacroTest(TestCase):
   def __CheckMacroCallFailure(self, macro_callback, args, expected_message):
     expected_message = '{location}: {message}'.format(
         location=TEST_LOCATION, message=expected_message)
-    try:
+    with self.assertRaises(FatalError) as ctx:
       self.__MacroCall(macro_callback, args)
-      self.fail('expected error: ' + expected_message)  # pragma: no cover
-    except FatalError:
-      self.assertFalse(self.called, 'expected macro callback not invoked')
-      self.assertEqual(self.logger.ConsumeStdErr(), expected_message)
+    self.logger.LogException(ctx.exception)
+    self.assertFalse(self.called, 'expected macro callback not invoked')
+    self.assertEqual(self.logger.ConsumeStdErr(), expected_message)
 
   def testDefault(self):
     @macro()

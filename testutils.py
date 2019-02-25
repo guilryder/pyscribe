@@ -165,9 +165,10 @@ class FakeLogger(Logger):
   def __init__(self):
     self.err_file = io.StringIO()
     self.info_messages = []
-    super(FakeLogger, self).__init__(fmt=self.FORMAT,
+    super(FakeLogger, self).__init__(fmt='test',
                                      err_file=self.err_file,
-                                     info_file=None)
+                                     info_file=None,
+                                     fmt_definition=self.FORMAT)
 
   def ConsumeStdErr(self):
     """Returns the errors logged so far, then clears them."""
@@ -262,14 +263,13 @@ class TestCase(unittest.TestCase):
 
     Args:
       contents: (string) The contents of the file.
-        If None, the file raises IOError on all reads.
+        If None, the file raises OSError on all reads.
     """
     if contents is None:
-      class FakeErrorFile:
+      class FakeErrorFile(io.StringIO):
         def read(self):
-          raise IOError('Fake error')
-        close = read
-      return FakeErrorFile()
+          raise OSError('Fake read error')
+      return FakeErrorFile('')
     else:
       return io.StringIO(contents, **kwargs)
 
@@ -305,11 +305,13 @@ class TestCase(unittest.TestCase):
           elif filename.startswith(FAKE_PYSCRIBE_DIR):
             return self.OpenSourceFile(filename, mode=mode, **kwargs)
           else:
-            raise FileNotFoundError(errno.ENOENT, 'file not found: ' + filename)
+            raise FileNotFoundError(errno.ENOENT, 'File not found', filename)
         elif mode == 'wt':
           # Open an output file.
           assert filename not in fs.__output_writers, \
               'Output file already open: ' + filename
+          if 'not_writeable' in filename:
+            raise PermissionError(errno.EACCES, 'File not writeable', filename)
           writer = self.FakeOutputFile(**kwargs)
           fs.__output_writers[filename] = writer
           return writer
@@ -434,7 +436,8 @@ class ExecutionTestCase(TestCase):
     try:
       executor.ExecuteFile('/root')
       actual_fatal_error = False
-    except FatalError:
+    except FatalError as e:
+      logger.LogException(e)
       actual_fatal_error = True
 
     # Retrieve the output of each branch.
@@ -444,7 +447,7 @@ class ExecutionTestCase(TestCase):
         executor.RenderBranches()
       except InternalError as e:
         actual_fatal_error = True
-        logger.LogLocation(loc('<unknown>', -1, dir_path='/'), e)
+        logger.LogException(e)
       actual_outputs = fs.GetOutputs()
 
     # Verify the output.

@@ -405,7 +405,7 @@ class Executor:
     call_stack = self.__call_stack[
         :max(0, self.__call_stack_size - call_frame_skip)]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    return self.logger.LogLocation(location, message, call_stack, **kwargs)
+    return self.logger.LocationError(location, message, call_stack, **kwargs)
 
   def MacroFatalError(self, call_node, message, **kwargs):
     """Logs and raises a macro fatal error."""

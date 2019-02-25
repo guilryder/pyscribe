@@ -136,8 +136,9 @@ class ExecutorTest(TestCase):
         call_node, self.MacroCallback, min_args_count, max_args_count)
 
   def assertCheckArgumentCountFailure(self, expected_error, *args, **kwargs):
-    with self.assertRaises(FatalError):
+    with self.assertRaises(FatalError) as ctx:
       self.CheckArgumentCount(*args, **kwargs)
+    self.logger.LogException(ctx.exception)
     self.assertEqual(self.logger.ConsumeStdErr(),
                      'file.txt:42: $name: ' + expected_error)
 

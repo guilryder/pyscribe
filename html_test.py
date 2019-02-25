@@ -34,7 +34,7 @@ _STUB_SUFFIX = (
 
 
 def ParseXml(xml_string):
-  return etree.fromstring(xml_string.encode('utf-8')).getroottree()
+  return etree.fromstring(xml_string.encode()).getroottree()
 
 def XmlToString(elem_or_tree):
   return etree.tostring(elem_or_tree, encoding=str)
@@ -247,7 +247,7 @@ class GlobalExecutionTest(HtmlExecutionTestCase):
   def testElementOpenedAtEnd(self):
     self.assertExecution(
         '$tag.open[div][block]test',
-        messages=['<unknown>:-1: element not closed in branch "root": <div>'])
+        messages=['element not closed in branch "root": <div>'])
 
   def testStripsInnerSpaces_textInside(self):
     self.assertExecution(

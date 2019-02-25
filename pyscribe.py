@@ -5,7 +5,6 @@ __author__ = 'Guillaume Ryder'
 
 import argparse
 import sys
-import traceback
 
 from branch_macros import BRANCH_TYPES
 from execution import PYSCRIBE_EXT, Executor, FileSystem
@@ -100,7 +99,7 @@ class Main:
     args = parser.parse_args(self.__input_args)
 
     # Logger
-    self.__logger = log.Logger(fmt=log.Logger.FORMATS[args.error_format],
+    self.__logger = log.Logger(fmt=args.error_format,
                                err_file=fs.stderr,
                                info_file=args.info_file)
 
@@ -151,9 +150,8 @@ class Main:
       # Load and execute the input file.
       executor.ExecuteFile(input_path)
       executor.RenderBranches()
-    except log.FatalError:
-      if args.error_format == 'python':
-        traceback.print_exc(file=fs.stderr)
+    except log.FatalError as e:
+      self.__logger.LogException(e, exc_info=sys.exc_info())
       sys.exit(1)
 
 
