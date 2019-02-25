@@ -150,7 +150,7 @@ class Main:
       # Load and execute the input file.
       executor.ExecuteFile(input_path)
       executor.RenderBranches()
-    except log.FatalError as e:
+    except Exception as e:  # pylint: disable=broad-except
       self.__logger.LogException(e, exc_info=sys.exc_info())
       sys.exit(1)
 

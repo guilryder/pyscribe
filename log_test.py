@@ -134,6 +134,7 @@ class LoggerTest(TestCase):
         'file.txt:42: arg=value; 123',
         '  file1.txt:1: $one',
         '  file2.txt:2: $two',
+        'Set --error_format=python for details.',
     ])
 
   def testLocationError_pythonFormat_minimal(self):

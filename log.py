@@ -170,6 +170,8 @@ class Logger:
       if self.__fmt == 'python':
         traceback.print_exception(*exc_info, file=self.__err_file,
                                   limit=tb_limit)
+      else:
+        print('Set --error_format=python for details.', file=self.__err_file)
 
   def LogInfo(self, message):
     """

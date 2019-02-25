@@ -125,6 +125,16 @@ class IncludeTest(ExecutionTestCase):
         messages=['/root:1: $include: unable to include "404.psc": ' +
                   "[Errno 2] File not found: '/404.psc'"])
 
+  def testFileNotReadable(self):
+    self.assertExecution(
+        {
+            '/root': '$include[not_readable.psc]',
+            '/not_readable.psc': None,
+        },
+        messages=['/not_readable.psc:1: unable to read the input file:'
+                  ' /not_readable.psc',
+                  'Fake read error'])
+
   def testAutoExtension(self):
     self.assertExecution(
         {

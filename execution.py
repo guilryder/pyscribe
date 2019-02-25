@@ -207,6 +207,9 @@ class Executor:
       filename_suffix: The path suffix of the file to write, relative to
         __output_path_prefix. Must be empty, or start with a dot and contain no
         directory separator.
+
+    Throws:
+      NodeError
     """
     fs = self.fs
 
@@ -227,7 +230,11 @@ class Executor:
         'Writing: {filename}'.format(filename=path))
 
     # Create the writer.
-    writer = fs.open(path, mode='wt', encoding=ENCODING, newline=None)
+    try:
+      writer = fs.open(path, mode='wt', encoding=ENCODING, newline=None)
+    except OSError as e:
+      raise NodeError('unable to write to file: {path}\n{cause}',
+                      path=path, cause=e) from e
     self.opened_paths.add(path)
     return writer
 
@@ -277,6 +284,11 @@ class Executor:
 
     Args:
       path: (string) The absolute path of the file to execute.
+
+    Throws:
+      FatalError on file execution error
+      NodeError if too many nested includes
+      OSError if unable to open the file
     """
     assert self.fs.isabs(path)
     self.opened_paths.add(path)
@@ -297,6 +309,11 @@ class Executor:
 
     Do not close the writers: tests need to be able to call StringIO.getvalue(),
     and production closes the files automatically.
+
+    Throws:
+      FatalError
+      NodeError
+      OSError on output file write error
     """
     for branch in self.root_branches:
       branch.Render()

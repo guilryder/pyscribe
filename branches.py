@@ -130,6 +130,11 @@ class Branch(metaclass=ABCMeta):
     Renders this branch and its sub-branches recursively.
 
     Can be called on root branches only.
+
+    Throws:
+      FatalError
+      NodeError
+      OSError on output file write error
     """
     writer = self.writer
     if writer is not None:
@@ -144,6 +149,11 @@ class Branch(metaclass=ABCMeta):
     Args:
       write: (stream) The stream to render the output text to.
         Must have a write() method.
+
+    Throws:
+      FatalError
+      NodeError
+      OSError on output file write error
     """
 
 

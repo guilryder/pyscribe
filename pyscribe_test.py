@@ -23,8 +23,8 @@ class EndToEndTestCase(TestCase):
   def GetStdFile(self, name):
     return getattr(self.fs, 'std' + name).getvalue().strip()
 
-  def assertOutput(self, expected_filename, expected_output):
-    self.assertEqual(self.GetStdFile('err'), '')
+  def assertOutput(self, expected_filename, expected_output, expected_err=''):
+    self.assertEqual(self.GetStdFile('err'), expected_err)
     self.assertEqual(self.fs.GetOutputs(),
                      {expected_filename: expected_output})
 
@@ -62,8 +62,8 @@ class EndToEndTestCase(TestCase):
 class MainTest(EndToEndTestCase):
 
   @staticmethod
-  def __Output(contents):
-    return ('$branch.create.root[text][root][.out]' +
+  def __Output(contents, branch_type='text'):
+    return ('$branch.create.root[' + branch_type + '][root][.out]' +
             '$branch.write[root][' + contents + ']')
 
   def setUp(self):
@@ -134,7 +134,8 @@ class MainTest(EndToEndTestCase):
   def testExecutionError_simpleErrorFormat(self):
     self.Execute('error.psc', expect_failure=True)
     self.assertEqual(self.GetStdFile('err'),
-                     '/cur/error.psc:1: macro not found: $invalid')
+                     '/cur/error.psc:1: macro not found: $invalid\n'
+                     'Set --error_format=python for details.')
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testExecutionError_pythonErrorFormat(self):
@@ -214,6 +215,31 @@ class MainTest(EndToEndTestCase):
     self.assertOutput('/cur/constants.out',
                       ', '.join('{}={}'.format(*constant)
                                 for constant in constants.items()))
+
+  def testError_inputFileNotFound(self):
+    self.Execute('does_not_exist', expect_failure=True)
+    self.assertEqual(self.GetStdFile('err'),
+                     "[Errno 2] File not found: '/cur/does_not_exist.psc'\n"
+                     'Set --error_format=python for details.')
+    self.assertEqual(self.fs.GetOutputs(), {})
+
+  def testError_outputWriteError(self):
+    self.Execute('input.psc -p not_writeable', expect_failure=True)
+    self.assertEqual(self.GetStdFile('err'),
+                     '/cur/input.psc:1: $branch.create.root:'
+                     ' unable to write to file: /cur/not_writeable.out\n'
+                     "[Errno 13] File not writeable: '/cur/not_writeable.out'\n"
+                     'Set --error_format=python for details.')
+    self.assertEqual(self.fs.GetOutputs(), {})
+
+  def testError_renderBranchesFailure(self):
+    self.inputs['/cur/render.psc'] = \
+        self.__Output('$tag.open[div][block]test', branch_type='html')
+    self.Execute('render.psc --format html', expect_failure=True)
+    self.assertOutput('/cur/render.out', '',
+                      expected_err='element not closed in branch "root":'
+                                   ' <div>\n'
+                                   'Set --error_format=python for details.')
 
 
 # Command-line to generated output file basename.

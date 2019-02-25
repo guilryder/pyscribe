@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 import re
 
 from execution import ENCODING, PYSCRIBE_EXT, ExecutionContext
-from log import NodeError
+from log import FatalError, NodeError
 from macros import *
 from parsing import CallNode
 
@@ -99,7 +99,9 @@ def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
                                              directory=directory,
                                              default_ext=default_ext)
     resolved_path_handler(resolved_path)
-  except (OSError, NodeError) as e:
+  except FatalError:
+    raise
+  except Exception as e:
     raise NodeError('unable to include "{path}": {reason}',
                     path=path, reason=e) from e
 
