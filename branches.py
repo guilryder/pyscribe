@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 from abc import ABCMeta, abstractmethod
 import io
 
-from log import InternalError
+from log import NodeError
 from macros import *
 
 
@@ -86,17 +86,17 @@ class Branch(metaclass=ABCMeta):
       sub_branch: (Branch) The sub-branch to insert.
 
     Raises:
-      InternalError if the sub-branch is already attached or has not been
-        created by this branch.
+      NodeError if the sub-branch is already attached or has not been created by
+        this branch.
     """
     if sub_branch.parent is not self:
-      raise InternalError(
+      raise NodeError(
           "expected a sub-branch created by branch '{self_branch.name}'; " +
           "got one created by branch '{sub_branch.parent.name}'",
           self_branch=self, sub_branch=sub_branch)
 
     if sub_branch.attached:
-      raise InternalError(
+      raise NodeError(
           "the sub-branch '{sub_branch.name}' is already attached",
           sub_branch=sub_branch)
 

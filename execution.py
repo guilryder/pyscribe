@@ -7,7 +7,7 @@ import os
 import sys
 
 from branches import TextBranch
-from log import Filename, FormatMessage, InternalError
+from log import Filename, FormatMessage, NodeError
 from macros import *
 from parsing import ParseFile
 
@@ -213,17 +213,16 @@ class Executor:
     # Compute and validate the absolute path.
     if filename_suffix:
       if not filename_suffix.startswith('.'):
-        raise InternalError("invalid output file name suffix: '{suffix}'; "
-                            "must be empty or start with a period",
-                            suffix=filename_suffix)
+        raise NodeError("invalid output file name suffix: '{suffix}'; "
+                        "must be empty or start with a period",
+                        suffix=filename_suffix)
       if filename_suffix != fs.basename(filename_suffix):
-        raise InternalError("invalid output file name suffix: '{suffix}'; "
-                            "must be a basename (no directory separator)",
-                            suffix=filename_suffix)
+        raise NodeError("invalid output file name suffix: '{suffix}'; "
+                        "must be a basename (no directory separator)",
+                        suffix=filename_suffix)
     path = self.__output_path_prefix + filename_suffix
     if path in self.opened_paths:
-      raise InternalError("output file already opened: {filename}",
-                          filename=path)
+      raise NodeError("output file already opened: {filename}", filename=path)
     self.logger.LogInfo(
         'Writing: {filename}'.format(filename=path))
 
@@ -284,7 +283,7 @@ class Executor:
     filename = Filename(path, self.fs.dirname(path))
     with self.fs.open(path, encoding=ENCODING) as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
-        raise InternalError('too many nested includes')
+        raise NodeError('too many nested includes')
 
       self.__include_stack.append(filename)
       try:
@@ -315,7 +314,7 @@ class Executor:
     for node in nodes:
       try:
         node.Execute(self)
-      except InternalError as e:
+      except NodeError as e:
         raise self.FatalError(node.location, e) from e
 
   def ExecuteInCallContext(self, nodes, call_context):
@@ -469,7 +468,7 @@ class Executor:
     # Execute the macro.
     try:
       callback(self, call_node)
-    except InternalError as e:
+    except NodeError as e:
       raise self.MacroFatalError(call_node, e) from e
     finally:
       # Pop the call stack frame.

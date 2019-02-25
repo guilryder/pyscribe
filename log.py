@@ -48,16 +48,19 @@ class FatalError(BaseError):
   """
   Thrown when a fatal error is encountered.
 
-  The error message is expected to be complete: stacktrace included if needed.
+  Can be exposed as-is to the end user, includes any available contextual
+  information: location, stacktrace.
   """
 
 
-class InternalError(BaseError):
+class NodeError(BaseError):
   """
-  Thrown by internal methods when a fatal error is encountered.
+  Thrown on error when executing a node.
 
-  The error should not be exposed to the end-user, as it may miss additional
-  information such as stacktrace.
+  Translated into FatalError in Executor.ExecuteNodes().
+
+  Avoid exposing the error as-is to the end user, because the message lacks
+  contextual information: location, stacktrace.
   """
 
 

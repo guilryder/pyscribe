@@ -108,7 +108,7 @@ class InlineXmlElementTest(TestCase):
                '<root>before 1 <sub>2</sub> 3 after</root>')
 
   def testAttributesLost(self):
-    with self.assertRaises(InternalError):
+    with self.assertRaises(NodeError):
       self.check('<root><inline attr="value">inside</inline></root>', '')
 
 

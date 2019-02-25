@@ -11,7 +11,7 @@ from lxml import etree
 
 from branches import Branch
 import execution
-from log import InternalError
+from log import NodeError
 from macros import *
 
 
@@ -233,7 +233,7 @@ class HtmlBranch(Branch):
     for para in paras[1:]:
       self.AutoParaTryClose()
       if not self.AutoParaTryOpen():
-        raise InternalError('unable to open a new paragraph')
+        raise NodeError('unable to open a new paragraph')
       if para:  # pragma: no cover
         # Should never happen: at most one paragraph break per chunk of text.
         self.AppendLineText(para)
@@ -393,7 +393,7 @@ class HtmlBranch(Branch):
       self.__FlushText()
       self.AutoParaTryClose()
       if self.__current_elem_info.level.is_inline:
-        raise InternalError(
+        raise NodeError(
             'impossible to open a non-inline tag inside an inline tag')
 
     elem = etree.SubElement(self.__current_elem, tag)
@@ -419,7 +419,7 @@ class HtmlBranch(Branch):
       tag: (string) The name of the tag to close.
 
     Raises:
-      InternalError if the given tag cannot be found or closed.
+      NodeError if the given tag cannot be found or closed.
     """
     while True:
       if self.__current_elem.tag == tag:
@@ -430,7 +430,7 @@ class HtmlBranch(Branch):
       # Tag mismatch: expect a paragraph, auto-close it.
       elif not self.AutoParaTryClose():
         # Not a pragraph: tag mismatch error.
-        raise InternalError(
+        raise NodeError(
             'expected current tag to be <{expected_tag}>, got <{actual_tag}>',
             expected_tag=tag, actual_tag=self.__current_elem.tag)
 
@@ -442,12 +442,12 @@ class HtmlBranch(Branch):
       discard_if_empty: (bool) Whether to remove the element if it's empty.
 
     Raises:
-      InternalError if the given tag cannot be found or closed.
+      NodeError if the given tag cannot be found or closed.
     """
     self.__FlushText()
     closed_elem = self.__current_elem
     if closed_elem == self.__root_elem:
-      raise InternalError('cannot close the root element of the branch')
+      raise NodeError('cannot close the root element of the branch')
 
     # Pop the element.
     current_elem_info = self.__current_elem_info
@@ -479,7 +479,7 @@ class HtmlBranch(Branch):
       action: (Element -> void) The method to call with the targeted element.
 
     Raises:
-      InternalError on error
+      NodeError on error
     """
     if target == 'current':
       # Current element, possibly automatically created.
@@ -503,7 +503,7 @@ class HtmlBranch(Branch):
           action(prev_elem)
           return
         elem_info = elem_info.parent
-      raise InternalError('no previous element exists')
+      raise NodeError('no previous element exists')
     elif target == 'para':
       # Deepest paragraph element.
       elem_info_predicate = lambda elem_info: elem_info.level.is_para
@@ -511,7 +511,7 @@ class HtmlBranch(Branch):
       # Deepest element with the given tag.
       tag = self.__TAG_TARGET_REGEXP.match(target)
       if tag is None:
-        raise InternalError('invalid target: {target}', target=target)
+        raise NodeError('invalid target: {target}', target=target)
       tag = tag.group(1)
       elem_info_predicate = lambda elem_info: elem_info.elem.tag == tag
 
@@ -520,8 +520,7 @@ class HtmlBranch(Branch):
     while elem_info and not elem_info_predicate(elem_info):
       elem_info = elem_info.parent
     if elem_info is None:
-      raise InternalError('no element found for target: {target}',
-                          target=target)
+      raise NodeError('no element found for target: {target}', target=target)
     action(elem_info.elem)
 
   def CreateSubBranch(self):
@@ -556,14 +555,14 @@ class HtmlBranch(Branch):
     Recurses in sub-branches.
 
     Raises:
-      InternalError if an element is still open.
+      NodeError if an element is still open.
     """
     # Close paragraphs automatically. Fail if some elements are still open.
     self.__FlushText()
     while self.AutoParaTryClose():
       pass
     if self.__current_elem_info.parent:
-      raise InternalError(
+      raise NodeError(
           'element not closed in branch "{branch.name}": <{elem.tag}>',
           branch=self, elem=self.__current_elem)
 
@@ -641,7 +640,7 @@ class HtmlBranch(Branch):
         elem.attrib.get(_DELETE_IF_EMPTY_ATTR_NAME, None) != \
             _DELETE_IF_EMPTY_ATTR_VALUE:
       elem.text = ''
-      raise InternalError(
+      raise NodeError(
           'removing an empty element with attributes: {elem}',
           elem=etree.tostring(elem, encoding='unicode'))
     return True
@@ -830,7 +829,7 @@ class Macros:
     branch = executor.current_branch
     branch.AutoParaTryClose()
     if not branch.AutoParaTryOpen():
-      raise InternalError('unable to open a new paragraph')
+      raise NodeError('unable to open a new paragraph')
 
   @staticmethod
   @macro(public_name='tag.open', args_signature='tag,level_name')

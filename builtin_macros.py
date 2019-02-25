@@ -3,7 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
-from log import InternalError
+from log import NodeError
 from macros import *
 
 
@@ -13,7 +13,7 @@ def ParseArabic(number):
   try:
     return int(number)
   except ValueError as e:
-    raise InternalError('invalid Arabic number: {number}', number=number) from e
+    raise NodeError('invalid Arabic number: {number}', number=number) from e
 
 
 @macro(public_name='case.lower', args_signature='text', text_compatible=True)
@@ -39,7 +39,7 @@ def AlphaLatin(executor, unused_call_node, number):
   # Validate the input.
   arabic_num = ParseArabic(number)
   if not 1 <= arabic_num <= 26:
-    raise InternalError(
+    raise NodeError(
         'unsupported number for conversion to latin letter: {number}',
         number=number)
 
@@ -58,11 +58,11 @@ def ArabicToRoman(number):
     (string) Its Roman equivalent.
 
   Raises:
-    InternalError if the number cannot be converted.
+    NodeError if the number cannot be converted.
   """
   if not 0 < number < 4000:
-    raise InternalError('unsupported number for conversion to Roman: {number}',
-                        number=number)
+    raise NodeError('unsupported number for conversion to Roman: {number}',
+                    number=number)
 
   # pylint: disable=bad-whitespace
   conv_table = ((1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
@@ -169,4 +169,4 @@ def _ParseInt(text):
   try:
     return int(text)
   except ValueError as e:
-    raise InternalError('invalid integer value: {value}', value=text) from e
+    raise NodeError('invalid integer value: {value}', value=text) from e

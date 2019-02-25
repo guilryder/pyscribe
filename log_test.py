@@ -61,9 +61,9 @@ class FatalErrorTest(Helpers.ExceptionClassTestCase):
   exception = FatalError
 
 
-class InternalErrorTest(Helpers.ExceptionClassTestCase):
+class NodeErrorTest(Helpers.ExceptionClassTestCase):
 
-  exception = InternalError
+  exception = NodeError
 
 
 class FilenameTest(TestCase):

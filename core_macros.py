@@ -6,7 +6,7 @@ __author__ = 'Guillaume Ryder'
 import re
 
 from execution import ENCODING, PYSCRIBE_EXT, ExecutionContext
-from log import InternalError
+from log import NodeError
 from macros import *
 from parsing import CallNode
 
@@ -99,9 +99,9 @@ def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
                                              directory=directory,
                                              default_ext=default_ext)
     resolved_path_handler(resolved_path)
-  except (OSError, InternalError) as e:
-    raise InternalError('unable to include "{path}": {reason}',
-                       path=path, reason=e) from e
+  except (OSError, NodeError) as e:
+    raise NodeError('unable to include "{path}": {reason}',
+                    path=path, reason=e) from e
 
 
 __SIGNATURE_REGEX = re.compile(
@@ -146,7 +146,7 @@ def ParseMacroSignature(signature):
   # Parse the macro name and arguments.
   signature_match = __SIGNATURE_REGEX.match(signature)
   if not signature_match:
-    raise InternalError('invalid signature: {signature}', signature=signature)
+    raise NodeError('invalid signature: {signature}', signature=signature)
   macro_name = signature_match.group(1)
   macro_arg_names_text = signature_match.group(2)
   if macro_arg_names_text is None:
@@ -159,8 +159,8 @@ def ParseMacroSignature(signature):
   if len(macro_arg_names_set) != len(macro_arg_names):
     for macro_arg_name in macro_arg_names:
       macro_arg_names.remove(macro_arg_name)
-    raise InternalError('duplicate argument in signature: {argument}',
-                        argument=macro_arg_names[0])
+    raise NodeError('duplicate argument in signature: {argument}',
+                    argument=macro_arg_names[0])
   return (macro_name, macro_arg_names)
 
 def MacroNewCallback(macro_call_context, macro_arg_names, body):
@@ -221,10 +221,10 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
   """
   macro_name, macro_arg_names = ParseMacroSignature(signature)
   if VALID_MACRO_NAME_REGEXP.match(original) is None:
-    raise InternalError('invalid original macro name: ' + original)
+    raise NodeError('invalid original macro name: ' + original)
   if original in macro_arg_names:
-    raise InternalError('original macro name conflicts with signature: '
-                        '{} vs. {}'.format(original, signature))
+    raise NodeError('original macro name conflicts with signature: '
+                    '{} vs. {}'.format(original, signature))
   macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'override')
 
   # Create the override execution context: map the original macro to $original.
@@ -277,7 +277,7 @@ def MacroCall(executor, call_node):
   macro_name_nodes = call_node.args[0]
   macro_name = executor.EvalText(macro_name_nodes)
   if not (macro_name and macro_name_nodes):
-    raise InternalError('expected non-empty macro name')
+    raise NodeError('expected non-empty macro name')
 
   called_node = CallNode(macro_name_nodes[0].location, macro_name,
                          call_node.args[1:])
@@ -302,9 +302,9 @@ def _LookupNonBuiltinMacro(executor, macro_name, verb):
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
   if macro_callback is None:
-    raise InternalError('cannot {verb} a non-existing macro: {macro_name}',
-                        verb=verb, macro_name=macro_name)
+    raise NodeError('cannot {verb} a non-existing macro: {macro_name}',
+                    verb=verb, macro_name=macro_name)
   if macro_callback.builtin:
-    raise InternalError('cannot {verb} a built-in macro: {macro_name}',
-                        verb=verb, macro_name=macro_name)
+    raise NodeError('cannot {verb} a built-in macro: {macro_name}',
+                    verb=verb, macro_name=macro_name)
   return macro_callback

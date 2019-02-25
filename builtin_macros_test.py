@@ -49,15 +49,15 @@ class AlphaLatinTest(ExecutionTestCase):
 class ArabicToRomanTest(TestCase):
 
   def testZeroUnsupported(self):
-    with self.assertRaises(InternalError):
+    with self.assertRaises(NodeError):
       ArabicToRoman(0)
 
   def testNegativeUnsupported(self):
-    with self.assertRaises(InternalError):
+    with self.assertRaises(NodeError):
       ArabicToRoman(-1)
 
   def testTooLargeUnsupported(self):
-    with self.assertRaises(InternalError):
+    with self.assertRaises(NodeError):
       ArabicToRoman(5000)
 
   def testSmallValues(self):

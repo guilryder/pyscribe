@@ -11,7 +11,7 @@ import os
 import unittest
 
 import execution
-from log import FatalError, Filename, InternalError, Location, Logger
+from log import FatalError, Filename, Location, Logger, NodeError
 from macros import macro, GetPublicMacros
 
 
@@ -445,7 +445,7 @@ class ExecutionTestCase(TestCase):
     if not actual_fatal_error:
       try:
         executor.RenderBranches()
-      except InternalError as e:
+      except NodeError as e:
         actual_fatal_error = True
         logger.LogException(e)
       actual_outputs = fs.GetOutputs()

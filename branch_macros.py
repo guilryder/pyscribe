@@ -3,7 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
-from log import InternalError
+from log import NodeError
 from macros import *
 from parsing import TextNode
 
@@ -52,7 +52,7 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref,
   # Parse the branch type.
   branch_class = BRANCH_TYPES.get(branch_type)
   if branch_class is None:
-    raise InternalError(
+    raise NodeError(
         'unknown branch type: {branch_type}; expected one of: {known}',
         branch_type=branch_type, known=', '.join(sorted(BRANCH_TYPES)))
 
@@ -106,8 +106,7 @@ def __ParseBranchName(executor, branch_name):
   """
   branch = executor.branches.get(branch_name)
   if branch is None:
-    raise InternalError('branch not found: {branch_name}',
-                        branch_name=branch_name)
+    raise NodeError('branch not found: {branch_name}', branch_name=branch_name)
   return branch
 
 
@@ -129,8 +128,8 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
   branch = branch_factory()
   if not is_reference:
     if name_or_ref in executor.branches:
-      raise InternalError('a branch of this name already exists: {name}',
-                          name=name_or_ref)
+      raise NodeError('a branch of this name already exists: {name}',
+                      name=name_or_ref)
     branch.name = name_or_ref
 
   executor.RegisterBranch(branch)
