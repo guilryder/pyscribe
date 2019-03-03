@@ -4,10 +4,12 @@
 
 __author__ = 'Guillaume Ryder'
 
+import argparse
 import collections
 import errno
 import io
 import os
+import sys
 import unittest
 
 import execution
@@ -502,3 +504,22 @@ class BranchTestCase(TestCase):
     self.assertEqual(branch.root, branch)
     self.assertEqual(sub_branch1.root, branch)
     self.assertEqual(sub_branch12.root, branch)
+
+
+class FakeArgumentParser(argparse.ArgumentParser):
+  """Option parser that prints to self.stderr."""
+  # pylint: disable=arguments-differ
+
+  def __init__(self, stderr):
+    super(FakeArgumentParser, self).__init__()
+    self.__stderr = stderr
+
+  def exit(self, status=0, msg='', **unused_kwargs):
+    self.__stderr.write(msg)
+    sys.exit(status)
+
+  def error(self, msg):
+    self.exit(2, "error: {}\n".format(msg))
+
+  def print_help(self, file=None, **kwargs):
+    argparse.ArgumentParser.print_help(self, self.__stderr, **kwargs)

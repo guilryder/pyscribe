@@ -3,10 +3,8 @@
 
 __author__ = 'Guillaume Ryder'
 
-from argparse import ArgumentParser
 import collections
 import shlex
-import sys
 
 import pyscribe
 from testutils import *
@@ -29,25 +27,12 @@ class EndToEndTestCase(TestCase):
                      {expected_filename: expected_output})
 
   def Execute(self, cmdline, expect_failure=False):
-    # pylint: disable=no-self-argument
-    class FakeArgumentParser(ArgumentParser):
-      """Option parser that prints to self.stderr."""
-      # pylint: disable=arguments-differ
-      def exit(parser, status=0, msg='', **unused_kwargs):
-        self.fs.stderr.write(msg)
-        sys.exit(status)
-
-      def error(parser, msg):
-        parser.exit(2, "error: {}\n".format(msg))
-
-      def print_help(parser, file=None, **kwargs):
-        ArgumentParser.print_help(parser, self.fs.stderr, **kwargs)
-
     args = shlex.split(cmdline)
-    main = pyscribe.Main(input_args=args,
-                         fs=self.fs,
-                         main_file=FAKE_PYSCRIBE_DIR + 'pyscribe.py',
-                         ArgumentParser=FakeArgumentParser)
+    main = pyscribe.Main(
+        input_args=args,
+        fs=self.fs,
+        main_file=FAKE_PYSCRIBE_DIR + 'pyscribe.py',
+        ArgumentParser=lambda: FakeArgumentParser(self.fs.stderr))
     if expect_failure:
       with self.assertRaises(SystemExit):
         main.Run()
