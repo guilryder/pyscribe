@@ -111,10 +111,10 @@ class TestsManager:
     print('Switching to: {}'.format(TESTDATA_DIR))
     os.chdir(TESTDATA_DIR)
     for cmdline in GOLDEN_TEST_DEFINITIONS:
-      full_cmdline = '{python} ../pyscribe.py {cmdline}'.format(
-          python=sys.executable, cmdline=cmdline)
-      print('Executing: {}'.format(full_cmdline), flush=True)
-      subprocess.call(full_cmdline)
+      args = [sys.executable, '../pyscribe.py'] + shlex.split(cmdline)
+      print('Executing: {}'.format(' '.join(map(shlex.quote, args))),
+            flush=True)
+      subprocess.call(args)
 
 
 if __name__ == '__main__':
