@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
+# pragma: no cover
 
 __author__ = 'Guillaume Ryder'
 
@@ -21,9 +22,10 @@ def _TryFindExecutable(filename, default=None):
 
 class Main:
 
-  def __init__(self, *, input_args=None,
+  def __init__(self, *, input_args=None, stdout=sys.stdout,
                ArgumentParser=argparse.ArgumentParser):
     self.__input_args = input_args
+    self.__stdout = stdout
     self.__ArgumentParser = ArgumentParser
     self.__all_success = True
     self.__pyscribe_dir = os.path.dirname(sys.argv[0])
@@ -173,7 +175,8 @@ class Main:
     output_dir = os.path.join(os.path.dirname(psc_filename), args.output_dir)
     output_path_noext = os.path.join(output_dir, basename_noext)
 
-    print('\nProcessing PyScribe file: {}'.format(psc_filename))
+    print('\nProcessing PyScribe file: {}'.format(psc_filename),
+          file=self.__stdout)
 
     # HTML.
     if 'html' in args.formats:
@@ -239,18 +242,19 @@ class Main:
     Returns: (bool) Whether the execution succeeded.
     """
     print('{prefix}Executing: {cmdline}'.format(
-        prefix='(dry run) ' if self.__args.dry_run else '',
-        cmdline=' '.join(map(shlex.quote, args))), flush=True)
+            prefix='(dry run) ' if self.__args.dry_run else '',
+            cmdline=' '.join(map(shlex.quote, args))),
+          flush=True, file=self.__stdout)
 
     if self.__args.dry_run:
       return True
 
-    try:
+    try:  # pragma: no cover - covered by end-to-end tests
       subprocess.check_call(args, **kwargs)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError:  # pragma: no cover
       self.__all_success = False
       return False
-    else:
+    else:  # pragma: no cover
       return True
 
 
