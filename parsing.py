@@ -306,7 +306,7 @@ class Lexer:
 
     Yields: (Token) The parsed tokens.
     """
-    from collections import Iterable
+    from collections.abc import Iterable
     for text_before, rule_callable, matched_text in \
         self.__parser.Parse(self.__input_text):
       if text_before is not None:

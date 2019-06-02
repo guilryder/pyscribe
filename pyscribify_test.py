@@ -140,7 +140,7 @@ class DryRunTest(PyscribifyTestCase):
               r" --no-inline-toc --mobi-keep-original-images --cover=.*nul",
             r"pyscribe\.py Hello\.psc"
               r" --lib-dir=.*/pyscribe/lib --format=latex --output=output",
-            r"texify.* -I \S+/pyscribe/lib Hello\.tex"
+            r"texify.* -I .+/pyscribe/lib Hello\.tex"
               r" --batch --pdf --clean --quiet",
         ])
 
@@ -260,17 +260,17 @@ class DryRunTest(PyscribifyTestCase):
             '--texify-options=--texify-opt -e',
         ]),
         self.__HELLO_HEADER + [
-            r"^\S+ /foo/pyscribe/bin Hello\.psc"
-              r" --lib-dir=\S+/testdata/foo/lib/dir --format=html"
+            r"^.+ /foo/pyscribe/bin Hello\.psc"
+              r" --lib-dir=.+/testdata/foo/lib/dir --format=html"
               r" --output=output --pyscribe-opt -a",
             r"^/foo/calibre/bin output/Hello.html output/Hello.epub"
               r" --calibre-opt -b --epub-opt -c",
             r"^/foo/calibre/bin output/Hello.html output/Hello.mobi"
               r" --calibre-opt -b --mobi-opt -d",
-            r"^\S+ /foo/pyscribe/bin Hello\.psc"
-              r" --lib-dir=\S+/testdata/foo/lib/dir --format=latex"
+            r"^.+ /foo/pyscribe/bin Hello\.psc"
+              r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
               r" --output=output --pyscribe-opt -a",
-            r"^/foo/texify/bin -I \S+/foo/lib/dir Hello\.tex --texify-opt -e",
+            r"^/foo/texify/bin -I .+/foo/lib/dir Hello\.tex --texify-opt -e",
         ])
 
 
