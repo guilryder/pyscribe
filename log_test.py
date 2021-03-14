@@ -118,8 +118,11 @@ class LoggerTest(TestCase):
 
   def assertOutputs(self, err=(), info=()):
     for file, expected_lines in ((self.err_file, err), (self.info_file, info)):
-      self.assertEqual(file.getvalue(),
-                       '\n'.join(list(expected_lines) + ['']))
+      output = file.getvalue()
+      # Workaround for traceback.print_exception() behavior inconsistencies
+      # across Python versions: skip the "Traceback" line systematically.
+      output = output.replace('Traceback (most recent call last):\n', '')
+      self.assertEqual(output, '\n'.join(list(expected_lines) + ['']))
       file.close()
 
   def testLocationError_simpleFormat_minimal(self):
@@ -151,7 +154,6 @@ class LoggerTest(TestCase):
         '    arg=value; 123',
         '  File "file1.txt", line 1, in $one',
         '  File "file2.txt", line 2, in $two',
-        'Traceback (most recent call last):',
         'RuntimeError: fake error',
     ])
 
