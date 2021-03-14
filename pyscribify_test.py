@@ -94,9 +94,10 @@ class DryRunTest(PyscribifyTestCase):
   __HELLO_PSC_TO_LATEX = r'pyscribe.py.* Hello\.psc .*--format=latex'
   __HELLO_LATEX_TO_PDF = r'texify.*Hello\.tex'
 
-  def __Pyscribify(self, args):
+  def __Pyscribify(self, args, pdftool='texify'):
     output = subprocess.check_output(
-        [sys.executable, '../pyscribify.py', '--dry-run'] + list(args),
+        [sys.executable, '../pyscribify.py',
+        '--dry-run', '--latex-to-pdf-tool', pdftool] + list(args),
         stderr=subprocess.STDOUT)
     return [self.__ParseLogLine(line) for line in output.decode().splitlines()]
 
@@ -124,7 +125,7 @@ class DryRunTest(PyscribifyTestCase):
     for actual_line, expected_regexp in zip(actual_lines, expected_regexes):
       self.assertRegex(actual_line, expected_regexp or r'^$')
 
-  def testOneFile_allCommandLines(self):
+  def testOneFile_allCommandLines_texify(self):
     self.__assertLines(
         self.__Pyscribify(['Hello']),
         [
@@ -142,6 +143,17 @@ class DryRunTest(PyscribifyTestCase):
               r" --lib-dir=.*/pyscribe/lib --format=latex --output=output",
             r"texify.* -I .+/pyscribe/lib Hello\.tex"
               r" --batch --pdf --clean --quiet",
+        ])
+
+  def testOneFile_latexToPdfOnly_latexmk(self):
+    self.__assertLines(
+        self.__Pyscribify(['Hello', '--latex-to-pdf'], pdftool='latexmk'),
+        [
+            '',
+            r'^Processing PyScribe file: Hello\.psc$',
+            r"latexmk.* Hello\.tex"
+              r" -latexoption=-interaction=batchmode -pdf -gg",
+            r"latexmk.* Hello\.tex -c",
         ])
 
   def testMultipleFiles(self):
@@ -162,7 +174,7 @@ class DryRunTest(PyscribifyTestCase):
             r'pyscribe.py.* Three\.psc .*--format=latex',
         ])
 
-  def testOutput(self):
+  def testOutput_texify(self):
     self.__assertLines(
         self.__Pyscribify(['Hello', '-o', 'foo/bar']),
         self.__HELLO_HEADER + [
@@ -246,31 +258,43 @@ class DryRunTest(PyscribifyTestCase):
         ])
 
   def testCompilerOptions(self):
+    options = [
+        'Hello',
+        '--lib-dir=foo/lib/dir',
+        '--pyscribe-bin=/foo/pyscribe/bin',
+        '--pyscribe-options=--pyscribe-opt -a',
+        '--calibre-bin=/foo/calibre/bin',
+        '--calibre-options=--calibre-opt -b',
+        '--calibre-epub-options=--epub-opt -c',
+        '--calibre-mobi-options=--mobi-opt -d',
+        '--texify-bin=/foo/texify/bin',
+        '--texify-options=--texify-opt -e',
+        '--latexmk-bin=/foo/latexmk/bin',
+        '--latexmk-options=--latexmk-opt -f',
+        '--latexmk-clean-options=--latexmk-clean-opt -g',
+    ]
+    commands_common = self.__HELLO_HEADER + [
+        r"^.+ /foo/pyscribe/bin Hello\.psc"
+          r" --lib-dir=.+/testdata/foo/lib/dir --format=html"
+          r" --output=output --pyscribe-opt -a",
+        r"^/foo/calibre/bin output/Hello.html output/Hello.epub"
+          r" --calibre-opt -b --epub-opt -c",
+        r"^/foo/calibre/bin output/Hello.html output/Hello.mobi"
+          r" --calibre-opt -b --mobi-opt -d",
+        r"^.+ /foo/pyscribe/bin Hello\.psc"
+          r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
+          r" --output=output --pyscribe-opt -a",
+    ]
     self.__assertLines(
-        self.__Pyscribify([
-            'Hello',
-            '--lib-dir=foo/lib/dir',
-            '--pyscribe-bin=/foo/pyscribe/bin',
-            '--pyscribe-options=--pyscribe-opt -a',
-            '--calibre-bin=/foo/calibre/bin',
-            '--calibre-options=--calibre-opt -b',
-            '--calibre-epub-options=--epub-opt -c',
-            '--calibre-mobi-options=--mobi-opt -d',
-            '--texify-bin=/foo/texify/bin',
-            '--texify-options=--texify-opt -e',
-        ]),
-        self.__HELLO_HEADER + [
-            r"^.+ /foo/pyscribe/bin Hello\.psc"
-              r" --lib-dir=.+/testdata/foo/lib/dir --format=html"
-              r" --output=output --pyscribe-opt -a",
-            r"^/foo/calibre/bin output/Hello.html output/Hello.epub"
-              r" --calibre-opt -b --epub-opt -c",
-            r"^/foo/calibre/bin output/Hello.html output/Hello.mobi"
-              r" --calibre-opt -b --mobi-opt -d",
-            r"^.+ /foo/pyscribe/bin Hello\.psc"
-              r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
-              r" --output=output --pyscribe-opt -a",
+        self.__Pyscribify(options, pdftool='texify'),
+        commands_common + [
             r"^/foo/texify/bin -I .+/foo/lib/dir Hello\.tex --texify-opt -e",
+        ])
+    self.__assertLines(
+        self.__Pyscribify(options, pdftool='latexmk'),
+        commands_common + [
+            r"^/foo/latexmk/bin Hello\.tex --latexmk-opt -f",
+            r"^/foo/latexmk/bin Hello\.tex --latexmk-clean-opt -g",
         ])
 
 

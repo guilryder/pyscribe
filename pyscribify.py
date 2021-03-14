@@ -92,7 +92,13 @@ class Main:
     group.add_argument('--psc-to-latex', action='store_true',
                        help='compile the *.psc files to Latex with PyScribe')
     group.add_argument('--latex-to-pdf', action='store_true',
-                       help='compile the Latex files to PDF with texify')
+                       help='compile the Latex files to PDF with'
+                            ' --latex-to-pdf-tool')
+    group.add_argument('--latex-to-pdf-tool',
+                       choices=('texify', 'latexmk'),
+                       default='texify' if platform.system() == 'Windows'
+                               else 'latexmk',
+                       help='Latex to PDF compiler; default: %(default)s')
 
     group = parser.add_argument_group('Convenience aliases')
     AddAlias(group, 'psc-to-all', ('psc-to-ebook', 'psc-to-pdf'),
@@ -136,14 +142,26 @@ class Main:
     group.add_argument('--texify-bin', metavar='PATH',
                        default=_TryFindExecutable('texify'),
                        help='texify path; default: %(default)s')
-    group.add_argument('--texify-options', metavar='PATH',
+    group.add_argument('--texify-options', metavar='OPTIONS',
                        default='--batch --pdf --clean --quiet',
                        help='texify command-line options; default: %(default)s')
+
+    group.add_argument('--latexmk-bin', metavar='PATH',
+                       default=_TryFindExecutable('latexmk'),
+                       help='latexmk path; default: %(default)s')
+    group.add_argument('--latexmk-options', metavar='OPTIONS',
+                       default='-latexoption=-interaction=batchmode -pdf -gg',
+                       help='latexmk command-line options'
+                            '; default: %(default)s')
+    group.add_argument('--latexmk-clean-options', metavar='OPTIONS',
+                       default='-c',
+                       help='latexmk cleanup command-line options'
+                            '; default: %(default)s')
 
     self.__args = args = parser.parse_args(self.__input_args)
 
     # Default to --psc-to-all if no --X-to-Y is set.
-    args.psc_to_all |= not any('_to_' in name and value
+    args.psc_to_all |= not any('_to_' in name and value is True
                                for name, value in vars(args).items())
 
     # Propagate the convenience aliases. Not optimal (should use a topologically
@@ -210,11 +228,25 @@ class Main:
 
       # Latex to PDF.
       if psc_to_latex_success and args.latex_to_pdf:
-        self.__CallProgram(args.texify_bin,
-                           '-I', args.lib_dir,
-                           basename_noext + '.tex',
-                           *shlex.split(args.texify_options),
-                           cwd=output_dir)
+        if args.latex_to_pdf_tool == 'texify':
+          # With texify.
+          self.__CallProgram(args.texify_bin,
+                             '-I', args.lib_dir,
+                             basename_noext + '.tex',
+                             *shlex.split(args.texify_options),
+                             cwd=output_dir)
+        elif args.latex_to_pdf_tool == 'latexmk':
+          # With latexmk.
+          env = os.environ.copy()
+          env['TEXINPUTS'] = '{}:'.format(args.lib_dir)
+          self.__CallProgram(args.latexmk_bin,
+                             basename_noext + '.tex',
+                             *shlex.split(args.latexmk_options),
+                             cwd=output_dir, env=env)
+          self.__CallProgram(args.latexmk_bin,
+                             basename_noext + '.tex',
+                             *shlex.split(args.latexmk_clean_options),
+                             cwd=output_dir)
 
   def __CallPyscribe(self, *, psc_filename, output_dir, psc_format):
     args = self.__args
