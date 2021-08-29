@@ -64,20 +64,21 @@ class ArabicToRomanTest(TestCase):
     values = ((1, 'I'), (2, 'II'), (3, 'III'), (4, 'IV'), (5, 'V'), (6, 'VI'),
               (7, 'VII'), (8, 'VIII'), (9, 'IX'), (10, 'X'))
     for arabic, roman in values:
-      self.assertEqualExt(ArabicToRoman(arabic), roman,
-                          'ArabicToRoman mismatch for ' + str(arabic))
+      with self.subTest(arabic=arabic):
+        self.assertEqual(ArabicToRoman(arabic), roman)
 
   def testLargeValues(self):
     values = ((20, 'XX'), (50, 'L'), (42, 'XLII'), (99, 'XCIX'),
               (399, 'CCCXCIX'), (499, 'CDXCIX'), (1000, 'M'), (1999, 'MCMXCIX'),
               (3789, 'MMMDCCLXXXIX'), (3999, 'MMMCMXCIX'))
     for arabic, roman in values:
-      self.assertEqualExt(ArabicToRoman(arabic), roman,
-                          'ArabicToRoman mismatch for ' + str(arabic))
+      with self.subTest(arabic=arabic):
+        self.assertEqual(ArabicToRoman(arabic), roman)
 
-  def testAllValues(self):  # pylint: disable=no-self-use
+  def testAllValues(self):
     for arabic in range(1, 4000):
-      ArabicToRoman(arabic)
+      with self.subTest(arabic=arabic):
+        ArabicToRoman(arabic)
 
 
 class RomanTest(ExecutionTestCase):

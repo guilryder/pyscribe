@@ -10,7 +10,7 @@ from testutils import *
 class TextBranchTest(BranchTestCase):
 
   def setUp(self):
-    super(TextBranchTest, self).setUp()
+    super().setUp()
     self.branch = TextBranch(parent=None, name='dummy')
 
   def assertRender(self, expected):

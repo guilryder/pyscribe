@@ -167,10 +167,10 @@ class FakeLogger(Logger):
   def __init__(self):
     self.err_file = io.StringIO()
     self.info_messages = []
-    super(FakeLogger, self).__init__(fmt='test',
-                                     err_file=self.err_file,
-                                     info_file=None,
-                                     fmt_definition=self.FORMAT)
+    super().__init__(fmt='test',
+                     err_file=self.err_file,
+                     info_file=None,
+                     fmt_definition=self.FORMAT)
 
   def ConsumeStdErr(self):
     """Returns the errors logged so far, then clears them."""
@@ -186,7 +186,7 @@ class FakeLogger(Logger):
 class FakeFileSystem(execution.AbstractFileSystem):
 
   def __init__(self):
-    super(FakeFileSystem, self).__init__()
+    super().__init__()
     self.stdout = None
     self.stderr = None
     self.cwd = '/cur'
@@ -236,20 +236,15 @@ class FakeFileSystem(execution.AbstractFileSystem):
 
 class TestCase(unittest.TestCase):
 
-  def __FailureMessage(self, fmt_string, msg, fmt, *args):  #pragma: no cover
-    if msg:
-      msg += '\n'
-    else:
-      msg = ''
-    if fmt is None:
-      fmt = lambda x: x
-    return msg + fmt_string.format(*map(fmt, args))
+  def __FailureMessage(self, *lines):  #pragma: no cover
+    return '\n'.join(filter(None, lines))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
     if not actual == expected:  #pragma: no cover
+      fmt = fmt or (lambda x: x)
       raise self.failureException(self.__FailureMessage(
-          'Actual:   {}\nExpected: {}', msg, fmt, actual, expected))
+          msg, f'Actual:   {fmt(actual)}\nExpected: {fmt(expected)}'))
 
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
@@ -257,7 +252,7 @@ class TestCase(unittest.TestCase):
       if '\xa0' in actual or '\xa0' in expected:
         actual, expected = repr(actual), repr(expected)
       raise self.failureException(self.__FailureMessage(
-          'Actual:\n{}\nExpected:\n{}', msg, None, actual, expected))
+          msg, f'Actual:\n{actual}\nExpected:\n{expected}'))
 
   def FakeInputFile(self, contents, **kwargs):
     """
@@ -281,10 +276,10 @@ class TestCase(unittest.TestCase):
   def OpenSourceFile(self, path, **kwargs):
     kwargs.setdefault('encoding', 'utf-8')
     assert path.startswith(FAKE_PYSCRIBE_DIR), (
-        'Source path must start with {}: {}'.format(FAKE_PYSCRIBE_DIR, path))
+        f'Source path must start with {FAKE_PYSCRIBE_DIR}: {path}')
     real_suffix = path[len(FAKE_PYSCRIBE_DIR):]
     real_path = os.path.normpath(os.path.join(REAL_PYSCRIBE_DIR, real_suffix))
-    return open(real_path, **kwargs)
+    return open(real_path, **kwargs)  # pylint: disable=unspecified-encoding
 
   def GetFileSystem(self, inputs):
     class TestFileSystem(FakeFileSystem):
@@ -310,8 +305,8 @@ class TestCase(unittest.TestCase):
             raise FileNotFoundError(errno.ENOENT, 'File not found', filename)
         elif mode == 'wt':
           # Open an output file.
-          assert filename not in fs.__output_writers, \
-              'Output file already open: ' + filename
+          assert filename not in fs.__output_writers, (
+              'Output file already open: ' + filename)
           if 'not_writeable' in filename:
             raise PermissionError(errno.EACCES, 'File not writeable', filename)
           writer = self.FakeOutputFile(**kwargs)
@@ -339,7 +334,7 @@ class ExecutionTestCase(TestCase):
     executor.ExecuteNodes(contents)
 
   def setUp(self):
-    super(ExecutionTestCase, self).setUp()
+    super().setUp()
     self.additional_builtin_macros = GetPublicMacros(self)
 
   @staticmethod
@@ -363,8 +358,8 @@ class ExecutionTestCase(TestCase):
     return executor.system_branch
 
   def PrepareInputOutput(self, text_or_iter, separator):
-    if isinstance(text_or_iter, collections.Iterable) and \
-        not isinstance(text_or_iter, str):
+    if (isinstance(text_or_iter, collections.abc.Iterable) and
+        not isinstance(text_or_iter, str)):
       return separator.join(text_or_iter)
     else:
       return text_or_iter
@@ -403,7 +398,7 @@ class ExecutionTestCase(TestCase):
       fatal_error = bool(messages)
 
     # Create the input dictionary.
-    if not isinstance(inputs, collections.Mapping):
+    if not isinstance(inputs, collections.abc.Mapping):
       inputs = {'/root': inputs}
     inputs = {
         filename: self.InputHook(
@@ -425,7 +420,7 @@ class ExecutionTestCase(TestCase):
     output_branch.context.AddMacros(self.additional_builtin_macros)
 
     # Create the expected output dictionary.
-    if not isinstance(expected_outputs, collections.Mapping):
+    if not isinstance(expected_outputs, collections.abc.Mapping):
       expected_outputs = {
           self.GetBranchFilename(output_branch.name): expected_outputs,
       }
@@ -457,19 +452,20 @@ class ExecutionTestCase(TestCase):
       self.assertTrue(actual_fatal_error, 'expected a fatal error')
     else:
       self.assertFalse(actual_fatal_error,
-                       'unexpected fatal error; messages: {}'.format(
-                           logger.ConsumeStdErr()))
+                       'unexpected fatal error; messages: ' +
+                          logger.ConsumeStdErr())
       expected_filenames = frozenset(expected_outputs.keys())
       actual_filenames = frozenset(actual_outputs.keys())
       self.assertTrue(
           expected_filenames.issubset(actual_filenames),
-          ('output file names mismatch; expected filenames:\n  {expected}\n' +
-           'should be a subset of actual filenames:\n  {actual}').format(
-              expected=expected_filenames, actual=actual_filenames))
+          'output file names mismatch; expected filenames:\n'
+          f'  {expected_filenames}\n'
+          'should be a subset of actual filenames:\n'
+          f'  {actual_filenames}')
       for filename in expected_outputs:
         self.assertExecutionOutput(actual_outputs[filename],
                                    expected_outputs[filename],
-                                   'output mismatch for: ' + filename)
+                                   f'output mismatch for: {filename}')
 
     # Verify the log messages.
     self.assertEqualExt(logger.ConsumeStdErr(), '\n'.join(messages),
@@ -508,18 +504,17 @@ class BranchTestCase(TestCase):
 
 class FakeArgumentParser(argparse.ArgumentParser):
   """Option parser that prints to self.stderr."""
-  # pylint: disable=arguments-differ
 
   def __init__(self, stderr):
-    super(FakeArgumentParser, self).__init__()
+    super().__init__()
     self.__stderr = stderr
 
-  def exit(self, status=0, msg='', **unused_kwargs):
-    self.__stderr.write(msg)
+  def exit(self, status=0, message='', **unused_kwargs):
+    self.__stderr.write(message)
     sys.exit(status)
 
-  def error(self, msg):
-    self.exit(2, "error: {}\n".format(msg))
+  def error(self, message):
+    self.exit(2, f'error: {message}\n')
 
   def print_help(self, file=None, **kwargs):
     argparse.ArgumentParser.print_help(self, self.__stderr, **kwargs)

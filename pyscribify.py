@@ -184,8 +184,8 @@ class Main:
     args = self.__args
 
     # Append the default *.psc extension if necessary.
-    if not os.path.splitext(psc_filename)[1] \
-        and not os.path.lexists(psc_filename):
+    if (not os.path.splitext(psc_filename)[1]
+        and not os.path.lexists(psc_filename)):
       psc_filename += '.psc'
     basename_noext = os.path.splitext(os.path.basename(psc_filename))[0]
 
@@ -193,8 +193,7 @@ class Main:
     output_dir = os.path.join(os.path.dirname(psc_filename), args.output_dir)
     output_path_noext = os.path.join(output_dir, basename_noext)
 
-    print('\nProcessing PyScribe file: {}'.format(psc_filename),
-          file=self.__stdout)
+    print(f'\nProcessing PyScribe file: {psc_filename}', file=self.__stdout)
 
     # HTML.
     if 'html' in args.formats:
@@ -238,7 +237,7 @@ class Main:
         elif args.latex_to_pdf_tool == 'latexmk':
           # With latexmk.
           env = os.environ.copy()
-          env['TEXINPUTS'] = '{}:'.format(args.lib_dir)
+          env['TEXINPUTS'] = f'{args.lib_dir}:'
           self.__CallProgram(args.latexmk_bin,
                              basename_noext + '.tex',
                              *shlex.split(args.latexmk_options),

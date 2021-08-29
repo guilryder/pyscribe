@@ -46,13 +46,13 @@ class Main:
       (name, sep, text) = value.partition('=')
       if not sep:
         raise argparse.ArgumentTypeError(
-            'invalid value, expected format: name=text; got: {}'.format(value))
+            f'invalid value, expected format: name=text; got: {value}')
       return (name, text)
 
     def ValidateBasename(value):
       if value != fs.basename(value):
         raise argparse.ArgumentTypeError(
-            'expected basename without separator, got: {}'.format(value))
+            f'expected basename without separator, got: {value}')
       return value
 
     parser = self.__ArgumentParser()
@@ -132,9 +132,9 @@ class Main:
               input_path=input_path,
               output_basename_prefix=args.output_basename_prefix))
     output_dir = constants['dir.output']
-    output_path_prefix = \
+    output_path_prefix = (
         fs.MakeAbsolute(output_dir,
-                        constants['file.output.basename.prefix'])
+                        constants['file.output.basename.prefix']))
 
     # Create the output directory.
     fs.makedirs(output_dir, exist_ok=True)

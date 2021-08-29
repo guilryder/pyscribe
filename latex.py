@@ -42,8 +42,8 @@ class LatexWriter:
       self.__sep_end = False
       previous_char = self.__last_char
       next_char = text[0]
-      if (previous_char == '\\' and next_char == '\\') \
-          or next_char not in _SEPARATOR_CHARS:
+      if ((previous_char == '\\' and next_char == '\\')
+          or next_char not in _SEPARATOR_CHARS):
         self.__writer.write(' ')
 
     # Write the text.
@@ -90,7 +90,7 @@ class LatexBranch(AbstractSimpleBranch):
   type_name = 'latex'
 
   def __init__(self, *args, **kwargs):
-    super(LatexBranch, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
 
     if self.parent is None:
       self.context.AddMacros(GetPublicMacros(Macros))

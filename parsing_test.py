@@ -144,9 +144,9 @@ class ParsingTest(TestCase):
     if fatal_error:
       self.assertTrue(actual_fatal_error, 'expected a fatal error')
     else:
-      self.assertFalse(actual_fatal_error,
-                       'unexpected fatal error; messages: {0}'.format(
-                          logger.ConsumeStdErr()))
+      self.assertFalse(
+          actual_fatal_error,
+          f'unexpected fatal error; messages: {logger.ConsumeStdErr()}')
       if isinstance(output, str):
         self.assertEqualExt(FormatNodes(nodes), output, 'nodes text mismatch')
       else:

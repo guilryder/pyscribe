@@ -174,7 +174,7 @@ class IncludeTextTest(ExecutionTestCase):
             '/root': 'roota $include.text[hello.txt] rootb',
             '/hello.txt': included,
         },
-        'roota {} rootb'.format(included))
+        f'roota {included} rootb')
 
   def testFileNotFound(self):
     self.assertExecution(

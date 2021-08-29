@@ -37,7 +37,7 @@ class BaseError(Exception):
   """
 
   def __init__(self, message=None, **kwargs):
-    super(BaseError, self).__init__()
+    super().__init__()
     self.message = FormatMessage(message, **kwargs).rstrip()
 
   def __str__(self):
@@ -85,9 +85,9 @@ class Filename:
     return self.display_path
 
   def __eq__(self, other):
-    return isinstance(other, Filename) and \
-        self.display_path == other.display_path and \
-        self.dir_path == other.dir_path
+    return (isinstance(other, Filename) and
+            self.display_path == other.display_path and
+            self.dir_path == other.dir_path)
 
 
 class Location:
@@ -106,12 +106,12 @@ class Location:
     self.lineno = lineno
 
   def __repr__(self):
-    return '{0.filename}:{0.lineno}'.format(self)
+    return f'{self.filename}:{self.lineno}'
 
   def __eq__(self, other):
-    return isinstance(other, Location) and \
-        self.filename == other.filename and \
-        self.lineno == other.lineno
+    return (isinstance(other, Location) and
+            self.filename == other.filename and
+            self.lineno == other.lineno)
 
 
 class Logger:
@@ -130,8 +130,8 @@ class Logger:
 
   def __init__(self, *, fmt, err_file, info_file, fmt_definition=None):
     self.__fmt = fmt
-    (self.__top_format, self.__stack_frame_format) = \
-        fmt_definition or self.FORMATS[fmt]
+    self.__top_format, self.__stack_frame_format = (
+        fmt_definition or self.FORMATS[fmt])
     self.__err_file = err_file
     self.__info_file = info_file
 
@@ -146,11 +146,11 @@ class Logger:
       call_stack: (CallNode list) The macro call stack.
       **kwargs: (dict) The formatting parameters to apply to the message.
     """
-    return FatalError('{header}{stack}',
-        header=self.__top_format.format(
-            location=location, message=FormatMessage(message, **kwargs)),
-        stack=''.join(self.__stack_frame_format.format(call_node=call_node)
-                      for call_node in call_stack))
+    top = self.__top_format.format(
+        location=location, message=FormatMessage(message, **kwargs))
+    stack = ''.join(self.__stack_frame_format.format(call_node=call_node)
+                    for call_node in call_stack)
+    return FatalError(top + stack)
 
   def LogException(self, e, exc_info=None, tb_limit=None):
     """

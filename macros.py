@@ -10,8 +10,8 @@ import re
 
 
 MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
-VALID_MACRO_NAME_PATTERN = \
-    r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)'
+VALID_MACRO_NAME_PATTERN = (
+    r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)')
 VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
 
@@ -89,13 +89,14 @@ class macro:
 
     # Split the list of arguments in two: first required, then optional.
     parsers_list = [ParseArgSignature(sig) for sig in args_signature.split(',')]
-    parsers_grouped_by_optional = \
-        [(optional, [parser[1] for parser in parsers])
-         for (optional, parsers)
-         in itertools.groupby(parsers_list, operator.itemgetter(0))]
+    parsers_grouped_by_optional = [
+        (optional, [parser[1] for parser in parsers])
+        for (optional, parsers)
+        in itertools.groupby(parsers_list, operator.itemgetter(0))
+    ]
     optionals = [parser[0] for parser in parsers_grouped_by_optional]
-    assert len(optionals) <= 2 and optionals != [True, False], \
-        'Invalid args signature: optional arguments must be grouped at the end'
+    assert len(optionals) <= 2 and optionals != [True, False], (
+        'Invalid args signature: optional arguments must be grouped at the end')
 
     parsers_keyed_by_optional = defaultdict(list, parsers_grouped_by_optional)
     return [parsers_keyed_by_optional[optional] for optional in (False, True)]
@@ -142,9 +143,9 @@ def GetMacroSignature(name, callback):
     or '$name(args signature)'.
   """
   if callback.args_signature:
-    return '${name}({args})'.format(name=name, args=callback.args_signature)
+    return f'${name}({callback.args_signature})'
   else:
-    return '${name}'.format(name=name)
+    return f'${name}'
 
 
 def GetPublicMacros(container):
@@ -164,9 +165,8 @@ def GetPublicMacros(container):
     for _, symbol in inspect.getmembers(container):
       public_name = getattr(symbol, 'public_name', None)
       if public_name is not None:
-        assert public_name not in public_macros, \
-            'duplicate public name "{public_name}" in {container}'.format(
-                public_name=public_name, container=container)
+        assert public_name not in public_macros, (
+            f'duplicate public name "{public_name}" in {container}')
         public_macros[public_name] = symbol
     container.public_macros = public_macros
   return container.public_macros
@@ -174,7 +174,7 @@ def GetPublicMacros(container):
 
 def GetPublicMacrosContainers():
   """Returns all public, built-in macros containers."""
-  import core_macros
+  import core_macros  # pylint: disable=import-outside-toplevel
   return (
       core_macros, core_macros.SpecialCharacters,
       __import__('branch_macros'),

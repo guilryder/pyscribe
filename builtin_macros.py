@@ -64,7 +64,6 @@ def ArabicToRoman(number):
     raise NodeError('unsupported number for conversion to Roman: {number}',
                     number=number)
 
-  # pylint: disable=bad-whitespace
   conv_table = ((1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
                  (100, 'C'),  (90, 'XC'),  (50, 'L'),  (40, 'XL'),
                   (10, 'X'),   (9, 'IX'),   (5, 'V'),   (4, 'IV'),
@@ -160,8 +159,7 @@ def CounterCreate(executor, unused_call_node, counter_name):
       '.incr': IncrCallback,
   }
   for name_suffix, callback in macros.items():
-    macro_name = '{counter_name}{suffix}'.format(counter_name=counter_name,
-                                                  suffix=name_suffix)
+    macro_name = f'{counter_name}{name_suffix}'
     executor.current_branch.context.AddMacro(macro_name, callback)
 
 

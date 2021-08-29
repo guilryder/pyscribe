@@ -60,8 +60,8 @@ class ExecutionContext:
       name: (string) The name of the symbol, without '$' prefix.
       callback: (runnable) The macro callback.
     """
-    assert hasattr(callback, 'args_signature'), \
-        'args_signature missing for ' + name
+    assert hasattr(callback, 'args_signature'), (
+        'args_signature missing for ' + name)
     self.macros[name] = callback
 
   def AddMacros(self, macros):
@@ -226,8 +226,7 @@ class Executor:
     path = self.__output_path_prefix + filename_suffix
     if path in self.opened_paths:
       raise NodeError("output file already opened: {filename}", filename=path)
-    self.logger.LogInfo(
-        'Writing: {filename}'.format(filename=path))
+    self.logger.LogInfo(f'Writing: {path}')
 
     # Create the writer.
     try:
@@ -273,8 +272,8 @@ class Executor:
     """
     assert fs.isabs(abs_directory)
     path = fs.MakeAbsolute(abs_directory, path)
-    if default_ext is not None \
-        and not fs.splitext(path)[1] and not fs.lexists(path):
+    if (default_ext is not None
+        and not fs.splitext(path)[1] and not fs.lexists(path)):
       path += default_ext
     return path
 
@@ -386,7 +385,7 @@ class Executor:
     """
     for sub_branch in branch.IterBranches():
       if sub_branch.name is None:
-        sub_branch.name = 'auto{index}'.format(index=len(self.branches))
+        sub_branch.name = f'auto{len(self.branches)}'
       self.branches[sub_branch.name] = sub_branch
       if sub_branch.parent is None:
         self.root_branches.append(sub_branch)

@@ -1,0 +1,17 @@
+[MASTER]
+jobs=4
+extension-pkg-whitelist=lxml.etree
+
+[MESSAGES CONTROL]
+disable=invalid-name,missing-docstring,no-else-return,protected-access,too-few-public-methods,too-many-arguments,too-many-instance-attributes,too-many-lines,too-many-local-variables,too-many-locals,too-many-public-methods,unused-private-member,unused-wildcard-import,wildcard-import
+
+[BASIC]
+bad-functions=
+
+[FORMAT]
+max-line-length=80
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+indent-string='  '
+
+[VARIABLES]
+dummy-variables-rgx=_$|dummy|^unused_

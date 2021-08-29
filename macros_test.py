@@ -3,7 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
-import imp
+import importlib
 
 from execution import Executor
 from macros import *
@@ -15,7 +15,7 @@ class MacroTest(TestCase):
   # pylint: disable=attribute-defined-outside-init
 
   def setUp(self):
-    super(MacroTest, self).setUp()
+    super().setUp()
     self.logger = FakeLogger()
     self.executor = Executor(logger=self.logger, fs=FakeFileSystem(),
                              current_dir='/cur',
@@ -37,13 +37,12 @@ class MacroTest(TestCase):
     self.assertTrue(self.called)
 
   def __CheckMacroCallFailure(self, macro_callback, args, expected_message):
-    expected_message = '{location}: {message}'.format(
-        location=TEST_LOCATION, message=expected_message)
+    expected_message_full = f'{TEST_LOCATION}: {expected_message}'
     with self.assertRaises(FatalError) as ctx:
       self.__MacroCall(macro_callback, args)
     self.logger.LogException(ctx.exception)
     self.assertFalse(self.called, 'expected macro callback not invoked')
-    self.assertEqual(self.logger.ConsumeStdErr(), expected_message)
+    self.assertEqual(self.logger.ConsumeStdErr(), expected_message_full)
 
   def testDefault(self):
     @macro()
@@ -117,14 +116,14 @@ class MacroTest(TestCase):
   def testAutoParser_requiredThenOptional(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one?,two?,three')
-      def unused_MacroCallback():
-        pass  # pragma: no cover
+      def unused_MacroCallback():  # pragma: no cover
+        pass
 
   def testAutoParser_requiredThenOptionalThenRequired(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one,two?,three')
-      def unused_MacroCallback():
-        pass  # pragma: no cover
+      def unused_MacroCallback():  # pragma: no cover
+        pass
 
 
 class GetMacroSignatureTest(TestCase):
@@ -167,8 +166,9 @@ class GetPublicMacrosTest(TestCase):
                               public2=self.TestClass.PublicMacro2))
 
   def testOnModule(self):
-    module = imp.new_module('test')
-    code = \
+    module_spec = importlib.util.spec_from_loader('test', loader=None)
+    module = importlib.util.module_from_spec(module_spec)
+    code = (
 """
 from macros import macro
 
@@ -183,7 +183,7 @@ def PrivateMacro():
 @macro(public_name='public2')
 def PublicMacro2():
   pass
-"""
+""")
     exec(code, module.__dict__)  # pylint: disable=exec-used
     self.assertDictEqual(GetPublicMacros(module),
                          dict(public1=getattr(module, 'PublicMacro1'),

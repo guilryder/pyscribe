@@ -115,7 +115,7 @@ class InlineXmlElementTest(TestCase):
 class HtmlBranchTest(BranchTestCase):
 
   def setUp(self):
-    super(HtmlBranchTest, self).setUp()
+    super().setUp()
     self.branch = HtmlBranch(parent=None)
 
   def assertRender(self, expected_xml_string):
@@ -144,7 +144,7 @@ class HtmlBranchTest(BranchTestCase):
 
   def testRender_unicode(self):
     self.branch.AppendText(TEST_UNICODE)
-    self.assertRender('<p>{}</p>'.format(TEST_UNICODE))
+    self.assertRender(f'<p>{TEST_UNICODE}</p>')
 
   def testRender_mix(self):
     self.PrepareMix(self.branch)
@@ -318,7 +318,7 @@ class GlobalExecutionTest(HtmlExecutionTestCase):
             '/root': 'roota $include.text[hello.txt] rootb',
             '/hello.txt': included + SPECIAL_CHARS,
         },
-        '<p>roota {} rootb</p>'.format(included + SPECIAL_CHARS_AS_HTML))
+        f'<p>roota {included}{SPECIAL_CHARS_AS_HTML} rootb</p>')
 
 
 class StructureExecutionTest(HtmlExecutionTestCase):
@@ -414,7 +414,7 @@ class NeutralTypographyTest(HtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['neutral']))
+        f'<p>{TYPO_TO_SPECIAL_CHARS_AS_HTML["neutral"]}</p>')
 
   def testPunctuationDouble_keepsSpaces(self):
     self.assertExecution(
@@ -514,7 +514,7 @@ class EnglishTypographyTest(HtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['english']))
+        f'<p>{TYPO_TO_SPECIAL_CHARS_AS_HTML["english"]}</p>')
 
   def testPunctuationDouble_preservesSpaces(self):
     self.assertExecution(
@@ -686,7 +686,7 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
   def testAllSpecialChars(self):
     self.assertExecution(
         SPECIAL_CHARS,
-        '<p>{}</p>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['french']))
+        f'<p>{TYPO_TO_SPECIAL_CHARS_AS_HTML["french"]}</p>')
 
   def testPunctuationDouble_convertsSpaces(self):
     self.assertExecution(
@@ -1413,7 +1413,7 @@ class TagBodyRawTest(HtmlExecutionTestCase):
               ']',
             '$tag.close[div]',
         ),
-        '<div>{}</div>'.format(TYPO_TO_SPECIAL_CHARS_AS_HTML['english']))
+        f'<div>{TYPO_TO_SPECIAL_CHARS_AS_HTML["english"]}</div>')
 
   def testPreservesExactSpacingInside(self):
     self.assertExecution(

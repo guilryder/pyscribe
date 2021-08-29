@@ -226,7 +226,7 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
     raise NodeError('invalid original macro name: ' + original)
   if original in macro_arg_names:
     raise NodeError('original macro name conflicts with signature: '
-                    '{} vs. {}'.format(original, signature))
+                    f'{original} vs. {signature}')
   macro_callback = _LookupNonBuiltinMacro(executor, macro_name, 'override')
 
   # Create the override execution context: map the original macro to $original.

@@ -13,7 +13,7 @@ from testutils import *
 class EndToEndTestCase(TestCase):
 
   def setUp(self):
-    super(EndToEndTestCase, self).setUp()
+    super().setUp()
     self.inputs = {}
     self.fs = self.GetFileSystem(self.inputs)
     self.fs.InitializeForWrites()
@@ -40,7 +40,7 @@ class EndToEndTestCase(TestCase):
       try:
         main.Run()
       except SystemExit as e:  # pragma: no cover
-        msg = 'Unexpected error:\n{}'.format(self.GetStdFile('err'))
+        msg = 'Unexpected error:\n' + self.GetStdFile('err')
         raise AssertionError(msg) from e
 
 
@@ -52,7 +52,7 @@ class MainTest(EndToEndTestCase):
             '$branch.write[root][' + contents + ']')
 
   def setUp(self):
-    super(MainTest, self).setUp()
+    super().setUp()
     self.inputs.update({
         '/cur/input.psc': self.__Output('Hello, World!'),
         '/cur/format.psc': self.__Output('Format: $format'),
@@ -161,14 +161,14 @@ class MainTest(EndToEndTestCase):
     self.assertOutput('/cur/format.out', 'Format: html')
 
   def testOutputBasenamePrefix_empty(self):
-    self.inputs['/cur/dummy.psc'] = \
-        self.__Output('$file.output.basename.prefix')
+    self.inputs['/cur/dummy.psc'] = (
+        self.__Output('$file.output.basename.prefix'))
     self.Execute('dummy.psc -p ""')
     self.assertOutput('/cur/dummy.out', 'dummy')
 
   def testOutputBasenamePrefix_notEmpty(self):
-    self.inputs['/cur/dummy.psc'] = \
-        self.__Output('$file.output.basename.prefix')
+    self.inputs['/cur/dummy.psc'] = (
+        self.__Output('$file.output.basename.prefix'))
     self.Execute('dummy.psc -p custom-output-prefix')
     self.assertOutput('/cur/custom-output-prefix.out', 'custom-output-prefix')
 
@@ -194,12 +194,12 @@ class MainTest(EndToEndTestCase):
         'file.input.basename.noext': 'constants',
         'file.output.basename.prefix': 'constants',
     }
-    self.inputs['/cur/constants.psc'] = \
-        self.__Output(', '.join('{0}=${0}'.format(name) for name in constants))
+    self.inputs['/cur/constants.psc'] = (
+        self.__Output(', '.join(f'{name}=${name}' for name in constants)))
     self.Execute('constants.psc')
     self.assertOutput('/cur/constants.out',
-                      ', '.join('{}={}'.format(*constant)
-                                for constant in constants.items()))
+                      ', '.join(f'{name}={value}'
+                                for name, value in constants.items()))
 
   def testError_inputFileNotFound(self):
     self.Execute('does_not_exist', expect_failure=True)
@@ -218,8 +218,8 @@ class MainTest(EndToEndTestCase):
     self.assertEqual(self.fs.GetOutputs(), {})
 
   def testError_renderBranchesFailure(self):
-    self.inputs['/cur/render.psc'] = \
-        self.__Output('$tag.open[div][block]test', branch_type='html')
+    self.inputs['/cur/render.psc'] = (
+        self.__Output('$tag.open[div][block]test', branch_type='html'))
     self.Execute('render.psc --format html', expect_failure=True)
     self.assertOutput('/cur/render.out', '',
                       expected_err='element not closed in branch "root":'

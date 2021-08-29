@@ -34,7 +34,7 @@ class Token:
     self.value = value
 
   def __repr__(self):
-    return '({0.type} l{0.lineno} {0.value!r})'.format(self)
+    return f'({self.type} l{self.lineno} {self.value!r})'
 
 
 class TextNode:
@@ -51,7 +51,7 @@ class TextNode:
     return repr(self.text)
 
   def __repr__(self):
-    return "{0.location!r}{0}".format(self)
+    return f'{self.location!r}{self}'
 
   def __eq__(self, other):
     return isinstance(other, TextNode) and repr(self) == repr(other)
@@ -76,20 +76,18 @@ class CallNode:
     executor.CallMacro(self)
 
   def __str__(self):
-    return '${name}{args}'.format(
-        name=self.name,
-        args=''.join('[{}]'.format(FormatNodes(param)) for param in self.args))
+    args = ''.join(f'[{FormatNodes(param)}]' for param in self.args)
+    return f'${self.name}{args}'
 
   def __repr__(self):
-    return '${name}{args}'.format(
-        name=self.name,
-        args=''.join('[{}]'.format(ReprNodes(param)) for param in self.args))
+    args = ''.join(f'[{ReprNodes(param)}]' for param in self.args)
+    return f'${self.name}{args}'
 
   def __eq__(self, other):
-    return isinstance(other, CallNode) and \
-           self.location == other.location and \
-           self.name == other.name and \
-           self.args == other.args
+    return (isinstance(other, CallNode) and
+            self.location == other.location and
+            self.name == other.name and
+            self.args == other.args)
 
 
 def CompactTextNodes(nodes):
@@ -194,7 +192,7 @@ class RegexpParser:
 
     # Compute the aggregate regexp for all rules.
     full_pattern = '|'.join(
-        '(?P<{0.rule_name}>{0.regexp})'.format(rule)
+        f'(?P<{rule.rule_name}>{rule.regexp})'
         for rule in self.__rules.values())
     self.__regexp = re.compile(full_pattern, re.MULTILINE)
 
@@ -306,9 +304,10 @@ class Lexer:
 
     Yields: (Token) The parsed tokens.
     """
+    # pylint: disable=import-outside-toplevel
     from collections.abc import Iterable
-    for text_before, rule_callable, matched_text in \
-        self.__parser.Parse(self.__input_text):
+    for text_before, rule_callable, matched_text in (
+        self.__parser.Parse(self.__input_text)):
       if text_before is not None:
         if self.__skip_spaces:
           text_before = text_before.lstrip(' \t')
@@ -387,7 +386,6 @@ class Lexer:
   @rule(r'[ \t]*\#.*(?:\n\s*|\Z)')
   def RuleComment(self, value):
     self.__UpdateLineno(value)
-    return None
 
   @rule(r'\^.')
   def RuleEscape(self, value):
@@ -410,8 +408,8 @@ class Lexer:
   @rule(r'\$\$[a-zA-Z0-9._]*\n?')
   def RulePreProcessingInstruction(self, value):
     preproc_instr_name = value[2:].strip()
-    preproc_instr_callback = \
-        self.__preproc_instr_callbacks.get(preproc_instr_name)
+    preproc_instr_callback = (
+        self.__preproc_instr_callbacks.get(preproc_instr_name))
     if preproc_instr_callback is None:
       raise self.context.MakeLocationError(
           self.__Location(),
@@ -423,7 +421,6 @@ class Lexer:
     preproc_instr_callback()
     self.__UpdateLineno(value)
     self.__skip_spaces = True
-    return None
 
   def __PreprocessWhitespacePreserve(self):
     self.__text_processor = self.__TextProcessorPreserveWhitespace
@@ -677,8 +674,7 @@ def ParseFile(reader, filename, logger):
   except Exception as e:
     raise context.MakeLocationError(
         context.MakeLocation(1),
-        'unable to read the input file: {filename}\n{error}'.format(
-            filename=filename, error=e)) from e
+        f'unable to read the input file: {filename}\n{e}') from e
 
   # Parse the file contents.
   lexer = Lexer(context, input_text)

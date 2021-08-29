@@ -130,18 +130,17 @@ class HtmlBranch(Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XML_HEADER = '<?xml version="1.0" encoding="{}"?>\n'.format(
-      execution.ENCODING)
-  __XHTML_STUB = bytes("""\
+  __XML_HEADER = f'<?xml version="1.0" encoding="{execution.ENCODING}"?>\n'
+  __XHTML_STUB = bytes(f"""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
 <head>
 <meta http-equiv="Content-Type"
-      content="application/xhtml+xml; charset={encoding}"/>
+      content="application/xhtml+xml; charset={execution.ENCODING}"/>
 </head>
 </html>
-""".format(encoding=execution.ENCODING), encoding='ascii')
+""", encoding='ascii')
 
   __AUTO_PARA_DELIMITER = re.compile(r'\n{2,}')
   __AUTO_PARA_TAG_DEFAULT = 'p'
@@ -150,7 +149,7 @@ class HtmlBranch(Branch):
   type_name = 'html'
 
   def __init__(self, *args, **kwargs):
-    super(HtmlBranch, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     parent = self.parent
     self.sub_branches = []
 
@@ -203,8 +202,8 @@ class HtmlBranch(Branch):
   def SetTypography(self, typography):
     # pylint: disable=attribute-defined-outside-init
     self.__typography = typography
-    self.__typography_context.macros = \
-        typography.context.macros if typography else {}
+    self.__typography_context.macros = (
+        typography.context.macros if typography else {})
 
   typography = property(GetTypography, SetTypography,
                         doc='(Typography) The typography rules.')
@@ -428,7 +427,7 @@ class HtmlBranch(Branch):
         self.AutoParaTryOpen(except_tag=tag)
         break
       # Tag mismatch: expect a paragraph, auto-close it.
-      elif not self.AutoParaTryClose():
+      if not self.AutoParaTryClose():
         # Not a pragraph: tag mismatch error.
         raise NodeError(
             'expected current tag to be <{expected_tag}>, got <{actual_tag}>',
@@ -463,8 +462,8 @@ class HtmlBranch(Branch):
                                                        preserve_tail=False):
       closed_elem = None
 
-    if not current_elem_info.level.is_inline and closed_elem is not None \
-        and closed_elem.tail is None:
+    if (not current_elem_info.level.is_inline and closed_elem is not None
+        and closed_elem.tail is None):
       closed_elem.tail = '\n'
 
   def RegisterTargetAction(self, unused_call_node, target, action):
@@ -492,8 +491,8 @@ class HtmlBranch(Branch):
       elem_info_predicate = lambda elem_info: not elem_info.level.is_auto
     elif target == 'parent':
       # Parent element.
-      elem_info_predicate = \
-          lambda elem_info: elem_info != self.__current_elem_info != elem_info
+      elem_info_predicate = (
+          lambda elem_info: elem_info != self.__current_elem_info != elem_info)
     elif target == 'previous':
       # Previous element.
       elem_info = self.__current_elem_info
@@ -594,17 +593,17 @@ class HtmlBranch(Branch):
         tail_elem = elem[-1]
         tail_elem.tail = (tail_elem.tail or '').rstrip(_STRIPPABLE) or None
       else:
-        elem.text = (elem.text or '').strip(_STRIPPABLE) or \
-            GetTagEmptyContents(elem.tag)
+        elem.text = ((elem.text or '').strip(_STRIPPABLE) or
+                     GetTagEmptyContents(elem.tag))
 
     # Process the "delete if empty" attribute.
-    if elem.attrib.pop(_DELETE_IF_EMPTY_ATTR_NAME, None) == \
-        _DELETE_IF_EMPTY_ATTR_VALUE:
+    if (elem.attrib.pop(_DELETE_IF_EMPTY_ATTR_NAME, None) ==
+        _DELETE_IF_EMPTY_ATTR_VALUE):
       cls._RemoveElementIfEmpty(elem, preserve_tail=True, ignore_attribs=True)
 
     # Comment out the contents of <style> tags to disable escaping.
     if elem.tag == 'style' and elem.text:
-      elem.append(etree.Comment('\n{}\n'.format(elem.text)))
+      elem.append(etree.Comment(f'\n{elem.text}\n'))
       elem.text = None
 
   @classmethod
@@ -636,9 +635,9 @@ class HtmlBranch(Branch):
     parent_elem.remove(elem)
 
     # Fail if the element has attributes.
-    if not ignore_attribs and elem.attrib and \
-        elem.attrib.get(_DELETE_IF_EMPTY_ATTR_NAME, None) != \
-            _DELETE_IF_EMPTY_ATTR_VALUE:
+    if (not ignore_attribs and elem.attrib and
+        elem.attrib.get(_DELETE_IF_EMPTY_ATTR_NAME, None) !=
+            _DELETE_IF_EMPTY_ATTR_VALUE):
       elem.text = ''
       raise NodeError(
           'removing an empty element with attributes: {elem}',
@@ -705,7 +704,7 @@ class Typography(metaclass=ABCMeta):
   macros_container = None
 
   def __init__(self):
-    super(Typography, self).__init__()
+    super().__init__()
     assert self.name  # pylint: disable=no-member
     if self.macros_container is None:
       self.macros_container = self
@@ -727,8 +726,8 @@ class Typography(metaclass=ABCMeta):
 
   @staticmethod
   def FormatNumberCustom(number, thousands_sep):
-    (sign, before_decimal, decimal_sep, after_decimal) = \
-        _NUMBER_REGEXP.match(number).groups()
+    sign, before_decimal, decimal_sep, after_decimal = (
+        _NUMBER_REGEXP.match(number).groups())
 
     # Use an en-dash as minus sign.
     if sign == '-':
@@ -778,7 +777,7 @@ class FrenchTypography(Typography):
   name = 'french'
 
   @staticmethod
-  def FormatNumber(number):  # pylint: disable=arguments-differ
+  def FormatNumber(number):
     return Typography.FormatNumberCustom(number, NBSP)
 
   TextBacktick = AppendTextMacro('text.backtick', "‘")
@@ -818,8 +817,8 @@ TYPOGRAPHIES = {
 
 class Macros:
 
-  __AUTO_PARA_LEVEL_REGEXP = \
-      re.compile(r'\Ablock,autopara=(?P<auto_para_tag>.+)\Z')
+  __AUTO_PARA_LEVEL_REGEXP = (
+      re.compile(r'\Ablock,autopara=(?P<auto_para_tag>.+)\Z'))
   __CLASS_NAME_SEPARATOR_REGEXP = re.compile(r'\s+')
 
   @staticmethod

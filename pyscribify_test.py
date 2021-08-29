@@ -40,7 +40,7 @@ class EndToEndTest(PyscribifyTestCase):
     try:
       pyscribify_output = subprocess.check_output(
           [sys.executable, '../pyscribify.py', 'Hello'],
-                              stderr=subprocess.STDOUT)
+          stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:  # pragma: no cover
       print(e.output.decode(), end='')
       raise
@@ -50,11 +50,12 @@ class EndToEndTest(PyscribifyTestCase):
       output_files_opened = []
       def OpenOutputFile(filename, mode):
         output_files_opened.append(filename)
-        return open(os.path.join(OUTPUT_DIR, filename), mode)
+        return open(os.path.join(OUTPUT_DIR, filename), mode,
+                    encoding='utf8' if 't' in mode else None)
 
       # Compare Hello.tex with the golden.
-      with OpenOutputFile('Hello.tex', 'rt') as output, \
-           open('Hello.tex', 'rt') as golden:
+      with OpenOutputFile('Hello.tex', 'rt') as output, (
+           open('Hello.tex', 'rt', encoding='utf8')) as golden:
         self.assertEqual(output.read(), golden.read(),
                          msg='Hello.tex mismatch')
 
@@ -300,7 +301,7 @@ class DryRunTest(PyscribifyTestCase):
 
 class CoverageTest(PyscribifyTestCase):
 
-  def testDryRun(self):  # pylint: disable=no-self-use
+  def testDryRun(self):
     output = io.StringIO()
     main = pyscribify.Main(input_args=('Hello', '--dry-run'), stdout=output,
                            ArgumentParser=lambda: FakeArgumentParser(output))

@@ -40,7 +40,7 @@ class Branch(metaclass=ABCMeta):
         of the branch. Defaults to parent.context if parent is set.
       name: (string) The name of the branch; optional.
     """
-    from execution import ExecutionContext
+    from execution import ExecutionContext  # pylint: disable=import-outside-toplevel
     if parent and not parent_context:
       parent_context = parent.context
     self.parent = parent
@@ -59,7 +59,7 @@ class Branch(metaclass=ABCMeta):
       self.writer = writer
 
   def __repr__(self):
-    return '<{}: {}>'.format(self.__class__.__name__, self.name)
+    return f'<{self.__class__.__name__}: {self.name}>'
 
   @abstractmethod
   def AppendText(self, text):
@@ -170,7 +170,7 @@ class AbstractSimpleBranch(Branch):
   """
 
   def __init__(self, *args, **kwargs):
-    super(AbstractSimpleBranch, self).__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
     self.__nodes = []
     self.__AppendLeaf()
 

@@ -17,7 +17,7 @@ class ExecutorTest(TestCase):
     pass  # pragma: no cover
 
   def setUp(self):
-    super(ExecutorTest, self).setUp()
+    super().setUp()
     fs = self.GetFileSystem({
         '/exists-no-ext': '',
     })
@@ -222,7 +222,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$macro.new[loop][',
               '$i ',
               '$i.incr',
-              '$if.eq[$i][{}][][$loop]'.format(expected_loop_iterations),
+              f'$if.eq[$i][{expected_loop_iterations}][][$loop]',
             ']',
             '$loop',
         ),
@@ -291,7 +291,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     for type_name in BRANCH_TYPES:
       executor = self.assertExecution(
           (
-              '$branch.create.root[{}][new][.suffix]'.format(type_name),
+              f'$branch.create.root[{type_name}][new][.suffix]',
               '$branch.write[new][test]',
           ),
           {},
@@ -311,8 +311,8 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     for callback in macros:
       self.assertTrue(
           callback.builtin,
-          'initial macros should be built-in: {0} in branch of type {1}'.format(
-              callback.public_name, branch_type_name))
+          f'initial macros should be built-in: {callback.public_name}'
+          f' in branch of type {branch_type_name}')
 
 
 class ExecutorAddConstantsTest(ExecutionTestCase):

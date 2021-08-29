@@ -93,7 +93,7 @@ class LocationTest(TestCase):
 class LoggerTest(TestCase):
 
   def setUp(self):
-    super(LoggerTest, self).setUp()
+    super().setUp()
     self.err_file = self.FakeOutputFile()
     self.info_file = self.FakeOutputFile()
 
