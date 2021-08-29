@@ -4,6 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 import collections
+import enum
 import inspect
 import itertools
 import re
@@ -12,10 +13,11 @@ from log import Filename, Location
 from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 
-TOKEN_LBRACKET = 0  # value: ignored
-TOKEN_RBRACKET = 1  # value: ignored
-TOKEN_TEXT = 2      # value: unescaped text
-TOKEN_MACRO = 3     # value: macro name without '$' prefix
+class TokenType(enum.Enum):
+  LBRACKET = enum.auto()  # value: ignored
+  RBRACKET = enum.auto()  # value: ignored
+  TEXT = enum.auto()      # value: unescaped text
+  MACRO = enum.auto()     # value: macro name without '$' prefix
 
 
 class Token:
@@ -149,13 +151,13 @@ class ParsingContext:
 
 _RULE_METHOD_NAME_PATTERN = re.compile('Rule(?P<name>.+)')
 
-_RULE_TYPE_REGULAR = 1 << 0
-_RULE_TYPE_SPECIAL_CHAR_LATEX = 1 << 1
-_RULE_TYPE_SPECIAL_CHAR_OTHER = 1 << 2
+class RuleType(enum.Flag):
+  REGULAR = enum.auto()
+  SPECIAL_CHAR_LATEX = enum.auto()
+  SPECIAL_CHAR_OTHER = enum.auto()
+  ALL = REGULAR | SPECIAL_CHAR_LATEX | SPECIAL_CHAR_OTHER
 
-_RULE_TYPES_ALL = ~0
-
-def rule(regexp, rule_type=_RULE_TYPE_REGULAR):
+def rule(regexp, rule_type=RuleType.REGULAR):
   """Decorator for rule methods; see RegexpParser."""
   def wrapper(func):
     name_match = _RULE_METHOD_NAME_PATTERN.match(func.__name__)
@@ -236,7 +238,7 @@ class Lexer:
     input_text_match = self.__GLOBAL_STRIP_REGEXP.match(input_text)
     self.__lineno = 1 + input_text[:input_text_match.start(1)].count('\n')
     self.__skip_spaces = True
-    self.__enabled_rule_types = _RULE_TYPES_ALL
+    self.__enabled_rule_types = RuleType.ALL
     self.__input_text = input_text_match.group(1) or ''
 
     self.context = context
@@ -251,11 +253,11 @@ class Lexer:
         'whitespace.preserve': self.__PreprocessWhitespacePreserve,
         'whitespace.skip': self.__PreprocessWhitespaceSkip,
         'special.chars.escape.all': lambda: SetEnabledRuleTypes(
-            _RULE_TYPES_ALL),
+            RuleType.ALL),
         'special.chars.escape.none': lambda: SetEnabledRuleTypes(
-            _RULE_TYPE_REGULAR),
+            RuleType.REGULAR),
         'special.chars.latex.mode': lambda: SetEnabledRuleTypes(
-            _RULE_TYPE_REGULAR | _RULE_TYPE_SPECIAL_CHAR_OTHER),
+            RuleType.REGULAR | RuleType.SPECIAL_CHAR_OTHER),
     }
     self.__text_processor = self.__TextProcessorPreserveWhitespace
 
@@ -275,7 +277,7 @@ class Lexer:
     """
     text_token_accu = None
     for token in tokens:
-      if token.type == TOKEN_TEXT:
+      if token.type == TokenType.TEXT:
         # Text token
         if text_token_accu is None:
           # Start a new text accumulator.
@@ -321,7 +323,7 @@ class Lexer:
           elif token is not None:
             yield token
         else:
-          yield Token(TOKEN_TEXT, self.__lineno, matched_text)
+          yield Token(TokenType.TEXT, self.__lineno, matched_text)
 
   def __TextProcessorPreserveWhitespace(self, text):
     """
@@ -338,13 +340,13 @@ class Lexer:
     for match in self.__LINE_REGEXP.finditer(text):
       (match_begin, match_end) = match.span()
       newlines = match.group(1)
-      yield Token(TOKEN_TEXT, lineno, text[last_end:match_begin] + newlines)
+      yield Token(TokenType.TEXT, lineno, text[last_end:match_begin] + newlines)
       lineno += len(newlines)
       last_end = match_end
 
     # Yield the last chunk of text.
     if last_end < len(text):
-      yield Token(TOKEN_TEXT, lineno, text[last_end:])
+      yield Token(TokenType.TEXT, lineno, text[last_end:])
 
     self.__lineno = lineno
     self.__skip_spaces = False
@@ -363,13 +365,13 @@ class Lexer:
     for match in self.__LINE_REGEXP.finditer(text):
       (match_begin, match_end) = match.span()
       if last_end < match_begin:
-        yield Token(TOKEN_TEXT, lineno, text[last_end:match_begin])
+        yield Token(TokenType.TEXT, lineno, text[last_end:match_begin])
       lineno += len(match.group(1))
       last_end = match_end
 
     # Yield the last chunk of text.
     if last_end < len(text):
-      yield Token(TOKEN_TEXT, lineno, text[last_end:])
+      yield Token(TokenType.TEXT, lineno, text[last_end:])
 
     self.__lineno = lineno
     self.__skip_spaces = False
@@ -390,18 +392,18 @@ class Lexer:
   @rule(r'\^.')
   def RuleEscape(self, value):
     self.__skip_spaces = False
-    return Token(TOKEN_TEXT, self.__lineno, value[1:])
+    return Token(TokenType.TEXT, self.__lineno, value[1:])
 
   @rule(r'\[\s*')
   def RuleLbracket(self, value):
-    token = Token(TOKEN_LBRACKET, self.__lineno, '[')
+    token = Token(TokenType.LBRACKET, self.__lineno, '[')
     self.__UpdateLineno(value)
     return token
 
   @rule(r'\s*\]')
   def RuleRbracket(self, value):
     self.__UpdateLineno(value)
-    return Token(TOKEN_RBRACKET, self.__lineno, value)
+    return Token(TokenType.RBRACKET, self.__lineno, value)
 
   # Pre-processing statement
 
@@ -447,27 +449,27 @@ class Lexer:
 
   # Special characters
 
-  @rule(r'%', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'%', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RulePercent(self, _):
     return self.__MacroToken('text.percent')
 
-  @rule(r'&', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'&', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleAmpersand(self, _):
     return self.__MacroToken('text.ampersand')
 
-  @rule(r'\\', rule_type=_RULE_TYPE_SPECIAL_CHAR_LATEX)
+  @rule(r'\\', rule_type=RuleType.SPECIAL_CHAR_LATEX)
   def RuleBackslash(self, _):
     return self.__MacroToken('text.backslash')
 
-  @rule(r'_', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'_', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleUnderscore(self, _):
     return self.__MacroToken('text.underscore')
 
-  @rule(r'~', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'~', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleNonBreakingSpace(self, _):
     return self.__MacroToken('text.nbsp')
 
-  @rule(r'-{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'-{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleDashes(self, value):
     length = len(value)
     if length == 2:
@@ -475,57 +477,57 @@ class Lexer:
     elif length == 3:
       dash_name = 'em'
     else:
-      return Token(TOKEN_TEXT, self.__lineno, value)
+      return Token(TokenType.TEXT, self.__lineno, value)
     return self.__MacroToken('text.dash.' + dash_name)
 
-  @rule(r'\.{3,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'\.{3,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleEllipsis(self, value):
     if len(value) == 3:
       return self.__MacroToken('text.ellipsis')
     else:
-      return Token(TOKEN_TEXT, self.__lineno, value)
+      return Token(TokenType.TEXT, self.__lineno, value)
 
-  @rule(r'«|\<{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'«|\<{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleGuillemetOpen(self, value):
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.open')
     else:
-      return Token(TOKEN_TEXT, self.__lineno, value)
+      return Token(TokenType.TEXT, self.__lineno, value)
 
-  @rule(r'»|\>{2,}', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'»|\>{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleGuillemetClose(self, value):
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.close')
     else:
-      return Token(TOKEN_TEXT, self.__lineno, value)
+      return Token(TokenType.TEXT, self.__lineno, value)
 
-  @rule(r"`{1,2}", rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r"`{1,2}", rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleBacktick(self, value):
     if len(value) == 1:
       return self.__MacroToken('text.backtick')
     else:
       return self.__MacroToken('text.quote.open')
 
-  @rule(r"'{1,2}", rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r"'{1,2}", rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleApostrophe(self, value):
     if len(value) == 1:
       return self.__MacroToken('text.apostrophe')
     else:
       return self.__MacroToken('text.quote.close')
 
-  @rule(r'[!:;?]+', rule_type=_RULE_TYPE_SPECIAL_CHAR_OTHER)
+  @rule(r'[!:;?]+', rule_type=RuleType.SPECIAL_CHAR_OTHER)
   def RuleDoublePunctuation(self, value):
     return (
         self.__MacroToken('text.punctuation.double'),
         self.RuleLbracket('['),
-        Token(TOKEN_TEXT, self.__lineno, value),
+        Token(TokenType.TEXT, self.__lineno, value),
         self.RuleRbracket(']'))
 
   # Helpers
 
   def __MacroToken(self, macro_name):
     self.__skip_spaces = False
-    return Token(TOKEN_MACRO, self.__lineno, macro_name)
+    return Token(TokenType.MACRO, self.__lineno, macro_name)
 
 
 class Parser:
@@ -558,7 +560,7 @@ class Parser:
       Parses the tokens into a list of nodes.
 
       If the call_nest_count == 0, reads all available input nodes.
-      Else, reads input nodes up to (exclusive) the TOKEN_RBRACKET that
+      Else, reads input nodes up to (exclusive) the TokenType.RBRACKET that
       completes the argument.
 
       Args:
@@ -575,12 +577,12 @@ class Parser:
 
         token_type = token.type
 
-        if token_type == TOKEN_TEXT:
+        if token_type == TokenType.TEXT:
           # Text
           next(tokens)
           nodes.append(TextNode(MakeLocation(token.lineno), token.value))
 
-        elif token_type == TOKEN_MACRO:
+        elif token_type == TokenType.MACRO:
           # Macro call
           next(tokens)
           macro_name = token.value
@@ -591,7 +593,7 @@ class Parser:
           while True:
             # If '[', expect a new argument; else end the macro call.
             token = tokens.peek()
-            if token is None or token.type != TOKEN_LBRACKET:
+            if token is None or token.type != TokenType.LBRACKET:
               break
             next(tokens)
             arg_lineno = token.lineno
@@ -604,11 +606,11 @@ class Parser:
             if token is None:
               raise MakeLocationError(
                   arg_lineno, "syntax error: macro argument should be closed")
-            assert token.type == TOKEN_RBRACKET
+            assert token.type == TokenType.RBRACKET
 
           nodes.append(CallNode(macro_location, macro_name, args))
 
-        elif token_type == TOKEN_RBRACKET:
+        elif token_type == TokenType.RBRACKET:
           # ']': do not consume the token, leave it to the parent macro call.
           if call_nest_count == 0:
             raise MakeLocationError(
