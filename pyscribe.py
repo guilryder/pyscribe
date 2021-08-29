@@ -17,7 +17,7 @@ class Main:
                ArgumentParser=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__fs = fs
-    self.__main_file = main_file
+    self.__main_file = fs.Path(main_file)
     self.__ArgumentParser = ArgumentParser
 
   def Run(self):
@@ -72,12 +72,11 @@ class Main:
                         help='format to render into; sets $format; '
                              'default: %(default)s')
     parser.add_argument('-o', '--output', metavar='DIR',
-                        dest='output_dir',
-                        default=self.__current_dir,
+                        dest='output_dir', type=fs.Path,
+                        default=str(self.__current_dir),
                         help='output directory')
-    parser.add_argument('-p', '--output-basename-prefix', type=ValidateBasename,
-                        metavar='BASENAME',
-                        dest='output_basename_prefix',
+    parser.add_argument('-p', '--output-basename-prefix', metavar='BASENAME',
+                        dest='output_basename_prefix', type=ValidateBasename,
                         default='',
                         help='basename prefix of the output files; defaults to '
                              'the input file basename without extension')
@@ -86,12 +85,11 @@ class Main:
                         action='store_const', const=None,
                         default=fs.stdout,
                         help='do not print informational messages')
-    parser.add_argument('--lib-dir',
-                        metavar='DIR',
-                        dest='lib_dir',
+    parser.add_argument('--lib-dir', metavar='DIR',
+                        dest='lib_dir', type=fs.Path,
                         default=fs.MakeAbsolute(
                             self.__current_dir,
-                            fs.join(fs.dirname(self.__main_file), 'lib')),
+                            self.__main_file.parent / 'lib'),
                         help='library directory, sets $dir.lib; '
                              'default: %(default)s')
     parser.add_argument('input_filename', metavar='filename',
@@ -131,7 +129,7 @@ class Main:
               output_dir=args.output_dir,
               input_path=input_path,
               output_basename_prefix=args.output_basename_prefix))
-    output_dir = constants['dir.output']
+    output_dir = fs.Path(constants['dir.output'])
     output_path_prefix = (
         fs.MakeAbsolute(output_dir,
                         constants['file.output.basename.prefix']))
@@ -161,10 +159,10 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
   Returns the standard constant definitions for files and directories.
 
   Args:
-    current_dir: (string) The current directory, used to resolve relative paths.
-    lib_dir: (string) The path to the directory that contains core.psc.
-    output_dir: (string) The path to the output directory.
-    input_path: (string) The absolute path to the top-level file being executed.
+    current_dir: (fs.Path) The current directory used to resolve relative paths.
+    lib_dir: (fs.Path) The path to the directory that contains core.psc.
+    output_dir: (fs.Path) The path to the output directory.
+    input_path: (fs.Path) The absolute path to the executed top-level file.
     output_basename_prefix: (string) The basename prefix of all output files.
       Defaults to the basename of input_filename without extension if empty.
 
@@ -172,9 +170,9 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
     (name string, value string) dict
   """
   output_dir = fs.MakeAbsolute(current_dir, output_dir)
-  input_dir = fs.dirname(input_path)
-  input_basename = fs.basename(input_path)
-  input_basename_noext = fs.splitext(input_basename)[0]
+  input_dir = input_path.parent
+  input_basename = input_path.name
+  input_basename_noext = input_path.stem
   output_basename_prefix = output_basename_prefix or input_basename_noext
 
   constants = {
@@ -187,7 +185,7 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
       'file.output.basename.prefix': output_basename_prefix,
   }
 
-  return {name: fs.MakeUnix(value) for name, value in constants.items()}
+  return {name: fs.Path(value).as_posix() for name, value in constants.items()}
 
 
 if __name__ == '__main__':

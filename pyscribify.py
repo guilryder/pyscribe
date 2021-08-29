@@ -6,6 +6,7 @@ __author__ = 'Guillaume Ryder'
 
 import argparse
 import os
+from pathlib import Path
 import platform
 import shlex
 import shutil
@@ -28,13 +29,13 @@ class Main:
     self.__stdout = stdout
     self.__ArgumentParser = ArgumentParser
     self.__all_success = True
-    self.__pyscribe_dir = os.path.dirname(sys.argv[0])
+    self.__pyscribe_dir = Path(sys.argv[0]).parent
 
   def Run(self):
     self.__ParseArguments()
 
-    for psc_filename in self.__args.psc_filenames:
-      self.__ProcessSourceFile(psc_filename)
+    for psc_path in self.__args.psc_paths:
+      self.__ProcessSourceFile(psc_path)
 
     sys.exit(0 if self.__all_success else 1)
 
@@ -50,11 +51,11 @@ class Main:
     parser = self.__ArgumentParser()
 
     parser.add_argument('-o', '--output', metavar='DIR', dest='output_dir',
-                        default='output',
+                        type=Path, default='output',
                         help='output directory, absolute or relative to each'
                              ' source file')
 
-    parser.add_argument('psc_filenames', metavar='PSC-FILE', nargs='+',
+    parser.add_argument('psc_paths', metavar='PSC-FILE', nargs='+', type=Path,
                         help='source PyScribe files, *.psc extension optional')
 
     parser.add_argument('-f', '--formats', dest='formats', nargs='+',
@@ -107,18 +108,18 @@ class Main:
 
     # Compiler options.
     group = parser.add_argument_group('Compiler options')
-    group.add_argument('--lib-dir', metavar='DIR',
-                       default=os.path.join(self.__pyscribe_dir, 'lib'),
+    group.add_argument('--lib-dir', metavar='DIR', type=Path,
+                       default=self.__pyscribe_dir / 'lib',
                        help='PyScribe library directory; default: %(default)s')
 
-    group.add_argument('--pyscribe-bin', metavar='PATH',
-                       default=os.path.join(self.__pyscribe_dir, 'pyscribe.py'),
+    group.add_argument('--pyscribe-bin', metavar='PATH', type=Path,
+                       default=self.__pyscribe_dir / 'pyscribe.py',
                        help='PyScribe path; default: %(default)s')
     group.add_argument('--pyscribe-options', metavar='OPTIONS',
                        default='',
                        help='extra command-line options for PyScribe')
 
-    group.add_argument('--calibre-bin', metavar='PATH',
+    group.add_argument('--calibre-bin', metavar='PATH', type=Path,
                        default=_TryFindExecutable(
                           'ebook-convert',
                           r'C:\Program Files\Calibre\ebook-convert.exe'
@@ -139,14 +140,14 @@ class Main:
                        help='Mobi-specific command-line options for Calibre'
                             '; default: %(default)s')
 
-    group.add_argument('--texify-bin', metavar='PATH',
+    group.add_argument('--texify-bin', metavar='PATH', type=Path,
                        default=_TryFindExecutable('texify'),
                        help='texify path; default: %(default)s')
     group.add_argument('--texify-options', metavar='OPTIONS',
                        default='--batch --pdf --clean --quiet',
                        help='texify command-line options; default: %(default)s')
 
-    group.add_argument('--latexmk-bin', metavar='PATH',
+    group.add_argument('--latexmk-bin', metavar='PATH', type=Path,
                        default=_TryFindExecutable('latexmk'),
                        help='latexmk path; default: %(default)s')
     group.add_argument('--latexmk-options', metavar='OPTIONS',
@@ -180,20 +181,19 @@ class Main:
     # Make paths absolute.
     args.lib_dir = os.path.abspath(args.lib_dir)
 
-  def __ProcessSourceFile(self, psc_filename):
+  def __ProcessSourceFile(self, psc_path):
     args = self.__args
 
     # Append the default *.psc extension if necessary.
-    if (not os.path.splitext(psc_filename)[1]
-        and not os.path.lexists(psc_filename)):
-      psc_filename += '.psc'
-    basename_noext = os.path.splitext(os.path.basename(psc_filename))[0]
+    if not psc_path.suffix and not os.path.lexists(psc_path):
+      psc_path = psc_path.with_suffix('.psc')
+    basename_noext = psc_path.stem
 
     # Compute the paths of output files.
-    output_dir = os.path.join(os.path.dirname(psc_filename), args.output_dir)
-    output_path_noext = os.path.join(output_dir, basename_noext)
+    output_dir = psc_path.parent / args.output_dir
+    output_path_noext = str(output_dir / basename_noext)
 
-    print(f'\nProcessing PyScribe file: {psc_filename}', file=self.__stdout)
+    print(f'\nProcessing PyScribe file: {psc_path}', file=self.__stdout)
 
     # HTML.
     if 'html' in args.formats:
@@ -201,7 +201,7 @@ class Main:
       psc_to_html_success = True
       if args.psc_to_html:
         psc_to_html_success &= self.__CallPyscribe(
-            psc_filename=psc_filename, output_dir=output_dir,
+            psc_path=psc_path, output_dir=output_dir,
             psc_format='html')
 
       # HTML to ePub.
@@ -222,7 +222,7 @@ class Main:
       psc_to_latex_success = True
       if args.psc_to_latex:
         psc_to_latex_success &= self.__CallPyscribe(
-            psc_filename=psc_filename, output_dir=output_dir,
+            psc_path=psc_path, output_dir=output_dir,
             psc_format='latex')
 
       # Latex to PDF.
@@ -247,14 +247,14 @@ class Main:
                              *shlex.split(args.latexmk_clean_options),
                              cwd=output_dir)
 
-  def __CallPyscribe(self, *, psc_filename, output_dir, psc_format):
+  def __CallPyscribe(self, *, psc_path, output_dir, psc_format):
     args = self.__args
     return self.__CallProgram(
         sys.executable, args.pyscribe_bin,
-        psc_filename,
-        '--lib-dir=' + args.lib_dir,
-        '--format=' + psc_format,
-        '--output=' + output_dir,
+        psc_path,
+        f'--lib-dir={args.lib_dir}',
+        f'--format={psc_format}',
+        f'--output={output_dir}',
         *shlex.split(args.pyscribe_options))
 
   def __CallCalibre(self, *, input_path, output_path, extra_options):
@@ -274,7 +274,7 @@ class Main:
     """
     print('{prefix}Executing: {cmdline}'.format(
             prefix='(dry run) ' if self.__args.dry_run else '',
-            cmdline=' '.join(map(shlex.quote, args))),
+            cmdline=' '.join(shlex.quote(str(arg)) for arg in args)),
           flush=True, file=self.__stdout)
 
     if self.__args.dry_run:

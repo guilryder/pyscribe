@@ -16,14 +16,14 @@ import pyscribify
 from testutils import FakeArgumentParser, TESTDATA_DIR
 
 
-OUTPUT_DIR = os.path.join(TESTDATA_DIR, 'output')
+OUTPUT_DIR = TESTDATA_DIR / 'output'
 
 
 class PyscribifyTestCase(unittest.TestCase):
 
   def setUp(self):
     self.__orig_cwd = os.getcwd()
-    os.chdir(os.path.join(TESTDATA_DIR))
+    os.chdir(TESTDATA_DIR)
 
   def tearDown(self):
     os.chdir(self.__orig_cwd)
@@ -33,7 +33,7 @@ class EndToEndTest(PyscribifyTestCase):
 
   @classmethod
   def setUpClass(cls):
-    if os.path.isdir(OUTPUT_DIR):
+    if OUTPUT_DIR.is_dir():
       shutil.rmtree(OUTPUT_DIR)
 
   def testHello(self):
@@ -50,7 +50,7 @@ class EndToEndTest(PyscribifyTestCase):
       output_files_opened = []
       def OpenOutputFile(filename, mode):
         output_files_opened.append(filename)
-        return open(os.path.join(OUTPUT_DIR, filename), mode,
+        return open(OUTPUT_DIR / filename, mode,
                     encoding='utf8' if 't' in mode else None)
 
       # Compare Hello.tex with the golden.
@@ -275,27 +275,27 @@ class DryRunTest(PyscribifyTestCase):
         '--latexmk-clean-options=--latexmk-clean-opt -g',
     ]
     commands_common = self.__HELLO_HEADER + [
-        r"^.+ /foo/pyscribe/bin Hello\.psc"
+        r"^.+ .foo/pyscribe/bin Hello\.psc"
           r" --lib-dir=.+/testdata/foo/lib/dir --format=html"
           r" --output=output --pyscribe-opt -a",
-        r"^/foo/calibre/bin output/Hello.html output/Hello.epub"
+        r"^.foo/calibre/bin output/Hello.html output/Hello.epub"
           r" --calibre-opt -b --epub-opt -c",
-        r"^/foo/calibre/bin output/Hello.html output/Hello.mobi"
+        r"^.foo/calibre/bin output/Hello.html output/Hello.mobi"
           r" --calibre-opt -b --mobi-opt -d",
-        r"^.+ /foo/pyscribe/bin Hello\.psc"
+        r"^.+ .foo/pyscribe/bin Hello\.psc"
           r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
           r" --output=output --pyscribe-opt -a",
     ]
     self.__assertLines(
         self.__Pyscribify(options, pdftool='texify'),
         commands_common + [
-            r"^/foo/texify/bin -I .+/foo/lib/dir Hello\.tex --texify-opt -e",
+            r"^.foo/texify/bin -I .+/foo/lib/dir Hello\.tex --texify-opt -e",
         ])
     self.__assertLines(
         self.__Pyscribify(options, pdftool='latexmk'),
         commands_common + [
-            r"^/foo/latexmk/bin Hello\.tex --latexmk-opt -f",
-            r"^/foo/latexmk/bin Hello\.tex --latexmk-clean-opt -g",
+            r"^.foo/latexmk/bin Hello\.tex --latexmk-opt -f",
+            r"^.foo/latexmk/bin Hello\.tex --latexmk-clean-opt -g",
         ])
 
 

@@ -31,7 +31,7 @@ class EndToEndTestCase(TestCase):
     main = pyscribe.Main(
         input_args=args,
         fs=self.fs,
-        main_file=FAKE_PYSCRIBE_DIR + 'pyscribe.py',
+        main_file=FAKE_PYSCRIBE_DIR / 'pyscribe.py',
         ArgumentParser=lambda: FakeArgumentParser(self.fs.stderr))
     if expect_failure:
       with self.assertRaises(SystemExit):
@@ -93,7 +93,7 @@ class MainTest(EndToEndTestCase):
 
   def testCustomOutput_relative(self):
     self.Execute('input.psc --output ignored/../custom')
-    self.assertEqual(self.fs.created_dirs, set(['/cur/custom']))
+    self.assertEqual(self.fs.created_dirs, {self.fs.Path('/cur/custom')})
     self.assertEqual(self.GetStdFile('out'),
                      'Writing: /cur/custom/input.out')
     self.assertEqual(self.GetStdFile('err'), '')
@@ -102,7 +102,7 @@ class MainTest(EndToEndTestCase):
 
   def testCustomOutput_absolute(self):
     self.Execute('input.psc --output /custom')
-    self.assertEqual(self.fs.created_dirs, set(['/custom']))
+    self.assertEqual(self.fs.created_dirs, {self.fs.Path('/custom')})
     self.assertEqual(self.GetStdFile('out'),
                      'Writing: /custom/input.out')
     self.assertEqual(self.GetStdFile('err'), '')
@@ -243,12 +243,12 @@ GOLDEN_TEST_DEFINITIONS = collections.OrderedDict((
 class GoldenTest(EndToEndTestCase):
 
   def __Run(self, cmdline, output_basename):
-    output_path = '/pyscribe/testdata/' + output_basename
-    self.fs.cwd = '/pyscribe/testdata'
+    self.fs.cwd = self.fs.Path('/pyscribe/testdata')
+    output_path = self.fs.cwd / output_basename
     self.Execute(cmdline)
     with self.OpenSourceFile(output_path) as expected_file:
       self.maxDiff = None
-      self.assertOutput(output_path, expected_file.read())
+      self.assertOutput(str(output_path), expected_file.read())
 
   @classmethod
   def AddTestMethod(cls, cmdline, output_basename):
@@ -262,12 +262,13 @@ for definition in GOLDEN_TEST_DEFINITIONS.items():
 class ComputePathConstantsTest(TestCase):
 
   def testAbsoluteInputPaths(self):
+    fs = self.GetFileSystem({})
     self.assertEqual(pyscribe._ComputePathConstants(
-                        fs=self.GetFileSystem({}),
-                        current_dir='/root/current/ignored',
-                        lib_dir='/pyscribe/lib',
-                        output_dir='/root/output',
-                        input_path='/root/input/sub/file.abc.psc',
+                        fs=fs,
+                        current_dir=fs.Path('/root/current/ignored'),
+                        lib_dir=fs.Path('/pyscribe/lib'),
+                        output_dir=fs.Path('/root/output'),
+                        input_path=fs.Path('/root/input/sub/file.abc.psc'),
                         output_basename_prefix='outbn'),
                      {
                         'dir.lib': '/pyscribe/lib',
@@ -280,12 +281,13 @@ class ComputePathConstantsTest(TestCase):
                      })
 
   def testRelativeInputPaths(self):
+    fs = self.GetFileSystem({})
     self.assertEqual(pyscribe._ComputePathConstants(
-                        fs=self.GetFileSystem({}),
-                        current_dir='/root/current',
-                        lib_dir='..',
-                        output_dir='output',
-                        input_path='/root/current/file.abc.psc',
+                        fs=fs,
+                        current_dir=fs.Path('/root/current'),
+                        lib_dir=fs.Path('..'),
+                        output_dir=fs.Path('output'),
+                        input_path=fs.Path('/root/current/file.abc.psc'),
                         output_basename_prefix=''),
                      {
                         'dir.lib': '..',

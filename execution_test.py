@@ -21,70 +21,71 @@ class ExecutorTest(TestCase):
     fs = self.GetFileSystem({
         '/exists-no-ext': '',
     })
+    self.fs = fs
     self.logger = FakeLogger()
     self.executor = Executor(logger=self.logger, fs=fs,
-                             current_dir='/cur',
-                             output_path_prefix='/output')
+                             current_dir=fs.Path('/cur'),
+                             output_path_prefix=fs.Path('/output'))
 
   def testResolveFilePath_resolvesDots(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/root/ignored/../dir/./file', '/cur'),
-        '/root/dir/file')
+        self.fs.Path('/root/dir/file'))
 
   def testResolveFilePath_absolute_ignoresCurDir(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/dir/file', '/ignored'),
-        '/dir/file')
+        self.fs.Path('/dir/file'))
 
   def testResolveFilePath_relative_insertsCurDir(self):
     self.assertEqual(
         self.executor.ResolveFilePath('../sibling/file', '/cur/dir'),
-        '/cur/sibling/file')
+        self.fs.Path('/cur/sibling/file'))
 
   def testResolveFilePath_relativeCurDir(self):
     self.assertEqual(
         self.executor.ResolveFilePath('../sibling/file', 'dir/sub'),
-        '/cur/dir/sibling/file')
+        self.fs.Path('/cur/dir/sibling/file'))
 
   def testResolveFilePath_noDefaultExt(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/file', '/cur', default_ext=None),
-        '/file')
+        self.fs.Path('/file'))
 
   def testResolveFilePath_defaultExt_ignoresDir(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/dir.foo/file', '/cur',
                                       default_ext='.ext'),
-        '/dir.foo/file.ext')
+        self.fs.Path('/dir.foo/file.ext'))
 
   def testResolveFilePath_defaultExt_hiddenFile(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/dir/.file', '/cur',
                                       default_ext='.ext'),
-        '/dir/.file.ext')
+        self.fs.Path('/dir/.file.ext'))
 
   def testResolveFilePath_defaultExt_extPresent_fileNotExists(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/dir/missing.ext', '/cur',
                                       default_ext='.ignored'),
-        '/dir/missing.ext')
+        self.fs.Path('/dir/missing.ext'))
 
   def testResolveFilePath_defaultExt_extMissing_fileNotExists(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/missing', '/cur', default_ext='.ext'),
-        '/missing.ext')
+        self.fs.Path('/missing.ext'))
 
   def testResolveFilePath_defaultExt_extMissing_fileWithoutExtExists(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/exists-no-ext', '/cur',
                                       default_ext='.ext'),
-        '/exists-no-ext')
+        self.fs.Path('/exists-no-ext'))
 
   def testResolveFilePath_defaultExt_trailingDot(self):
     self.assertEqual(
         self.executor.ResolveFilePath('/file.', '/cur',
-                                      default_ext='.ignored'),
-        '/file.')
+                                      default_ext='.ext'),
+        self.fs.Path('/file..ext'))
 
   def testSystemBranch(self):
     self.assertEqual(self.executor.branches.get('system'),

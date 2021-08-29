@@ -4,6 +4,7 @@ __author__ = 'Guillaume Ryder'
 
 import io
 import os
+import pathlib
 import sys
 
 from branches import TextBranch
@@ -104,38 +105,29 @@ class ExecutionContext:
 
 class AbstractFileSystem:  # pylint: disable=no-member
 
-  @staticmethod
-  def MakeUnix(path):
-    """Converts an OS path to Unix format: '/' as separator."""
-    return path.replace(os.sep, '/')
-
   @classmethod
   def MakeAbsolute(cls, cur_dir, path):
     """
     Makes a path absolute and normalized.
 
     Args:
-      cur_dir: (string) The path to the current directory, used if the path is
+      cur_dir: (cls.Path) The path to the current directory, used if the path is
         relative.
-      path: (string) The path to make absolute.
+      path: (cls.Path) The path to make absolute.
     """
-    return cls.normpath(cls.join(cur_dir, path))
+    return cls.Path(os.path.normpath(cur_dir / path))
 
 
 class FileSystem(AbstractFileSystem):
   stdout = sys.stdout
   stderr = sys.stderr
+  Path = pathlib.PurePath
   basename = staticmethod(os.path.basename)
-  dirname = staticmethod(os.path.dirname)
-  getcwd = staticmethod(os.getcwd)
-  isabs = staticmethod(os.path.isabs)
-  join = staticmethod(os.path.join)
+  getcwd = staticmethod(pathlib.Path.cwd)
   lexists = staticmethod(os.path.lexists)
   makedirs = staticmethod(os.makedirs)
-  normpath = staticmethod(os.path.normpath)
   open = staticmethod(io.open)
   relpath = staticmethod(os.path.relpath)
-  splitext = staticmethod(os.path.splitext)
 
 
 class Executor:
@@ -149,9 +141,10 @@ class Executor:
   Fields:
     logger: (Logger) The logger used to print all error messages.
     fs: (FileSystem) The file system abstraction.
-    __current_dir: (string) The absolute path of the current directory.
-    __output_path_prefix: (string) The absolute path prefix of all output files.
-    opened_paths: (string set) The absolute paths of the readers and writers
+    __current_dir: (fs.Path) The absolute path of the current directory.
+    __output_path_prefix: (fs.Path) The absolute path prefix of all output
+      files; treated as a string prefix, not necessarily a directory.
+    opened_paths: (fs.Path set) The absolute paths of the readers and writers
       opened so far.
     system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (Branch list) All root branches, including the system branch.
@@ -168,8 +161,8 @@ class Executor:
 
   def __init__(self, *, logger, fs=FileSystem(),
                current_dir, output_path_prefix):
-    assert fs.isabs(current_dir)
-    assert fs.isabs(output_path_prefix)
+    assert current_dir.is_absolute()
+    assert output_path_prefix.is_absolute(), str(output_path_prefix)
     self.logger = logger
     self.fs = fs
     self.__current_dir = current_dir
@@ -220,10 +213,9 @@ class Executor:
                         "must be empty or start with a period",
                         suffix=filename_suffix)
       if filename_suffix != fs.basename(filename_suffix):
-        raise NodeError("invalid output file name suffix: '{suffix}'; "
-                        "must be a basename (no directory separator)",
-                        suffix=filename_suffix)
-    path = self.__output_path_prefix + filename_suffix
+        raise NodeError(f"invalid output file name suffix: '{filename_suffix}';"
+                         " must be a basename (no directory separator)")
+    path = fs.Path(str(self.__output_path_prefix) + filename_suffix)
     if path in self.opened_paths:
       raise NodeError("output file already opened: {filename}", filename=path)
     self.logger.LogInfo(f'Writing: {path}')
@@ -242,17 +234,17 @@ class Executor:
     Normalizes a user-entered, possibly relative file path.
 
     Args:
-        path: (string) The path to resolve.
-        directory: (string) The path of the directory to resolve path
+        path: (fs.Path) The path to resolve.
+        directory: (string|fs.Path) The path of the directory to resolve path
           against if it is relative. Can be relative to current_dir.
         default_ext: (string|None) The extension to append to the path if it has
           none and it refers to a non-existing file.
-    Returns: (string)
+    Returns: (Path)
       The resolved path, always absolute.
     """
     return self.ResolveFilePathStatic(
         path,
-        abs_directory=self.fs.join(self.__current_dir, directory),
+        abs_directory=self.__current_dir / directory,
         default_ext=default_ext,
         fs=self.fs)
 
@@ -262,19 +254,18 @@ class Executor:
     Normalizes a user-entered, possibly relative file path.
 
     Args:
-        path: (string) The path to resolve.
-        abs_directory: (string|None) The absolute path of the directory to
+        path: (fs.Path) The path to resolve.
+        abs_directory: (fs.Path|None) The absolute path of the directory to
           resolve path against if it is relative.
         default_ext: (string|None) The extension to append to the path if it has
           none and it refers to a non-existing file.
-    Returns: (string)
+    Returns: (fs.Path)
       The resolved path, always absolute.
     """
-    assert fs.isabs(abs_directory)
+    assert abs_directory.is_absolute()
     path = fs.MakeAbsolute(abs_directory, path)
-    if (default_ext is not None
-        and not fs.splitext(path)[1] and not fs.lexists(path)):
-      path += default_ext
+    if default_ext is not None and not path.suffix and not fs.lexists(path):
+      path = path.with_suffix(default_ext)
     return path
 
   def ExecuteFile(self, path):
@@ -282,16 +273,16 @@ class Executor:
     Executes the given PyScribe file.
 
     Args:
-      path: (string) The absolute path of the file to execute.
+      path: (Path) The absolute path of the file to execute.
 
     Throws:
       FatalError on file execution error
       NodeError if too many nested includes
       OSError if unable to open the file
     """
-    assert self.fs.isabs(path)
+    assert path.is_absolute()
     self.opened_paths.add(path)
-    filename = Filename(path, self.fs.dirname(path))
+    filename = Filename(path, path.parent)
     with self.fs.open(path, encoding=ENCODING) as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
         raise NodeError('too many nested includes')

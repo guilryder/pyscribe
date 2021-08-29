@@ -10,6 +10,7 @@ import argparse
 import coverage
 import glob
 import os
+from pathlib import Path
 import shutil
 import shlex
 import subprocess
@@ -20,10 +21,10 @@ import webbrowser
 class TestsManager:
 
   # The directory to write coverage files into.
-  COVERAGE_DIR = 'cov'
+  COVERAGE_DIR = Path('cov')
 
   # The coverage report index file (HTML).
-  COVERAGE_INDEX = os.path.join(COVERAGE_DIR, 'index.html')
+  COVERAGE_INDEX = COVERAGE_DIR / 'index.html'
 
   # The directories that --clean should delete.
   DIRS_TO_CLEAN = (
@@ -85,7 +86,7 @@ class TestsManager:
     cov.stop()
 
     # Generate HTML reports.
-    cov.html_report(directory=self.COVERAGE_DIR)
+    cov.html_report(directory=str(self.COVERAGE_DIR))
 
     # Print a coverage summary to the standard output.
     cov.report()
@@ -118,7 +119,7 @@ class TestsManager:
 
 
 if __name__ == '__main__':
-  os.chdir(os.path.dirname(sys.argv[0]) or '.')
+  os.chdir(Path(sys.argv[0]).parent)
   tests_manager = TestsManager(included_files=glob.glob('*.py'),
                                excluded_files=['tests.py'])
   tests_manager.Main()

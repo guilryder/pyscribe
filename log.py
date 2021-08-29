@@ -69,7 +69,7 @@ class Filename:
   Name and path of a file.
 
   Fields:
-    display_path: (string) The name of the file as it should be displayed in
+    display_path: (Path) The name of the file as it should be displayed in
       error messages. Does not have to be valid or absolute. Typically set to an
       arbitrary human-readable string for stdin/stdout files.
     dir_path: (string) The path of the directory of the file.
@@ -78,7 +78,7 @@ class Filename:
   """
 
   def __init__(self, display_path, dir_path):
-    self.display_path = display_path
+    self.display_path = str(display_path)
     self.dir_path = dir_path
 
   def __str__(self):

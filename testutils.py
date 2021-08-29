@@ -9,6 +9,7 @@ import collections
 import errno
 import io
 import os
+import pathlib
 import sys
 import unittest
 
@@ -147,10 +148,6 @@ OTHER_TEXT_MACROS_AS_TEXT = "& $ # ^ A\xa0B C\xadD"
 OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # ^ A\xa0B C\xadD"
 OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\-D'
 
-FAKE_PYSCRIBE_DIR = '/pyscribe/'
-REAL_PYSCRIBE_DIR = os.path.join(os.path.dirname(__file__), '')
-TESTDATA_DIR = os.path.join(REAL_PYSCRIBE_DIR, 'testdata')
-
 
 class FakeLogger(Logger):
 
@@ -189,7 +186,7 @@ class FakeFileSystem(execution.AbstractFileSystem):
     super().__init__()
     self.stdout = None
     self.stderr = None
-    self.cwd = '/cur'
+    self.cwd = self.Path('/cur')
     self.created_dirs = None
 
   def InitializeForWrites(self):
@@ -197,20 +194,12 @@ class FakeFileSystem(execution.AbstractFileSystem):
     self.stderr = io.StringIO()
     self.created_dirs = set()
 
-  basename = staticmethod(os.path.basename)
+  Path = pathlib.PurePosixPath
 
-  @classmethod
-  def dirname(cls, path):
-    return cls.MakeUnix(os.path.dirname(path))
+  basename = staticmethod(os.path.basename)
 
   def getcwd(self):
     return self.cwd
-
-  isabs = staticmethod(os.path.isabs)
-
-  @classmethod
-  def join(cls, path1, *paths):
-    return cls.MakeUnix(os.path.join(path1, *paths))
 
   def lexists(self, path):
     raise NotImplementedError()  # pragma: no cover
@@ -220,18 +209,25 @@ class FakeFileSystem(execution.AbstractFileSystem):
       raise NotImplementedError()  # pragma: no cover
     self.created_dirs.add(path)
 
-  @classmethod
-  def normpath(cls, path):
-    return cls.MakeUnix(os.path.normpath(path))
-
   def open(self, *args, **kwargs):
     raise NotImplementedError()  # pragma: no cover
 
   @classmethod
   def relpath(cls, path, start):
-    return cls.MakeUnix(os.path.relpath(path, start))
+    return cls._ToPosix(os.path.relpath(path, start))
 
-  splitext = staticmethod(os.path.splitext)
+  @classmethod
+  def MakeAbsolute(cls, cur_dir, path):
+    return cls.Path(str(super().MakeAbsolute(cur_dir, path)))
+
+  @staticmethod
+  def _ToPosix(path):
+    return pathlib.Path(path).as_posix()
+
+
+FAKE_PYSCRIBE_DIR = FakeFileSystem.Path('/pyscribe/')
+REAL_PYSCRIBE_DIR = pathlib.Path(__file__).parent
+TESTDATA_DIR = REAL_PYSCRIBE_DIR / 'testdata'
 
 
 class TestCase(unittest.TestCase):
@@ -275,10 +271,8 @@ class TestCase(unittest.TestCase):
 
   def OpenSourceFile(self, path, **kwargs):
     kwargs.setdefault('encoding', 'utf-8')
-    assert path.startswith(FAKE_PYSCRIBE_DIR), (
-        f'Source path must start with {FAKE_PYSCRIBE_DIR}: {path}')
-    real_suffix = path[len(FAKE_PYSCRIBE_DIR):]
-    real_path = os.path.normpath(os.path.join(REAL_PYSCRIBE_DIR, real_suffix))
+    real_suffix = path.relative_to(FAKE_PYSCRIBE_DIR)
+    real_path = os.path.normpath(REAL_PYSCRIBE_DIR / real_suffix)
     return open(real_path, **kwargs)  # pylint: disable=unspecified-encoding
 
   def GetFileSystem(self, inputs):
@@ -289,25 +283,25 @@ class TestCase(unittest.TestCase):
         fs.__output_writers = {}
 
       def lexists(fs, path):
-        return path in inputs
+        return str(path) in inputs
 
       def open(fs, filename, mode='rt', **kwargs):  # pylint: disable=inconsistent-return-statements
         # pylint: disable=arguments-differ
         assert kwargs.pop('encoding', None) == 'utf-8'
-        filename = fs.MakeAbsolute(fs.getcwd(), filename)
+        filename = str(fs.MakeAbsolute(fs.getcwd(), filename))
         if mode == 'rt':
           # Open an input file.
           if filename in inputs:
             return self.FakeInputFile(inputs[filename], **kwargs)
-          elif filename.startswith(FAKE_PYSCRIBE_DIR):
-            return self.OpenSourceFile(filename, mode=mode, **kwargs)
+          elif filename.startswith(str(FAKE_PYSCRIBE_DIR)):
+            return self.OpenSourceFile(fs.Path(filename), mode=mode, **kwargs)
           else:
             raise FileNotFoundError(errno.ENOENT, 'File not found', filename)
         elif mode == 'wt':
           # Open an output file.
           assert filename not in fs.__output_writers, (
               'Output file already open: ' + filename)
-          if 'not_writeable' in filename:
+          if 'not_writeable' in str(filename):
             raise PermissionError(errno.EACCES, 'File not writeable', filename)
           writer = self.FakeOutputFile(**kwargs)
           fs.__output_writers[filename] = writer
@@ -410,8 +404,8 @@ class ExecutionTestCase(TestCase):
 
     logger = FakeLogger()
     executor = execution.Executor(logger=logger, fs=fs,
-                                  current_dir='/cur',
-                                  output_path_prefix='/output')
+                                  current_dir=fs.Path('/cur'),
+                                  output_path_prefix=fs.Path('/output'))
     executor.system_branch.writer = fs.open(
         self.GetBranchFilename(executor.system_branch.name), 'wt',
         encoding='utf-8')
@@ -431,7 +425,7 @@ class ExecutionTestCase(TestCase):
 
     # Execute the input, render the output branches.
     try:
-      executor.ExecuteFile('/root')
+      executor.ExecuteFile(fs.Path('/root'))
       actual_fatal_error = False
     except FatalError as e:
       logger.LogException(e)
