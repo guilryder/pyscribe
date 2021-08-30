@@ -19,11 +19,8 @@ class FormatMessageTest(TestCase):
   def testEmptyMessage(self):
     self.assertEqual(FormatMessage(''), 'unknown error')
 
-  def testMessageOnly(self):
+  def testStringMessage(self):
     self.assertEqual(FormatMessage('message {blah}'), 'message {blah}')
-
-  def testMessageAndArgs(self):
-    self.assertEqual(FormatMessage('message {blah}', blah='arg'), 'message arg')
 
   def testException(self):
     self.assertEqual(FormatMessage(OSError(5, 'Fake', 'file')),
@@ -34,26 +31,21 @@ class Helpers:
   class ExceptionClassTestCase(TestCase):
 
     @abstractmethod
-    def exception(self, *unused_args, **unused_kwargs):
+    def exception(self, *unused_args):
       pass  # pragma: no cover
 
-    def testNoArgs(self):
+    def testNoneMessage(self):
       self.assertEqual(self.exception().message, 'unknown error')
 
     def testEmptyMessage(self):
       self.assertEqual(self.exception('').message, 'unknown error')
 
-    def testMessageOnly(self):
+    def testStringMessage(self):
       self.assertEqual(self.exception('message {blah}').message,
                        'message {blah}')
 
-    def testMessageAndArgs(self):
-      self.assertEqual(self.exception('message {blah}', blah='arg').message,
-                       'message arg')
-
     def testStr(self):
-      self.assertEqual(str(self.exception('message {blah}', blah='arg')),
-                       'message arg')
+      self.assertEqual(str(self.exception('message {blah}')), 'message {blah}')
 
 
 class FatalErrorTest(Helpers.ExceptionClassTestCase):
@@ -106,7 +98,7 @@ class LoggerTest(TestCase):
   @staticmethod
   def __LogMaximalLocationError(logger):
     e = logger.LocationError(
-        TEST_LOCATION, 'arg={arg}; {number}', arg='value', number=123,
+        TEST_LOCATION, 'message {ignored tag}',
         call_stack=(
             CallNode(loc('file1.txt', 1), 'one', []),
             CallNode(loc('file2.txt', 2), 'two', [])))
@@ -134,7 +126,7 @@ class LoggerTest(TestCase):
     logger = self.__CreateLogger(fmt='simple')
     self.__LogMaximalLocationError(logger)
     self.assertOutputs(err=[
-        'file.txt:42: arg=value; 123',
+        'file.txt:42: message {ignored tag}',
         '  file1.txt:1: $one',
         '  file2.txt:2: $two',
         'Set --error_format=python for details.',
@@ -151,7 +143,7 @@ class LoggerTest(TestCase):
     self.__LogMaximalLocationError(logger)
     self.assertOutputs(err=[
         '  File "file.txt", line 42',
-        '    arg=value; 123',
+        '    message {ignored tag}',
         '  File "file1.txt", line 1, in $one',
         '  File "file2.txt", line 2, in $two',
         'RuntimeError: fake error',

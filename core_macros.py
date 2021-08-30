@@ -102,8 +102,7 @@ def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
   except FatalError:
     raise
   except Exception as e:
-    raise NodeError('unable to include "{path}": {reason}',
-                    path=path, reason=e) from e
+    raise NodeError(f'unable to include "{path}": {e}') from e
 
 
 __SIGNATURE_REGEX = re.compile(
@@ -148,7 +147,7 @@ def ParseMacroSignature(signature):
   # Parse the macro name and arguments.
   signature_match = __SIGNATURE_REGEX.match(signature)
   if not signature_match:
-    raise NodeError('invalid signature: {signature}', signature=signature)
+    raise NodeError(f'invalid signature: {signature}')
   macro_name = signature_match.group(1)
   macro_arg_names_text = signature_match.group(2)
   if macro_arg_names_text is None:
@@ -161,8 +160,7 @@ def ParseMacroSignature(signature):
   if len(macro_arg_names_set) != len(macro_arg_names):
     for macro_arg_name in macro_arg_names:
       macro_arg_names.remove(macro_arg_name)
-    raise NodeError('duplicate argument in signature: {argument}',
-                    argument=macro_arg_names[0])
+    raise NodeError(f'duplicate argument in signature: {macro_arg_names[0]}')
   return (macro_name, macro_arg_names)
 
 def MacroNewCallback(macro_call_context, macro_arg_names, body):
@@ -223,7 +221,7 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
   """
   macro_name, macro_arg_names = ParseMacroSignature(signature)
   if VALID_MACRO_NAME_REGEXP.match(original) is None:
-    raise NodeError('invalid original macro name: ' + original)
+    raise NodeError(f'invalid original macro name: {original}')
   if original in macro_arg_names:
     raise NodeError('original macro name conflicts with signature: '
                     f'{original} vs. {signature}')
@@ -304,9 +302,7 @@ def _LookupNonBuiltinMacro(executor, macro_name, verb):
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
   if macro_callback is None:
-    raise NodeError('cannot {verb} a non-existing macro: {macro_name}',
-                    verb=verb, macro_name=macro_name)
+    raise NodeError(f'cannot {verb} a non-existing macro: {macro_name}')
   if macro_callback.builtin:
-    raise NodeError('cannot {verb} a built-in macro: {macro_name}',
-                    verb=verb, macro_name=macro_name)
+    raise NodeError(f'cannot {verb} a built-in macro: {macro_name}')
   return macro_callback

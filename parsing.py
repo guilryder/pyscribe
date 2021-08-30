@@ -413,13 +413,12 @@ class Lexer:
     preproc_instr_callback = (
         self.__preproc_instr_callbacks.get(preproc_instr_name))
     if preproc_instr_callback is None:
+      known = ', '.join(sorted(
+          f'$${name}' for name in self.__preproc_instr_callbacks))
       raise self.context.MakeLocationError(
           self.__Location(),
-          "unknown pre-processing instruction: '{name}'\n" +
-          "known instructions: {known}",
-          name='$$' + preproc_instr_name,
-          known=', '.join(sorted((
-              '$$' + name for name in self.__preproc_instr_callbacks))))
+          f"unknown pre-processing instruction: '$${preproc_instr_name}'\n"
+          f"known instructions: {known}")
     preproc_instr_callback()
     self.__UpdateLineno(value)
     self.__skip_spaces = True
@@ -444,8 +443,7 @@ class Lexer:
   @rule(r'\$(?:[^$]\S{,9}|\Z)')
   def RuleMacroInvalid(self, value):
     raise self.context.MakeLocationError(self.__Location(),
-                                         "invalid macro name: '{name}'",
-                                         name=value)
+                                         f"invalid macro name: '{value}'")
 
   # Special characters
 
@@ -620,7 +618,7 @@ class Parser:
         else:
           # Other: error
           raise MakeLocationError(
-              token.lineno, "syntax error: '{token.value}'", token=token)
+              token.lineno, f"syntax error: '{token.value}'")
       return nodes
 
     return ParseNodes(0)

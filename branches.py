@@ -91,14 +91,11 @@ class Branch(metaclass=ABCMeta):
     """
     if sub_branch.parent is not self:
       raise NodeError(
-          "expected a sub-branch created by branch '{self_branch.name}'; " +
-          "got one created by branch '{sub_branch.parent.name}'",
-          self_branch=self, sub_branch=sub_branch)
+          f"expected a sub-branch created by branch '{self.name}'; "
+          f"got one created by branch '{sub_branch.parent.name}'")
 
     if sub_branch.attached:
-      raise NodeError(
-          "the sub-branch '{sub_branch.name}' is already attached",
-          sub_branch=sub_branch)
+      raise NodeError(f"the sub-branch '{sub_branch.name}' is already attached")
 
     self._AppendSubBranch(sub_branch)
     sub_branch.attached = True

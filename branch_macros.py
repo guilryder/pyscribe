@@ -52,9 +52,9 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref,
   # Parse the branch type.
   branch_class = BRANCH_TYPES.get(branch_type)
   if branch_class is None:
+    known = ', '.join(sorted(BRANCH_TYPES))
     raise NodeError(
-        'unknown branch type: {branch_type}; expected one of: {known}',
-        branch_type=branch_type, known=', '.join(sorted(BRANCH_TYPES)))
+        f'unknown branch type: {branch_type}; expected one of: {known}')
 
   # Create the branch.
   __CreateBranch(
@@ -106,7 +106,7 @@ def __ParseBranchName(executor, branch_name):
   """
   branch = executor.branches.get(branch_name)
   if branch is None:
-    raise NodeError('branch not found: {branch_name}', branch_name=branch_name)
+    raise NodeError(f'branch not found: {branch_name}')
   return branch
 
 
@@ -128,8 +128,7 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
   branch = branch_factory()
   if not is_reference:
     if name_or_ref in executor.branches:
-      raise NodeError('a branch of this name already exists: {name}',
-                      name=name_or_ref)
+      raise NodeError(f'a branch of this name already exists: {name_or_ref}')
     branch.name = name_or_ref
 
   executor.RegisterBranch(branch)

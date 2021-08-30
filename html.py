@@ -430,8 +430,8 @@ class HtmlBranch(Branch):
       if not self.AutoParaTryClose():
         # Not a pragraph: tag mismatch error.
         raise NodeError(
-            'expected current tag to be <{expected_tag}>, got <{actual_tag}>',
-            expected_tag=tag, actual_tag=self.__current_elem.tag)
+            f'expected current tag to be <{tag}>, '
+            f'got <{self.__current_elem.tag}>')
 
   def __CloseCurrentElement(self, discard_if_empty):
     """
@@ -510,7 +510,7 @@ class HtmlBranch(Branch):
       # Deepest element with the given tag.
       tag = self.__TAG_TARGET_REGEXP.match(target)
       if tag is None:
-        raise NodeError('invalid target: {target}', target=target)
+        raise NodeError(f'invalid target: {target}')
       tag = tag.group(1)
       elem_info_predicate = lambda elem_info: elem_info.elem.tag == tag
 
@@ -519,7 +519,7 @@ class HtmlBranch(Branch):
     while elem_info and not elem_info_predicate(elem_info):
       elem_info = elem_info.parent
     if elem_info is None:
-      raise NodeError('no element found for target: {target}', target=target)
+      raise NodeError(f'no element found for target: {target}')
     action(elem_info.elem)
 
   def CreateSubBranch(self):
@@ -562,8 +562,8 @@ class HtmlBranch(Branch):
       pass
     if self.__current_elem_info.parent:
       raise NodeError(
-          'element not closed in branch "{branch.name}": <{elem.tag}>',
-          branch=self, elem=self.__current_elem)
+          f'element not closed in branch "{self.name}": '
+          f'<{self.__current_elem.tag}>')
 
     # Inline the attached branches.
     for branch in self.sub_branches:
@@ -640,8 +640,8 @@ class HtmlBranch(Branch):
             _DELETE_IF_EMPTY_ATTR_VALUE):
       elem.text = ''
       raise NodeError(
-          'removing an empty element with attributes: {elem}',
-          elem=etree.tostring(elem, encoding='unicode'))
+          'removing an empty element with attributes: ' +
+              etree.tostring(elem, encoding='unicode'))
     return True
 
   @staticmethod
@@ -848,15 +848,14 @@ class Macros:
       auto_para_tag = autoparablock_match.group('auto_para_tag')
       if auto_para_tag in _VOID_TAGS_TO_NONE:
         raise executor.MacroFatalError(
-            call_node, 'cannot use void tag as autopara: <{tag}>',
-            tag=auto_para_tag)
+            call_node, f'cannot use void tag as autopara: <{auto_para_tag}>')
     else:
       level = TagLevel.by_name.get(level_name)
       auto_para_tag = None
     if not level:
+      known = ', '.join(sorted(TagLevel.by_name))
       raise executor.MacroFatalError(
-          call_node, 'unknown level: {level}; expected one of: {known}.',
-          level=level_name, known=', '.join(sorted(TagLevel.by_name)))
+          call_node, f'unknown level: {level_name}; expected one of: {known}.')
 
     executor.current_branch.OpenTag(tag, level, auto_para_tag)
 
@@ -969,10 +968,10 @@ class Macros:
     """
     typography = TYPOGRAPHIES.get(typo_name, None)
     if not typography:
+      known = ', '.join(sorted(TYPOGRAPHIES))
       raise executor.MacroFatalError(
           call_node,
-          'unknown typography name: {typo_name}; expected one of: {known}',
-          typo_name=typo_name, known=', '.join(sorted(TYPOGRAPHIES)))
+          f'unknown typography name: {typo_name}; expected one of: {known}')
     executor.current_branch.typography = typography
 
   @staticmethod
@@ -983,8 +982,7 @@ class Macros:
     """
     # Reject invalid values.
     if _NUMBER_REGEXP.match(number) is None:
-      raise executor.MacroFatalError(
-          call_node, 'invalid integer: {number}', number=number)
+      raise executor.MacroFatalError(call_node, f'invalid integer: {number}')
     text = executor.current_branch.root.typography.FormatNumber(number)
     executor.AppendText(text)
 

@@ -209,23 +209,21 @@ class Executor:
     # Compute and validate the absolute path.
     if filename_suffix:
       if not filename_suffix.startswith('.'):
-        raise NodeError("invalid output file name suffix: '{suffix}'; "
-                        "must be empty or start with a period",
-                        suffix=filename_suffix)
+        raise NodeError(f"invalid output file name suffix: '{filename_suffix}';"
+                         " must be empty or start with a period")
       if filename_suffix != fs.basename(filename_suffix):
         raise NodeError(f"invalid output file name suffix: '{filename_suffix}';"
                          " must be a basename (no directory separator)")
     path = fs.Path(str(self.__output_path_prefix) + filename_suffix)
     if path in self.opened_paths:
-      raise NodeError("output file already opened: {filename}", filename=path)
+      raise NodeError(f'output file already opened: {path}')
     self.logger.LogInfo(f'Writing: {path}')
 
     # Create the writer.
     try:
       writer = fs.open(path, mode='wt', encoding=ENCODING, newline=None)
     except OSError as e:
-      raise NodeError('unable to write to file: {path}\n{cause}',
-                      path=path, cause=e) from e
+      raise NodeError(f'unable to write to file: {path}\n{e}') from e
     self.opened_paths.add(path)
     return writer
 
@@ -406,19 +404,18 @@ class Executor:
         self.__current_text_writer = old_text_writer
       return text_writer.getvalue()
 
-  def FatalError(self, location, message, call_frame_skip=0, **kwargs):
+  def FatalError(self, location, message, *, call_frame_skip=0):
     """Logs and raises a fatal error."""
     call_stack = self.__call_stack[
         :max(0, self.__call_stack_size - call_frame_skip)]
     call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    return self.logger.LocationError(location, message, call_stack, **kwargs)
+    return self.logger.LocationError(location, message, call_stack=call_stack)
 
-  def MacroFatalError(self, call_node, message, **kwargs):
+  def MacroFatalError(self, call_node, message, *, call_frame_skip=1):
     """Logs and raises a macro fatal error."""
-    return self.FatalError(call_node.location, '${call_node.name}: {details}',
-                           call_node=call_node,
-                           call_frame_skip=kwargs.get('call_frame_skip', 1),
-                           details=FormatMessage(message, **kwargs))
+    return self.FatalError(call_node.location,
+                           f'${call_node.name}: {FormatMessage(message)}',
+                           call_frame_skip=call_frame_skip)
 
   def LookupMacro(self, name, text_compatible):
     """
@@ -460,8 +457,7 @@ class Executor:
           raise self.MacroFatalError(call_node, 'text-incompatible macro call',
                                      call_frame_skip=0)
       raise self.FatalError(call_node.location,
-                            'macro not found: ${call_node.name}',
-                            call_node=call_node)
+                            f'macro not found: ${call_node.name}')
 
     # Store the new call stack frame. Enforce the call stack size limit.
     call_stack_size_orig = self.__call_stack_size
@@ -513,14 +509,12 @@ class Executor:
     expected_message = ''
     if max_args_count < 0:
       expected_message += 'at least '
-    expected_message += '{min_args_count}'
+    expected_message += f'{min_args_count}'
     if min_args_count < max_args_count:
-      expected_message += '..{max_args_count}'
+      expected_message += f'..{max_args_count}'
+    signature = GetMacroSignature(call_node.name, macro_callback)
     raise self.FatalError(
         call_node.location,
-        '{signature}: arguments count mismatch: ' +
-            'expected ' + expected_message + ', got {actual}',
-         call_frame_skip=1,
-         signature=GetMacroSignature(call_node.name, macro_callback),
-         min_args_count=min_args_count, max_args_count=max_args_count,
-         actual=actual_args_count)
+        f'{signature}: arguments count mismatch: '
+        f'expected {expected_message}, got {actual_args_count}',
+        call_frame_skip=1)

@@ -5,27 +5,17 @@ __author__ = 'Guillaume Ryder'
 import traceback
 
 
-def FormatMessage(message, **kwargs):
+def FormatMessage(message):
   """
   Formats a message.
 
   Args:
     message: (string|Exception) The error message, can be None.
-      If an exception, wraps it with str().
-      Returned as is if **kwargs is empty, else interpreted as a format.
-    **kwargs: (dict) The formatting parameters to apply to the message.
 
   Returns:
-    (string) The message, never None, formatted if necessary.
+    (string) The message, never None.
   """
-  if not message:
-    return 'unknown error'
-  elif kwargs:
-    return message.format(**kwargs)
-  elif isinstance(message, Exception):
-    return str(message)
-  else:
-    return message
+  return str(message) if message else 'unknown error'
 
 
 class BaseError(Exception):
@@ -36,9 +26,9 @@ class BaseError(Exception):
     message: (string) The error message, possibly with trailing newline.
   """
 
-  def __init__(self, message=None, **kwargs):
+  def __init__(self, message=None):
     super().__init__()
-    self.message = FormatMessage(message, **kwargs).rstrip()
+    self.message = FormatMessage(message).rstrip()
 
   def __str__(self):
     return self.message
@@ -135,19 +125,17 @@ class Logger:
     self.__err_file = err_file
     self.__info_file = info_file
 
-  def LocationError(self, location, message, call_stack=(), **kwargs):
+  def LocationError(self, location, message, *, call_stack=()):
     """
     Creates a FatalError for the given location.
 
     Args:
       location: (Location) The location of the error.
-      message: (string) The error message. Interpreted as a format if
-        **kwargs is not empty.
+      message: (string) The error message.
       call_stack: (CallNode list) The macro call stack.
-      **kwargs: (dict) The formatting parameters to apply to the message.
     """
     top = self.__top_format.format(
-        location=location, message=FormatMessage(message, **kwargs))
+        location=location, message=FormatMessage(message))
     stack = ''.join(self.__stack_frame_format.format(call_node=call_node)
                     for call_node in call_stack)
     return FatalError(top + stack)
