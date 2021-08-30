@@ -22,7 +22,7 @@ class LatexWriter:
       writer, before any text was appended.
     __sep_end: (bool) Whether $latex.sep was called since the last time text has
       been written. Cannot be true if the writer is empty.
-    __last_char: (None|string) The last character written, if any.
+    __last_char: (None|str) The last character written, if any.
   """
 
   def __init__(self, writer):

@@ -54,7 +54,7 @@ def ArabicToRoman(number):
     roman: (int) The integer number to convert.
 
   Returns:
-    (string) Its Roman equivalent.
+    (str) Its Roman equivalent.
 
   Raises:
     NodeError if the number cannot be converted.

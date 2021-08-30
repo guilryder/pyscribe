@@ -10,10 +10,10 @@ def FormatMessage(message):
   Formats a message.
 
   Args:
-    message: (string|Exception) The error message, can be None.
+    message: (str|Exception) The error message, can be None.
 
   Returns:
-    (string) The message, never None.
+    (str) The message, never None.
   """
   return str(message) if message else 'unknown error'
 
@@ -23,7 +23,7 @@ class BaseError(Exception):
   Base class for PyScribe-specific errors.
 
   Fields:
-    message: (string) The error message, possibly with trailing newline.
+    message: (str) The error message, possibly with trailing newline.
   """
 
   def __init__(self, message=None):
@@ -62,7 +62,7 @@ class Filename:
     display_path: (Path) The name of the file as it should be displayed in
       error messages. Does not have to be valid or absolute. Typically set to an
       arbitrary human-readable string for stdin/stdout files.
-    dir_path: (string) The path of the directory of the file.
+    dir_path: (str) The path of the directory of the file.
       Should always be valid; typically set to the current directory
       for stdin/stdout files.
   """
@@ -131,8 +131,8 @@ class Logger:
 
     Args:
       location: (Location) The location of the error.
-      message: (string) The error message.
-      call_stack: (CallNode list) The macro call stack.
+      message: (str) The error message.
+      call_stack: (List[CallNode]) The macro call stack.
     """
     top = self.__top_format.format(
         location=location, message=FormatMessage(message))
@@ -166,7 +166,7 @@ class Logger:
     Prints a log entry to stderr if --quiet is not set.
 
     Args:
-      message: (string) The message to log.
+      message: (str) The message to log.
     """
     if self.__info_file:
       print(message, file=self.__info_file, flush=True)

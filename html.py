@@ -91,7 +91,7 @@ class HtmlBranch(Branch):
   Branch for HTML.
 
   Fields:
-    sub_branches: (HtmlBranch list) The direct sub-branches of this branch.
+    sub_branches: (List[HtmlBranch]) The direct sub-branches of this branch.
     __typography: (Typography|None) The typography set for this branch;
       if None, inherits the typography of the parent branch.
     __typography_context: (ExecutionContext) The context containing the macros
@@ -101,12 +101,12 @@ class HtmlBranch(Branch):
       the branch. Ancestors and siblings of this element cannot be manipulated.
     __current_elem: (Element) The element currently open.
     __current_elem_info: (ElementInfo) Information about the current element.
-    __text_accu: (string list) The current text accumulator of the branch.
+    __text_accu: (List[str]) The current text accumulator of the branch.
       Used to merge consecutive text nodes created by AppendText.
-    __line_tail: (string) The last chunk of text appended to the current
+    __line_tail: (str) The last chunk of text appended to the current
       inline tag, empty if the current paragraph has no text.
       Guaranteed to be non-empty if the current paragraph has some text.
-    __text_sep: (string) The separator for AppendText to insert before the next
+    __text_sep: (str) The separator for AppendText to insert before the next
       chunk of non-whitespace text. Expected to be ' ' or NBSP.
       If empty, whitespaces are appended as is.
       If not empty, whitespaces are skipped.
@@ -117,7 +117,7 @@ class HtmlBranch(Branch):
     parent: (ElementInfo) The ElementInfo of the parent of the element.
     elem: (Element) The element.
     level: (TagLevel) The level of the element.
-    auto_para_tag: (string) The tag to use for auto-paragraphs,
+    auto_para_tag: (str) The tag to use for auto-paragraphs,
       None if the element does not support auto-paragraphs.
       Must be None for non-block elements.
     """
@@ -247,7 +247,7 @@ class HtmlBranch(Branch):
     Faster equivalent of AppendText() when the text to append is newlines-free.
 
     Args:
-      text: (string) The non-empty string to append. Must not contain any '\n'.
+      text: (str) The non-empty string to append. Must not contain any '\n'.
     """
     text = self.__NBSP_TRIM_REGEXP.sub(NBSP, text)
     text = self.__MULTIPLE_SPACES.sub(' ', text)
@@ -323,7 +323,7 @@ class HtmlBranch(Branch):
     Opens a new paragraph, if possible.
 
     Args:
-      except_tag: (string) Does not open a new paragraph with this tag.
+      except_tag: (str) Does not open a new paragraph with this tag.
 
     Returns:
       (bool) Whether a tag was opened.
@@ -373,9 +373,9 @@ class HtmlBranch(Branch):
     Opens a new child tag in the current element, and makes it current.
 
     Args:
-      tag: (string) The name of the tag, such as 'p' or 'h1'.
+      tag: (str) The name of the tag, such as 'p' or 'h1'.
       level: (TagLevel) The level of the new element.
-      auto_para_tag: (string) The tag to use for auto-paragraphs,
+      auto_para_tag: (str) The tag to use for auto-paragraphs,
         None if the element does not support auto-paragraphs.
         Must be None for non-block elements.
     """
@@ -415,7 +415,7 @@ class HtmlBranch(Branch):
     Discards the paragraph elements closed that are empty.
 
     Args:
-      tag: (string) The name of the tag to close.
+      tag: (str) The name of the tag to close.
 
     Raises:
       NodeError if the given tag cannot be found or closed.
@@ -474,8 +474,9 @@ class HtmlBranch(Branch):
 
     Args:
       call_node: (CallNode) The macro being called.
-      target: (string) The target given by the user.
-      action: (Element -> void) The method to call with the targeted element.
+      target: (str) The target given by the user.
+      action: (Callable[[Element], None) The method to call with the targeted
+        element.
 
     Raises:
       NodeError on error
@@ -654,7 +655,7 @@ class HtmlBranch(Branch):
     Args:
       tail_elem: (Element) If not None, appends to this element's tail.
       text_elem: (Element) If tail_elem is None, appends to this element's text.
-      text: (string) The text to append, not XML-escaped.
+      text: (str) The text to append, not XML-escaped.
     """
     if text:
       if tail_elem is not None:
@@ -717,11 +718,11 @@ class Typography(metaclass=ABCMeta):
     Formats a number to a string.
 
     Args:
-      number: (string) The number to format. Prefixed with '-' if negative.
+      number: (str) The number to format. Prefixed with '-' if negative.
         Can use '.' or ',' as decimal separator.
 
     Returns:
-      (string) The formatted number.
+      (str) The formatted number.
     """
 
   @staticmethod

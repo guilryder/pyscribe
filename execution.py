@@ -28,7 +28,7 @@ class ExecutionContext:
 
   Fields:
     parent: (ExecutionContext) The parent of the context, if any.
-    macros: (string -> callable dict) The symbols of this context.
+    macros: (Dict[str, callable]) The symbols of this context.
       Symbols of the parent entries are not duplicated in this dictionary.
       Each macro symbol has a name and a callback. See AddMacro for details.
   """
@@ -51,14 +51,14 @@ class ExecutionContext:
     where:
       executor: (Executor) The executor to run the macro against.
       location: (Location) The location of the caller of the macro.
-      args: (node list list) The arguments passed to the macro.
+      args: (List[List[node]]) The arguments passed to the macro.
 
     The callable has 'args_signature' attribute containing the signature
     of the macro arguments as a string: '' if the macro has no arguments,
     else 'name1,name2,...,nameN'.
 
     Args:
-      name: (string) The name of the symbol, without '$' prefix.
+      name: (str) The name of the symbol, without '$' prefix.
       callback: (runnable) The macro callback.
     """
     assert hasattr(callback, 'args_signature'), (
@@ -70,7 +70,7 @@ class ExecutionContext:
     Adds some macros to this context.
 
     Args:
-      macros: (string -> callable dict) The macros to add.
+      macros: (Dict[str, callable]) The macros to add.
     """
     for name, callback in macros.items():
       self.AddMacro(name, callback)
@@ -85,7 +85,7 @@ class ExecutionContext:
     If the macro must be text-compatible, skips text-incompatible matches.
 
     Args:
-      name: (string) The name of the macro to find.
+      name: (str) The name of the macro to find.
       text_compatible: (bool) Whether the macro must be text-compatible.
 
     Returns:
@@ -144,19 +144,19 @@ class Executor:
     __current_dir: (fs.Path) The absolute path of the current directory.
     __output_path_prefix: (fs.Path) The absolute path prefix of all output
       files; treated as a string prefix, not necessarily a directory.
-    opened_paths: (fs.Path set) The absolute paths of the readers and writers
+    opened_paths: (set[fs.Path]) The absolute paths of the readers and writers
       opened so far.
     system_branch: (Branch) The first branch of the executor, of type text.
-    root_branches: (Branch list) All root branches, including the system branch.
+    root_branches: (List[Branch]) All root branches, including system.
     current_branch: (Branch) The currently selected branch.
     call_context: (ExecutionContext) The top of the execution contexts stack.
     __current_text_writer: (None|writer) The writer to send text-only output to.
       If set, the executor is in text-only mode: executing text-incompatible
       macros fails. If None, the executor is in normal mode.
-    __call_stack: ((CallNode, callback) list) The current macro call stack,
+    __call_stack: (List[CallNode, callback]) The current macro call stack,
       pre-allocated to MAX_NESTED_CALLS frames.
     __call_stack_size: (int) The number of frames in __call_stack.
-    __include_stack: (Filename list) The stack of included file names.
+    __include_stack: (List[Filename]) The stack of included file names.
   """
 
   def __init__(self, *, logger, fs=FileSystem(),
@@ -186,7 +186,7 @@ class Executor:
     Adds constant macros to the system branch.
 
     Args:
-      constants: ((name, value) dict) The constants to add; values are strings.
+      constants: (Dict[name, str]) The constants to add.
     """
     context = self.system_branch.context
     for name, value in constants.items():
@@ -233,12 +233,13 @@ class Executor:
 
     Args:
         path: (fs.Path) The path to resolve.
-        directory: (string|fs.Path) The path of the directory to resolve path
+        directory: (str|fs.Path) The path of the directory to resolve path
           against if it is relative. Can be relative to current_dir.
-        default_ext: (string|None) The extension to append to the path if it has
+        default_ext: (str|None) The extension to append to the path if it has
           none and it refers to a non-existing file.
-    Returns: (Path)
-      The resolved path, always absolute.
+
+    Returns:
+      (Path) The resolved path, always absolute.
     """
     return self.ResolveFilePathStatic(
         path,
@@ -255,10 +256,11 @@ class Executor:
         path: (fs.Path) The path to resolve.
         abs_directory: (fs.Path|None) The absolute path of the directory to
           resolve path against if it is relative.
-        default_ext: (string|None) The extension to append to the path if it has
+        default_ext: (str|None) The extension to append to the path if it has
           none and it refers to a non-existing file.
-    Returns: (fs.Path)
-      The resolved path, always absolute.
+
+    Returns:
+      (fs.Path) The resolved path, always absolute.
     """
     assert abs_directory.is_absolute()
     path = fs.MakeAbsolute(abs_directory, path)
@@ -311,7 +313,7 @@ class Executor:
     Executes the given nodes in the current call context.
 
     Args:
-      nodes: (node list) The nodes to execute.
+      nodes: (List[node]) The nodes to execute.
 
     Throws:
       FatalError
@@ -327,7 +329,7 @@ class Executor:
     Executes the given nodes in the given call context.
 
     Args:
-      nodes: (node list) The nodes to execute.
+      nodes: (List[node]) The nodes to execute.
       call_context: (ExecutionContext|None)
         The call context to execute the nodes in, None for current.
     """
@@ -346,7 +348,7 @@ class Executor:
     Executes the given nodes in the given branch context.
 
     Args:
-      nodes: (node list) The nodes to execute.
+      nodes: (List[node]) The nodes to execute.
       call_context: (ExecutionContext)
         The branch context to execute the nodes in.
     """
@@ -387,10 +389,10 @@ class Executor:
     Fails if text-incompatible macros are executed.
 
     Args:
-      nodes: (node list) The text nodes to evaluate.
+      nodes: (List[node]) The text nodes to evaluate.
 
     Returns:
-      (string) The nodes execution result.
+      (str) The nodes execution result.
 
     Throws:
       FatalError
@@ -426,7 +428,7 @@ class Executor:
     2) in the context of the current branch.
 
     Args:
-      name: (string) The name of the macro to retrieve.
+      name: (str) The name of the macro to retrieve.
       text_compatible: (bool) Whether the macro must be text-compatible.
 
     Returns:

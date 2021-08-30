@@ -255,7 +255,7 @@ class TestCase(unittest.TestCase):
     Returns a fake input file supporting the read() and close() methods.
 
     Args:
-      contents: (string) The contents of the file.
+      contents: (str) The contents of the file.
         If None, the file raises OSError on all reads.
     """
     if contents is None:
@@ -368,23 +368,25 @@ class ExecutionTestCase(TestCase):
                       fatal_error=None, expected_infos=None):
     """
     Args:
-      inputs: (input|(string, input) dict) The input files.
+      inputs: (Dict[str, input]|input) The input files.
         If a dictionary, the input files keyed by name.
         If not a dictionary, the contents of the '/root' input file.
         Each entry is processed by PrepareInputOutput to generate the file
         contents: either a string, or a sequence of strings joined with '\n' if
         fatal_error is true, or '' if fatal_error is false.
-      expected_outputs: (output|(string, output) dict) The expected branch
+      expected_outputs: (Dict[str, output]|output) The expected branch
         outputs. If a dictionary, the outputs keyed by branch name.
         If not a dictionary, the expected output of GetExecutionBranch().
         Each entry is processed by PrepareInputOutput: either a string, or a
         sequence of strings to join with '\n'.
-      messages: (string list) The expected error messages.
+      messages: (List[str]) The expected error messages.
       fatal_error: (bool) Whether a fatal error is expected.
         Automatically set to True if messages is not None.
-      expected_infos: (string list|None) If set, the expected messages logged
+      expected_infos: (List[str]|None) If set, the expected messages logged
         via Logger.LogInfo().
-    Returns: (Executor) The executor created to do the verification.
+
+    Returns:
+      (Executor) The executor created to do the verification.
     """
 
     # By default, expect a fatal error if log messages are expected.

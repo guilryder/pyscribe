@@ -163,11 +163,11 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
     lib_dir: (fs.Path) The path to the directory that contains core.psc.
     output_dir: (fs.Path) The path to the output directory.
     input_path: (fs.Path) The absolute path to the executed top-level file.
-    output_basename_prefix: (string) The basename prefix of all output files.
+    output_basename_prefix: (str) The basename prefix of all output files.
       Defaults to the basename of input_filename without extension if empty.
 
   Returns:
-    (name string, value string) dict
+    Dict[str, str]
   """
   output_dir = fs.MakeAbsolute(current_dir, output_dir)
   input_dir = input_path.parent

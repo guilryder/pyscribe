@@ -22,9 +22,9 @@ class macro:
                auto_args_parser=True, text_compatible=False, builtin=True):
     """
     Args:
-      public_name: (string) The name of the macro if it is builtin,
+      public_name: (str) The name of the macro if it is builtin,
         without '$' prefix.
-      args_signature: (string) The signature of the arguments of the macro.
+      args_signature: (str) The signature of the arguments of the macro.
         Should be an empty string for macros with no arguments,
         or a comma-separated list of names for macros with fixed arguments.
         Nodes arguments should be prefixed with '*'.
@@ -54,13 +54,13 @@ class macro:
     Builds argument parsers for the given signature.
 
     Args:
-      args_signature: (string) The signature of the macro.
+      args_signature: (str) The signature of the macro.
 
     Returns:
-      (arg parser list, arg parser list) The required and optional argument
-      parsers of the macro. Each argument parser is a (name, parser) tuple,
+      (List[arg parser], List[arg parser]) The required and optional argument
+      parsers of the macro. Each argument parser is a Tuple[name, parser],
       where 'name' is the parameter name without special prefixes/suffixes,
-      and 'parser' is a (Executor, node list) -> object function.
+      and 'parser' is a Callable[[Executor, List[node], object].
       Parsers for nodes arguments return their argument as is.
       Parsers for text-only arguments call Executor.EvalText.
     """
@@ -135,11 +135,11 @@ def GetMacroSignature(name, callback):
   Returns the full signature of a macro.
 
   Args:
-    name: (string) The name of the macro, without '$' prefix.
+    name: (str) The name of the macro, without '$' prefix.
     callback: (callable) The macro callback, with 'args_signature' attribute.
 
   Returns:
-    (string) The full signature of the macro: '$name' (empty args signature)
+    (str) The full signature of the macro: '$name' (empty args signature)
     or '$name(args signature)'.
   """
   if callback.args_signature:
@@ -158,7 +158,7 @@ def GetPublicMacros(container):
     container: (object) The module or class that declares the macros
 
   Returns:
-    (string -> callable dict) The public macros, keyed by name.
+    (Dict[str, callable]) The public macros, keyed by name.
   """
   if not hasattr(container, 'public_macros'):
     public_macros = {}

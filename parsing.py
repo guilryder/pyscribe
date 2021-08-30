@@ -65,8 +65,8 @@ class CallNode:
 
   Fields:
     location: (Location) The location of the call node.
-    name: (string) The name of the macro called, without '$' prefix.
-    args: (node list list) The arguments of the macro, each as a list of nodes.
+    name: (str) The name of the macro called, without '$' prefix.
+    args: (List[List[node]]) The arguments of the macro, each as a node list.
   """
 
   def __init__(self, location, name, args):
@@ -99,9 +99,9 @@ def CompactTextNodes(nodes):
   Args:
     nodes: (Node iter) The nodes to process.
 
-  Yields: (Node) The input nodes with consecutive text nodes merged.
-    The location of a merged text node is the location of the first original
-    text node.
+  Yields:
+    (Node) The input nodes with consecutive text nodes merged. The location of a
+    merged text node is the location of the first original text node.
   """
   def GroupingKey(node):
     return (type(node), node.location)
@@ -176,7 +176,7 @@ class RegexpParser:
   Creates a parsing rule for each method of an object decorated with @rule.
 
   Fields:
-    __rules: ((name, method) OrderedDict)
+    __rules: (OrderedDict[name, method])
   """
 
   def __init__(self, rules_container):
@@ -203,11 +203,11 @@ class RegexpParser:
     Parses the given input text.
 
     Args:
-      input_text: (string) The text to parse.
+      input_text: (str) The text to parse.
 
     Yields:
-      (string, callable|None, string|None) The non-overlapping matches of the
-      rules, each as a (text_before, rule_callable, matched_text) tuple.
+      (Tuple[str, callable|None, str|None]) The non-overlapping matches of the
+      rules, each as a Tuple[text_before, rule_callable, matched_text].
       'text_before' is the text between the previous match (or the beginning of
       the string for the first match) and the current match.
       'rule_callable' and 'matched_text' are the rule and the text that matched,
@@ -271,9 +271,10 @@ class Lexer:
     Merges the consecutive text tokens that have the same line.
 
     Args:
-      nodes: (Token iter) The tokens to process.
+      nodes: (iter[Token]) The tokens to process.
 
-    Yields: (Token)
+    Yields:
+      (Token)
     """
     text_token_accu = None
     for token in tokens:
@@ -304,7 +305,8 @@ class Lexer:
     """
     Parses the tokens.
 
-    Yields: (Token) The parsed tokens.
+    Yields:
+      (Token) The parsed tokens.
     """
     # pylint: disable=import-outside-toplevel
     from collections.abc import Iterable
@@ -541,7 +543,7 @@ class Parser:
     """
     Parses the input file into a list of nodes.
 
-    Return: (node list)
+    Return: (List[node])
       The parsed nodes, None on fatal error.
     """
 
@@ -565,7 +567,7 @@ class Parser:
         call_nest_count: (int) The macro call nesting level, 0 for top-level.
 
       Returns:
-        (node list) The parsed nodes.
+        (List[node]) The parsed nodes.
       """
       nodes = []
       while True:
@@ -660,7 +662,7 @@ def ParseFile(reader, filename, logger):
     logger: (Logger) The logger to use to report errors.
 
   Returns:
-    (node list) The parsed nodes.
+    (List[node]) The parsed nodes.
 
   Throws:
     FatalError

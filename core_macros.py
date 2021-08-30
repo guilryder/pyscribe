@@ -140,8 +140,8 @@ def ParseMacroSignature(signature):
   - with no arguments: 'name' or 'name()'
   Spaces between tokens are ignored.
 
-  Returns: (string, string list)
-    The macro name and list of arguments.
+  Returns:
+    (Tuple[str, List[str]]) The macro name and list of arguments.
   """
 
   # Parse the macro name and arguments.

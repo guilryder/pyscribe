@@ -99,7 +99,7 @@ def __ParseBranchName(executor, branch_name):
   Parses a branch name.
 
   Args:
-    name: (string) The name of the branch to parse.
+    branch_name: (str) The name of the branch to parse.
 
   Returns:
     (Branch) The branch having the given name.
@@ -117,10 +117,10 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
   Args:
     call_node: (CallNode) The branch creation macro being executed.
       Given to the created branch name macro, if any,
-    name_or_ref: (string) The name of the branch to create, or, if prefixed
-      with '!', the name of the macro to store the automatically generated
-      branch name into.
-    branch_factory: (() -> Branch function) The function to call to create
+    name_or_ref: (str) The name of the branch to create, or, if prefixed with
+      '!', the name of the macro to store the automatically generated branch
+      name into.
+    branch_factory: (Callable[[], Branch]) The function to call to create
       the branch. The factory should not name or register the branch.
   """
   is_reference = name_or_ref.startswith('!')

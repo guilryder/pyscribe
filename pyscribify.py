@@ -67,7 +67,7 @@ class Main:
     parser.add_argument('-n', '--dry-run', dest='dry_run', action='store_true',
                         help='print the shell commands without running them')
 
-    aliases = {}  # (from_arg, to_arg tuple) dict, *NOT* topologically sorted
+    aliases = {}  # Dict[from_arg, to_arg tuple], *NOT* topologically sorted
 
     def AddAlias(args_group, from_flag, to_flags, help_suffix=''):
       aliases[from_flag] = to_flags
@@ -270,7 +270,9 @@ class Main:
     Args:
       *args: the command-line arguments, with the program absolute path first.
       **kwargs: extra options for subprocess.call().
-    Returns: (bool) Whether the execution succeeded.
+
+    Returns:
+      (bool) Whether the execution succeeded.
     """
     print('{prefix}Executing: {cmdline}'.format(
             prefix='(dry run) ' if self.__args.dry_run else '',

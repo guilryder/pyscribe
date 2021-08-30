@@ -17,13 +17,13 @@ class Branch(metaclass=ABCMeta):
   No method other than the ones declared below can be called on them.
 
   Fields:
-    type_name: (string) The name of the type of the branch,
+    type_name: (str) The name of the type of the branch,
       as returned by $branch.type.
     parent: (Branch) The parent of this branch, None if the branch is root.
     root: (Branch) The root ancestor of this branch, self if the branch is root.
     context: (ExecutionContext) The execution context of the branch.
-    name: (string) The name of the branch.
-    sub_branches: (Branch list) The direct sub-branches of this branch.
+    name: (str) The name of the branch.
+    sub_branches: (List[Branch]) The direct sub-branches of this branch.
     attached: (bool) Whether the branch has been inserted in its parent branch;
       always true for root branches.
     writer: (stream) The output writer of the branch (root branch only).
@@ -38,7 +38,7 @@ class Branch(metaclass=ABCMeta):
       parent: (branch) The parent branch, None for top-level branches.
       parent_context: (ExecutionContext) The parent of the execution context
         of the branch. Defaults to parent.context if parent is set.
-      name: (string) The name of the branch; optional.
+      name: (str) The name of the branch; optional.
     """
     from execution import ExecutionContext  # pylint: disable=import-outside-toplevel
     if parent and not parent_context:
@@ -161,7 +161,7 @@ class AbstractSimpleBranch(Branch):
   The branch is a tree of leaves and sub-branches.
 
   Fields:
-    __nodes: (leaf|Branch list) The content leaves and sub-branches of branch.
+    __nodes: (List[leaf|Branch]) The content leaves and sub-branches of branch.
       Invariant: the last element is always _current_leaf.
     _current_leaf: (leaf) The last leaf of the branch.
   """
