@@ -335,8 +335,8 @@ class ExecutorAddConstantsTest(ExecutionTestCase):
 class FileSystemTest(TestCase):
 
   fs = FileSystem()
-  cwd = pathlib.Path.cwd()
-  home = pathlib.Path.home()
+  cwd: pathlib.PurePath = pathlib.Path.cwd()
+  home: pathlib.PurePath = pathlib.Path.home()
 
   def testBasename(self):
     self.assertEqual(self.fs.basename(self.home / 'foo' / 'bar'), 'bar')

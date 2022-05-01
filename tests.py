@@ -30,6 +30,7 @@ class TestsManager:
   DIRS_TO_CLEAN = (
     COVERAGE_DIR,
     '__pycache__',
+    '.mypy_cache',
   )
 
   def __init__(self, *, included_files, excluded_files):
@@ -52,6 +53,8 @@ class TestsManager:
         help="delete compilation artifacts and coverage reports")
     AddAction(self.ShowCoverage, 'show-coverage', '-s',
         help="show coverage results in the default Internet browser")
+    AddAction(self.TypeCheck, 'typecheck', '-tc',
+        help="run the type checker against all source files")
     AddAction(self.Lint, 'lint', '-l',
         help="run the linter against all source files")
     AddAction(self.RegenerateGoldens, 'golden', '-g',
@@ -99,6 +102,10 @@ class TestsManager:
   def ShowCoverage(self):
     """Opens coverage summary HTML file in the default Internet browser."""
     webbrowser.open(self.COVERAGE_INDEX)
+
+  def TypeCheck(self):
+    """Runs the type checker against all source files."""
+    subprocess.call([sys.executable, '-m', 'mypy'] + list(self.__python_files))
 
   def Lint(self):
     """Runs the linter against all source files."""

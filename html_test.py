@@ -4,8 +4,6 @@
 
 __author__ = 'Guillaume Ryder'
 
-from xml import etree
-
 from html import *
 from testutils import *
 
