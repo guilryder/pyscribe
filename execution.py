@@ -103,22 +103,7 @@ class ExecutionContext:
     return None
 
 
-class AbstractFileSystem:  # pylint: disable=no-member
-
-  @classmethod
-  def MakeAbsolute(cls, cur_dir, path):
-    """
-    Makes a path absolute and normalized.
-
-    Args:
-      cur_dir: (cls.Path) The path to the current directory, used if the path is
-        relative.
-      path: (cls.Path) The path to make absolute.
-    """
-    return cls.Path(os.path.normpath(cur_dir / path))
-
-
-class FileSystem(AbstractFileSystem):
+class FileSystem:
   stdout = sys.stdout
   stderr = sys.stderr
   Path = pathlib.PurePath
@@ -128,6 +113,20 @@ class FileSystem(AbstractFileSystem):
   makedirs = staticmethod(os.makedirs)
   open = staticmethod(io.open)
   relpath = staticmethod(os.path.relpath)
+
+  @classmethod
+  def MakeAbsolute(cls, cur_dir, path):
+    """
+    Makes a path absolute and normalized.
+
+    Removes '.' and resolves '..' path parts.
+
+    Args:
+      cur_dir: (cls.Path) The path to the current directory, used if the path is
+        relative.
+      path: (cls.Path) The path to make absolute.
+    """
+    return cls.Path(os.path.normpath(cur_dir / path))
 
 
 class Executor:

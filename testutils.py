@@ -180,7 +180,7 @@ class FakeLogger(Logger):
     self.info_messages.append(message)
 
 
-class FakeFileSystem(execution.AbstractFileSystem):
+class FakeFileSystem(execution.FileSystem):
 
   def __init__(self):
     super().__init__()
@@ -218,7 +218,22 @@ class FakeFileSystem(execution.AbstractFileSystem):
 
   @classmethod
   def MakeAbsolute(cls, cur_dir, path):
-    return cls.Path(str(super().MakeAbsolute(cur_dir, path)))
+    absolute_path = cls.Path(path)
+    if not absolute_path.is_absolute():
+      absolute_path = cur_dir / absolute_path
+
+    # Normalize like the Posix os.path.normpath(): remove '.' and resolve '..'.
+    parts = []
+    for part in absolute_path.parts:
+      if part == '..':
+        if len(parts) > 1:
+          parts.pop()
+      elif part and part != '.':
+        parts.append(part)
+
+    result = cls.Path(*parts)
+    assert result.is_absolute()
+    return result
 
   @staticmethod
   def _ToPosix(path):
@@ -282,6 +297,7 @@ class TestCase(unittest.TestCase):
         super(TestFileSystem, fs).__init__()
         fs.__output_writers = {}
 
+      # pylint: disable=arguments-renamed
       def lexists(fs, path):
         return str(path) in inputs
 

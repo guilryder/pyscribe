@@ -3,6 +3,8 @@
 
 __author__ = 'Guillaume Ryder'
 
+import pathlib
+
 from branches import TextBranch
 from branch_macros import BRANCH_TYPES
 from execution import *
@@ -327,6 +329,95 @@ class ExecutorAddConstantsTest(ExecutionTestCase):
 
   def testAddConstants(self):
     self.assertExecution('$one $two', 'value $~!')
+
+
+
+class FileSystemTest(TestCase):
+
+  fs = FileSystem()
+  cwd = pathlib.Path.cwd()
+  home = pathlib.Path.home()
+
+  def testBasename(self):
+    self.assertEqual(self.fs.basename(self.home / 'foo' / 'bar'), 'bar')
+
+  def testGetcwd(self):
+    self.assertEqual(self.fs.getcwd(), self.cwd)
+
+  def testLexists_exists(self):
+    self.assertTrue(self.fs.lexists(self.cwd))
+
+  def testLexists_doesNotExist(self):
+    self.assertFalse(self.fs.lexists(self.cwd / 'does' / 'not' / 'exist'))
+
+  def testOpen(self):
+    with self.fs.open(__file__, mode='rt') as f:
+      self.assertIn('def testOpen(self)', f.read())
+
+  def testMakedirs(self):
+    self.fs.makedirs(self.cwd, exist_ok=True)
+
+  def testRelpath_self(self):
+    self.assertEqual(self.fs.relpath(self.cwd, self.cwd), '.')
+
+  def testRelpath_grandChild(self):
+    self.assertEqual(self.fs.relpath(self.cwd / 'foo' / 'bar', self.cwd),
+                     str(self.fs.Path('foo', 'bar')))
+
+  def testRelpath_grandParent(self):
+    self.assertEqual(self.fs.relpath(self.cwd, self.cwd / 'foo' / 'bar'),
+                     str(self.fs.Path('..', '..')))
+
+  def testRelpath_sibling(self):
+    self.assertEqual(self.fs.relpath(self.cwd / 'foo', self.cwd / 'bar'),
+                     str(self.fs.Path('..', 'foo')))
+
+  def testMakeAbsolute_alreadyAbsolute(self):
+    absolute_path = self.home / 'foo' / 'bar'
+    self.assertEqual(
+        self.fs.MakeAbsolute(self.cwd, absolute_path),
+        absolute_path)
+
+  def testMakeAbsolute_relative(self):
+    self.assertEqual(
+        self.fs.MakeAbsolute(self.cwd, str(self.fs.Path('foo', 'bar'))),
+        self.cwd / 'foo' / 'bar')
+
+  def testMakeAbsolute_removesDot(self):
+    self.assertEqual(
+        self.fs.MakeAbsolute(
+            self.cwd, str(self.cwd / '.' / 'foo' / '.' / 'bar' / '.')),
+        self.cwd / 'foo' / 'bar')
+
+  def testMakeAbsolute_normalizesDotDot(self):
+    self.assertEqual(
+        self.fs.MakeAbsolute(
+            self.cwd, str(self.cwd / 'a' / 'b' / '..' / 'c' / '..' / 'd')),
+        self.cwd / 'a' / 'd')
+
+
+class FakeFileSystemTest(FileSystemTest):
+
+  fs = FakeFileSystem()
+  cwd = fs.cwd
+  home = fs.Path('/fake/home')
+
+  def testLexists_exists(self):
+    with self.assertRaises(NotImplementedError):
+      super().testLexists_exists()
+
+  def testLexists_doesNotExist(self):
+    with self.assertRaises(NotImplementedError):
+      super().testLexists_doesNotExist()
+
+  def testOpen(self):
+    with self.assertRaises(NotImplementedError):
+      super().testOpen()
+
+  def testMakedirs(self):
+    self.fs.InitializeForWrites()
+    super().testMakedirs()
+
 
 
 if __name__ == '__main__':
