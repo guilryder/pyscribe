@@ -274,10 +274,9 @@ class Main:
     Returns:
       (bool) Whether the execution succeeded.
     """
-    print('{prefix}Executing: {cmdline}'.format(
-            prefix='(dry run) ' if self.__args.dry_run else '',
-            cmdline=' '.join(shlex.quote(str(arg)) for arg in args)),
-          flush=True, file=self.__stdout)
+    prefix = '(dry run) ' if self.__args.dry_run else ''
+    cmdline = ' '.join(shlex.quote(str(arg)) for arg in args)
+    print(f'{prefix}Executing: {cmdline}', flush=True, file=self.__stdout)
 
     if self.__args.dry_run:
       return True
