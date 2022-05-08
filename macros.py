@@ -3,10 +3,12 @@
 __author__ = 'Guillaume Ryder'
 
 from collections import defaultdict
+from collections.abc import Collection
 import inspect
 import itertools
 import operator
 import re
+from typing import Any, Optional
 
 
 MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
@@ -18,13 +20,13 @@ VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 class macro:
   """Decorator for macro callbacks."""
 
-  def __init__(self, public_name=None, args_signature='',
-               auto_args_parser=True, text_compatible=False, builtin=True):
+  def __init__(self, public_name: Optional[str]=None, args_signature: str='',
+               auto_args_parser: bool=True, text_compatible: bool=False,
+               builtin: bool=True):
     """
     Args:
-      public_name: (str) The name of the macro if it is builtin,
-        without '$' prefix.
-      args_signature: (str) The signature of the arguments of the macro.
+      public_name: The name of the macro if it is builtin, without '$' prefix.
+      args_signature: The signature of the arguments of the macro.
         Should be an empty string for macros with no arguments,
         or a comma-separated list of names for macros with fixed arguments.
         Nodes arguments should be prefixed with '*'.
@@ -33,8 +35,8 @@ class macro:
         the end of the arguments list.
       text_compatible: (bool) Whether the macro has no side-effects and can
         produce text-only output.
-      builtin: (bool) Whether the macro is builtin as opposed to defined by the
-        user via $macro.new; determines if the macro can be wrapped.
+      builtin: Whether the macro is builtin as opposed to defined by the user
+        via $macro.new; determines if the macro can be wrapped.
     """
     if auto_args_parser:
       self.__arg_parsers = self.__BuildArgParsers(args_signature)
@@ -49,12 +51,11 @@ class macro:
     )
 
   @staticmethod
-  def __BuildArgParsers(args_signature):
-    """
-    Builds argument parsers for the given signature.
+  def __BuildArgParsers(args_signature: str):
+    """Builds argument parsers for the given signature.
 
     Args:
-      args_signature: (str) The signature of the macro.
+      args_signature: The signature of the macro.
 
     Returns:
       (List[arg parser], List[arg parser]) The required and optional argument
@@ -67,7 +68,7 @@ class macro:
     if not args_signature:
       return [], []
 
-    def TextArgParser(executor, arg):
+    def TextArgParser(executor, arg) -> Optional[str]:
       if arg is None:
         return None
       else:
@@ -76,7 +77,7 @@ class macro:
     def NodesArgParser(unused_executor, arg):
       return arg
 
-    def ParseArgSignature(arg_signature):
+    def ParseArgSignature(arg_signature: str):
       if arg_signature.startswith('*'):
         args_parser = NodesArgParser
         arg_signature = arg_signature[1:]
@@ -131,16 +132,15 @@ class macro:
     return standard_callback
 
 
-def GetMacroSignature(name, callback):
-  """
-  Returns the full signature of a macro.
+def GetMacroSignature(name: str, callback) -> str:
+  """Returns the full signature of a macro.
 
   Args:
-    name: (str) The name of the macro, without '$' prefix.
-    callback: (callable) The macro callback, with 'args_signature' attribute.
+    name: The name of the macro, without '$' prefix.
+    callback: The macro callback, with 'args_signature' attribute.
 
   Returns:
-    (str) The full signature of the macro: '$name' (empty args signature)
+    The full signature of the macro: '$name' (empty args signature)
     or '$name(args signature)'.
   """
   if callback.args_signature:
@@ -149,17 +149,17 @@ def GetMacroSignature(name, callback):
     return f'${name}'
 
 
-def GetPublicMacros(container):
+def GetPublicMacros(container: Any):
   """
   Returns the public macros declared by a module or class.
 
   Caches the result in the object.
 
   Args:
-    container: (object) The module or class that declares the macros
+    container: The module or class that declares the macros
 
   Returns:
-    (Dict[str, callable]) The public macros, keyed by name.
+    The public macros, keyed by name.
   """
   if not hasattr(container, 'public_macros'):
     public_macros = {}
@@ -173,7 +173,7 @@ def GetPublicMacros(container):
   return container.public_macros
 
 
-def GetPublicMacrosContainers():
+def GetPublicMacrosContainers() -> Collection[Any]:
   """Returns all public, built-in macros containers."""
   import core_macros  # pylint: disable=import-outside-toplevel
   return (
@@ -194,25 +194,22 @@ def ExecuteCallback(nodes, call_context=None, **kwargs):
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, unused_call_node):
+  def MacroCallback(executor, unused_call_node) -> None:
     executor.ExecuteInCallContext(nodes, call_context=call_context)
   return MacroCallback
 
 
-def AppendTextCallback(text, **kwargs):
-  """
-  Creates a macro callback that writes the given text.
+def AppendTextCallback(text: str, **kwargs: Any):
+  """Creates a macro callback that writes the given text.
 
   The callback expects no arguments.
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, unused_call_node):
+  def MacroCallback(executor, unused_call_node) -> None:
     executor.AppendText(text)
   return MacroCallback
 
-def AppendTextMacro(public_name, text):
-  """
-  Creates a method to define a macro that writes the given text.
-  """
+def AppendTextMacro(public_name: str, text: str):
+  """Creates a method to define a macro that writes the given text."""
   return staticmethod(AppendTextCallback(text, public_name=public_name))

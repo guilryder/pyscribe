@@ -3,6 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
+from collections.abc import Iterable
 import argparse
 import os
 from pathlib import Path
@@ -11,26 +12,34 @@ import shlex
 import shutil
 import subprocess
 import sys
+from typing import Any, Optional, TextIO
 
 
 _FORMATS = ('html', 'latex')
 
 
-def _TryFindExecutable(filename, default=None):
+def _TryFindExecutable(filename: str, default: Optional[str]=None) -> str:
   return shutil.which(filename) or default or filename
 
 
 class Main:
 
-  def __init__(self, *, input_args=None, stdout=sys.stdout,
-               ArgumentParser=argparse.ArgumentParser):
+  __input_args: Optional[list[str]]
+  __stdout: TextIO
+  __ArgumentParser: type[argparse.ArgumentParser]
+  __all_success: bool
+  __pyscribe_dir: Path
+
+  def __init__(
+      self, *, input_args: Optional[list[str]]=None, stdout: TextIO=sys.stdout,
+      ArgumentParser: type[argparse.ArgumentParser]=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__stdout = stdout
     self.__ArgumentParser = ArgumentParser
     self.__all_success = True
     self.__pyscribe_dir = Path(sys.argv[0]).parent
 
-  def Run(self):
+  def Run(self) -> None:
     self.__ParseArguments()
 
     for psc_path in self.__args.psc_paths:
@@ -38,9 +47,8 @@ class Main:
 
     sys.exit(0 if self.__all_success else 1)
 
-  def __ParseArguments(self):
-    """
-    Parses the command-line arguments given at construction.
+  def __ParseArguments(self) -> None:
+    """Parses the command-line arguments given at construction.
 
     Quits on error or if --help is passed.
 
@@ -68,7 +76,9 @@ class Main:
 
     aliases = {}  # Dict[from_arg, to_arg tuple], *NOT* topologically sorted
 
-    def AddAlias(args_group, from_flag, to_flags, help_suffix=''):
+    def AddAlias(args_group: argparse._ArgumentGroup,
+                 from_flag: str, to_flags: Iterable[str],
+                 help_suffix: str='') -> None:
       aliases[from_flag] = to_flags
       args_group.add_argument('--' + from_flag, action='store_true',
                               help='alias for ' +
@@ -166,7 +176,7 @@ class Main:
 
     # Propagate the convenience aliases. Not optimal (should use a topologically
     # sorted list of aliases) but good enough.
-    def PropagateFlag(flag, force_true):
+    def PropagateFlag(flag: str, force_true: bool) -> None:
       arg_name = flag.replace('-', '_')
       if force_true:
         setattr(args, arg_name, True)
@@ -180,7 +190,7 @@ class Main:
     # Make paths absolute.
     args.lib_dir = os.path.abspath(args.lib_dir)
 
-  def __ProcessSourceFile(self, psc_path):
+  def __ProcessSourceFile(self, psc_path: Path) -> None:
     args = self.__args
 
     # Append the default *.psc extension if necessary.
@@ -246,7 +256,8 @@ class Main:
                              *shlex.split(args.latexmk_clean_options),
                              cwd=output_dir)
 
-  def __CallPyscribe(self, *, psc_path, output_dir, psc_format):
+  def __CallPyscribe(
+      self, *, psc_path: Path, output_dir: Path, psc_format: str) -> bool:
     args = self.__args
     return self.__CallProgram(
         sys.executable, args.pyscribe_bin,
@@ -256,13 +267,14 @@ class Main:
         f'--output={output_dir}',
         *shlex.split(args.pyscribe_options))
 
-  def __CallCalibre(self, *, input_path, output_path, extra_options):
+  def __CallCalibre(self, *, input_path: str, output_path: str,
+                    extra_options: str) -> bool:
     args = self.__args
     return self.__CallProgram(
         args.calibre_bin, input_path, output_path,
         *(shlex.split(args.calibre_options) + shlex.split(extra_options)))
 
-  def __CallProgram(self, *args, **kwargs):
+  def __CallProgram(self, *args: Any, **kwargs: Any) -> bool:
     """
     Invokes a program.
 

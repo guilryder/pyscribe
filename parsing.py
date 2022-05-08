@@ -1,22 +1,25 @@
 # -*- coding: utf-8 -*-
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
+from __future__ import annotations
+
 __author__ = 'Guillaume Ryder'
 
 import collections
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 import enum
 import inspect
 import itertools
 import re
-from typing import TYPE_CHECKING
+from typing import Any, NoReturn, Optional, TextIO, TYPE_CHECKING, TypeVar
 
 from log import Filename, Location
 from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 if TYPE_CHECKING:
-  from log import Logger
+  from execution import Executor
+  from log import FatalError, Logger
 
 
 class TokenType(enum.Enum):
@@ -34,7 +37,7 @@ class Token:
   lineno: int  # The 1-based line index of the first character of the token.
   value: str  # The contents of the token; mutable.
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return f'({self.type} l{self.lineno} {self.value!r})'
 
 
@@ -44,6 +47,9 @@ class Node:
   location: Location
 
 
+NodesT = Sequence[Node]
+
+
 @dataclass(frozen=True)
 class TextNode(Node):
   """Plain text node; may contain line breaks."""
@@ -51,13 +57,13 @@ class TextNode(Node):
   location: Location
   text: str
 
-  def Execute(self, executor):
+  def Execute(self, executor: 'Executor') -> None:
     executor.AppendText(self.text)
 
-  def __str__(self):
+  def __str__(self) -> str:
     return repr(self.text)
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return f'{self.location!r}{self}'
 
 
@@ -67,32 +73,31 @@ class CallNode(Node):
 
   location: Location
   name: str  # The name of the macro called, without '$' prefix.
-  args: Sequence  # The macro arguments.
+  args: Sequence[NodesT]  # The macro arguments.
 
-  def Execute(self, executor):
+  def Execute(self, executor: 'Executor') -> None:
     executor.CallMacro(self)
 
-  def __str__(self):
+  def __str__(self) -> str:
     args = ''.join(f'[{FormatNodes(param)}]' for param in self.args)
     return f'${self.name}{args}'
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     args = ''.join(f'[{ReprNodes(param)}]' for param in self.args)
     return f'${self.name}{args}'
 
 
-def CompactTextNodes(nodes):
-  """
-  Merges consecutive text nodes located on the same line.
+def CompactTextNodes(nodes) -> Iterator[Node]:
+  """Merges consecutive text nodes located on the same line.
 
   Args:
-    nodes: (Node iter) The nodes to process.
+    nodes: The nodes to process.
 
   Yields:
-    (Node) The input nodes with consecutive text nodes merged. The location of a
+    The input nodes with consecutive text nodes merged. The location of a
     merged text node is the location of the first original text node.
   """
-  def GroupingKey(node):
+  def GroupingKey(node) -> tuple[type[Node], Location]:
     return type(node), node.location
   for (node_type, location), nodes_grp in itertools.groupby(nodes, GroupingKey):
     if issubclass(node_type, TextNode):
@@ -101,12 +106,12 @@ def CompactTextNodes(nodes):
       yield from nodes_grp
 
 
-def FormatNodes(nodes):
+def FormatNodes(nodes: Iterable[Node]) -> str:
   """Formats the given text nodes into a human-readable string."""
   return ''.join(str(node) for node in CompactTextNodes(nodes))
 
 
-def ReprNodes(nodes):
+def ReprNodes(nodes: Iterable[Node]) -> str:
   """Formats the given text nodes into a representation string."""
   return ''.join(repr(node) for node in nodes)
 
@@ -118,13 +123,12 @@ class ParsingContext:
   filename: Filename  # The name of the file parsed.
   logger: 'Logger'
 
-  def MakeLocation(self, lineno):
+  def MakeLocation(self, lineno: int) -> Location:
     """Builds a Location object for this context."""
     return Location(self.filename, lineno)
 
-  def MakeLocationError(self, *args, **kwargs):
-    """
-    Returns a fatal error for the current location.
+  def MakeLocationError(self, *args: Any, **kwargs: Any) -> 'FatalError':
+    """Returns a fatal error for the current location.
 
     See Logger.LocationError() for parameters.
     """
@@ -161,10 +165,10 @@ class RegexpParser:
     __rules: (OrderedDict[name, method])
   """
 
-  def __init__(self, rules_container):
+  def __init__(self, rules_container: object):
     """
     Args:
-      rules_container: (object) The object that contains the @rule methods.
+      rules_container: The object that contains the @rule methods.
     """
 
     # Retrieve the rules from the container, sorted alphabetically.
@@ -181,11 +185,10 @@ class RegexpParser:
     self.__regexp = re.compile(full_pattern, re.MULTILINE)
 
   def Parse(self, input_text):
-    """
-    Parses the given input text.
+    """Parses the given input text.
 
     Args:
-      input_text: (str) The text to parse.
+      input_text: The text to parse.
 
     Yields:
       (Tuple[str, callable|None, str|None]) The non-overlapping matches of the
@@ -244,21 +247,13 @@ class Lexer:
     }
     self.__text_processor = self.__TextProcessorPreserveWhitespace
 
-  def __iter__(self):
+  def __iter__(self) -> Iterator[Token]:
     """Returns the tokens iterator."""
     return self.__tokens
 
   @staticmethod
-  def __MergeTextTokensSameLine(tokens):
-    """
-    Merges the consecutive text tokens that have the same line.
-
-    Args:
-      nodes: (iter[Token]) The tokens to process.
-
-    Yields:
-      (Token)
-    """
+  def __MergeTextTokensSameLine(tokens: Iterable[Token]) -> Iterator[Token]:
+    """Merges the consecutive text tokens that have the same line."""
     text_token_accu = None
     for token in tokens:
       if token.type == TokenType.TEXT:
@@ -284,14 +279,9 @@ class Lexer:
     if text_token_accu is not None:
       yield text_token_accu
 
-  def __Parse(self):
-    """
-    Parses the tokens.
-
-    Yields:
-      (Token) The parsed tokens.
-    """
-    # pylint: disable=import-outside-toplevel
+  def __Parse(self) -> Iterator[Token]:
+    """Parses the tokens."""
+    # pylint: disable=import-outside-toplevel,redefined-outer-name,reimported
     from collections.abc import Iterable
     for text_before, rule_callable, matched_text in (
         self.__parser.Parse(self.__input_text)):
@@ -310,9 +300,8 @@ class Lexer:
         else:
           yield Token(TokenType.TEXT, self.__lineno, matched_text)
 
-  def __TextProcessorPreserveWhitespace(self, text):
-    """
-    Yields tokens for a block of text, preserving whitespace.
+  def __TextProcessorPreserveWhitespace(self, text: str) -> Iterator[Token]:
+    """Yields tokens for a block of text, preserving whitespace.
 
     Ensures that line returns are always at the end of a token.
     Strips spaces around each line.
@@ -336,9 +325,8 @@ class Lexer:
     self.__lineno = lineno
     self.__skip_spaces = False
 
-  def __TextProcessorSkipWhitespace(self, text):
-    """
-    Sames as __TextProcessorPreserveWhitespace, but skips more whitespace.
+  def __TextProcessorSkipWhitespace(self, text: str) -> Iterator[Token]:
+    """Sames as __TextProcessorPreserveWhitespace, but skips more whitespace.
 
     Skips newlines and whitespace after macros.
     """
@@ -360,38 +348,38 @@ class Lexer:
     self.__lineno = lineno
     self.__skip_spaces = False
 
-  def __Location(self):
+  def __Location(self) -> Location:
     return Location(self.__filename, self.__lineno)
 
-  def __UpdateLineno(self, text):
+  def __UpdateLineno(self, text: Optional[str]) -> None:
     if text:
       self.__lineno += text.count('\n')
       self.__skip_spaces = (text[-1] == '\n')
 
   @rule(r'[ \t]*\#.*(?:\n\s*|\Z)')
-  def RuleComment(self, value):
+  def RuleComment(self, value: str) -> None:
     self.__UpdateLineno(value)
 
   @rule(r'\^.')
-  def RuleEscape(self, value):
+  def RuleEscape(self, value: str) -> Token:
     self.__skip_spaces = False
     return Token(TokenType.TEXT, self.__lineno, value[1:])
 
   @rule(r'\[\s*')
-  def RuleLbracket(self, value):
+  def RuleLbracket(self, value: str) -> Token:
     token = Token(TokenType.LBRACKET, self.__lineno, '[')
     self.__UpdateLineno(value)
     return token
 
   @rule(r'\s*\]')
-  def RuleRbracket(self, value):
+  def RuleRbracket(self, value: str) -> Token:
     self.__UpdateLineno(value)
     return Token(TokenType.RBRACKET, self.__lineno, value)
 
   # Pre-processing statement
 
   @rule(r'\$\$[a-zA-Z0-9._]*\n?')
-  def RulePreProcessingInstruction(self, value):
+  def RulePreProcessingInstruction(self, value: str) -> None:
     preproc_instr_name = value[2:].strip()
     preproc_instr_callback = (
         self.__preproc_instr_callbacks.get(preproc_instr_name))
@@ -406,16 +394,16 @@ class Lexer:
     self.__UpdateLineno(value)
     self.__skip_spaces = True
 
-  def __PreprocessWhitespacePreserve(self):
+  def __PreprocessWhitespacePreserve(self) -> None:
     self.__text_processor = self.__TextProcessorPreserveWhitespace
 
-  def __PreprocessWhitespaceSkip(self):
+  def __PreprocessWhitespaceSkip(self) -> None:
     self.__text_processor = self.__TextProcessorSkipWhitespace
 
   # Macro
 
   @rule(r'\$' + MACRO_NAME_PATTERN)
-  def RuleMacro(self, value):
+  def RuleMacro(self, value: str) -> Token:
     macro_name = value[1:]
     if VALID_MACRO_NAME_REGEXP.match(macro_name) is None:
       return self.RuleMacroInvalid(value)
@@ -425,34 +413,34 @@ class Lexer:
     return token
 
   @rule(r'\$(?:[^$]\S{,9}|\Z)')
-  def RuleMacroInvalid(self, value):
+  def RuleMacroInvalid(self, value: str) -> NoReturn:
     raise self.context.MakeLocationError(self.__Location(),
                                          f"invalid macro name: '{value}'")
 
   # Special characters
 
   @rule(r'%', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RulePercent(self, _):
+  def RulePercent(self, _: str) -> Token:
     return self.__MacroToken('text.percent')
 
   @rule(r'&', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleAmpersand(self, _):
+  def RuleAmpersand(self, _: str) -> Token:
     return self.__MacroToken('text.ampersand')
 
   @rule(r'\\', rule_type=RuleType.SPECIAL_CHAR_LATEX)
-  def RuleBackslash(self, _):
+  def RuleBackslash(self, _: str) -> Token:
     return self.__MacroToken('text.backslash')
 
   @rule(r'_', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleUnderscore(self, _):
+  def RuleUnderscore(self, _: str) -> Token:
     return self.__MacroToken('text.underscore')
 
   @rule(r'~', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleNonBreakingSpace(self, _):
+  def RuleNonBreakingSpace(self, _: str) -> Token:
     return self.__MacroToken('text.nbsp')
 
   @rule(r'-{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleDashes(self, value):
+  def RuleDashes(self, value: str) -> Token:
     length = len(value)
     if length == 2:
       dash_name = 'en'
@@ -463,42 +451,42 @@ class Lexer:
     return self.__MacroToken('text.dash.' + dash_name)
 
   @rule(r'\.{3,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleEllipsis(self, value):
+  def RuleEllipsis(self, value: str) -> Token:
     if len(value) == 3:
       return self.__MacroToken('text.ellipsis')
     else:
       return Token(TokenType.TEXT, self.__lineno, value)
 
   @rule(r'«|\<{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleGuillemetOpen(self, value):
+  def RuleGuillemetOpen(self, value: str) -> Token:
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.open')
     else:
       return Token(TokenType.TEXT, self.__lineno, value)
 
   @rule(r'»|\>{2,}', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleGuillemetClose(self, value):
+  def RuleGuillemetClose(self, value: str) -> Token:
     if len(value) <= 2:
       return self.__MacroToken('text.guillemet.close')
     else:
       return Token(TokenType.TEXT, self.__lineno, value)
 
   @rule(r"`{1,2}", rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleBacktick(self, value):
+  def RuleBacktick(self, value: str) -> Token:
     if len(value) == 1:
       return self.__MacroToken('text.backtick')
     else:
       return self.__MacroToken('text.quote.open')
 
   @rule(r"'{1,2}", rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleApostrophe(self, value):
+  def RuleApostrophe(self, value: str) -> Token:
     if len(value) == 1:
       return self.__MacroToken('text.apostrophe')
     else:
       return self.__MacroToken('text.quote.close')
 
   @rule(r'[!:;?]+', rule_type=RuleType.SPECIAL_CHAR_OTHER)
-  def RuleDoublePunctuation(self, value):
+  def RuleDoublePunctuation(self, value: str) -> Sequence[Token]:
     return (
         self.__MacroToken('text.punctuation.double'),
         self.RuleLbracket('['),
@@ -507,26 +495,29 @@ class Lexer:
 
   # Helpers
 
-  def __MacroToken(self, macro_name):
+  def __MacroToken(self, macro_name: str) -> Token:
     self.__skip_spaces = False
     return Token(TokenType.MACRO, self.__lineno, macro_name)
 
 
 class Parser:
-  """
-  Parses a stream of tokens into nodes.
-  """
+  """Parses a stream of tokens into nodes."""
 
-  def __init__(self, lexer):
+  __context: ParsingContext
+  __tokens: PeekableIterator[Token]
+
+  def __init__(self, lexer: Lexer):
     self.__context = lexer.context
     self.__tokens = PeekableIterator(lexer)
 
-  def Parse(self):
-    """
-    Parses the input file into a list of nodes.
+  def Parse(self) -> list[Node]:
+    """Parses the input file into a list of nodes.
 
-    Return: (List[node])
-      The parsed nodes, None on fatal error.
+    Return:
+      The parsed nodes.
+
+    Raises:
+      FatalError
     """
 
     # Optimization: bing instance values to the local scope.
@@ -534,10 +525,11 @@ class Parser:
     MakeLocation = context.MakeLocation
     tokens = self.__tokens
 
-    def MakeLocationError(lineno, *args, **kwargs):
+    def MakeLocationError(
+        lineno: int, *args: Any, **kwargs: Any) -> 'FatalError':
       raise context.MakeLocationError(MakeLocation(lineno), *args, **kwargs)
 
-    def ParseNodes(call_nest_count):
+    def ParseNodes(call_nest_count: int) -> list[Node]:
       """
       Parses the tokens into a list of nodes.
 
@@ -546,12 +538,12 @@ class Parser:
       completes the argument.
 
       Args:
-        call_nest_count: (int) The macro call nesting level, 0 for top-level.
+        call_nest_count: The macro call nesting level, 0 for top-level.
 
       Returns:
-        (List[node]) The parsed nodes.
+        The parsed nodes.
       """
-      nodes = []
+      nodes: list[Node] = []
       while True:
         token = tokens.peek()
         if token is None:
@@ -608,18 +600,20 @@ class Parser:
     return ParseNodes(0)
 
 
-class PeekableIterator(Iterator):
+_T = TypeVar('_T')
+
+class PeekableIterator(Iterator[_T]):
   """Adds peek() to the given iterator.
 
   Limitation: does not support iterated None values.
   """
 
-  def __init__(self, iterable):
+  def __init__(self, iterable: Iterable[_T]):
     self.__iterator = iter(iterable)
-    self.__next_value = None
+    self.__next_value: Optional[_T] = None
     self.__has_next_value = False
 
-  def __next__(self):
+  def __next__(self) -> _T:
     if self.__has_next_value:
       next_value = self.__next_value
       if next_value is None:
@@ -629,7 +623,7 @@ class PeekableIterator(Iterator):
     else:
       return next(self.__iterator)
 
-  def peek(self):
+  def peek(self) -> Optional[_T]:
     if self.__has_next_value:
       return self.__next_value
     else:
@@ -639,23 +633,22 @@ class PeekableIterator(Iterator):
       return next_value
 
 
-def ParseFile(reader, filename, logger):
-  """
-  Parses a file into a list of nodes.
+def ParseFile(reader: TextIO, filename: Filename, logger: Logger) -> list[Node]:
+  """Parses a file into a list of nodes.
 
   Does not close the file.
 
   Args:
-    filename: (Filename) The file to parse.
-    logger: (Logger) The logger to use to report errors.
+    reader: The stream to parse.
+    filename: The name of the read file, for logging.
+    logger: The logger to use to report errors.
 
   Returns:
-    (List[node]) The parsed nodes.
+    The parsed nodes.
 
-  Throws:
+  Raises:
     FatalError
   """
-  assert isinstance(filename, Filename)
   context = ParsingContext(filename, logger)
 
   # Read the file entirely.

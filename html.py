@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
+from __future__ import annotations
+
 __author__ = 'Guillaume Ryder'
 
 from abc import ABC, abstractmethod
 import enum
+from io import StringIO
 import re
+from typing import Any, ClassVar, Optional
 
 from lxml import etree
 # pylint: disable=len-as-condition
 
 from branches import Branch
-from execution import ENCODING, ExecutionContext
+from execution import ENCODING, ExecutionContext, Executor
 from log import NodeError
 from macros import *
+from parsing import CallNode
 
 
 NBSP = '\xa0'
@@ -42,9 +47,8 @@ _VOID_TAGS_TO_NONE = {
 _STRIPPABLE = ' \r\n\t'
 
 
-def GetTagEmptyContents(tag_name):
-  """
-  Returns the text an empty element of the given tag should have.
+def GetTagEmptyContents(tag_name: str) -> Optional[str]:
+  """Returns the text an empty element of the given tag should have.
 
   Returns None or '' depending on the tag.
   """
@@ -53,11 +57,13 @@ def GetTagEmptyContents(tag_name):
 
 @enum.unique
 class TagLevel(str, enum.Enum):
-  """
-  Level of a tag, used automatically paragraphs on '\n\n'.
-  """
+  """Level of a tag, used automatically paragraphs on '\n\n'."""
 
-  def __new__(cls, name, flags=frozenset()):
+  is_para: bool
+  is_auto: bool
+  is_inline: bool
+
+  def __new__(cls, name: str, flags: frozenset[str]=frozenset()) -> TagLevel:
     level = str.__new__(cls, name)
     level._value_ = name
     level.is_para = 'para' in flags
@@ -114,14 +120,16 @@ class HtmlBranch(Branch):
 
   class ElementInfo:
     """
-    parent: (ElementInfo) The ElementInfo of the parent of the element.
-    elem: (Element) The element.
-    level: (TagLevel) The level of the element.
-    auto_para_tag: (str) The tag to use for auto-paragraphs,
+    parent: The ElementInfo of the parent of the element.
+    elem: The element.
+    level: The level of the element.
+    auto_para_tag: The tag to use for auto-paragraphs,
       None if the element does not support auto-paragraphs.
       Must be None for non-block elements.
     """
-    def __init__(self, parent, elem, level, auto_para_tag=None):
+    def __init__(self, parent: Optional['HtmlBranch.ElementInfo'],
+                 elem, level: TagLevel,
+                 auto_para_tag: Optional[str]=None):
       if auto_para_tag:
         assert level == TagLevel.BLOCK
         assert auto_para_tag not in _VOID_TAGS_TO_NONE
@@ -148,7 +156,29 @@ class HtmlBranch(Branch):
 
   type_name = 'html'
 
-  def __init__(self, *args, **kwargs):
+  # The typography set for this branch.
+  # If None, inherits the typography of the parent branch.
+  __typography: Optional[Typography]
+
+  #  The context containing the macros of self.typography.
+  __typography_context: ExecutionContext
+
+  # The current text accumulator of the branch.
+  # Used to merge consecutive text nodes created by AppendText.
+  __text_accu: list[str]
+
+  # The last chunk of text appended to the current
+  # inline tag, empty if the current paragraph has no text.
+  # Guaranteed to be non-empty if the current paragraph has some text.
+  __line_tail: str
+
+  # The separator for AppendText to insert before the next
+  # chunk of non-whitespace text. Expected to be ' ' or NBSP.
+  # If empty, whitespaces are appended as is.
+  # If not empty, whitespaces are skipped.
+  __text_sep: str
+
+  def __init__(self, *args: Any, **kwargs: Any):
     super().__init__(*args, **kwargs)
     parent = self.parent
     self.sub_branches = []
@@ -192,7 +222,7 @@ class HtmlBranch(Branch):
 
     self.AutoParaTryOpen()
 
-  def GetTypography(self):
+  def GetTypography(self) -> Typography:
     branch = self
     while branch is not None:
       typography = branch.__typography
@@ -201,7 +231,7 @@ class HtmlBranch(Branch):
       branch = branch.parent
     return None  # pragma: no cover
 
-  def SetTypography(self, typography):
+  def SetTypography(self, typography: Typography) -> None:
     # pylint: disable=attribute-defined-outside-init
     self.__typography = typography
     self.__typography_context.macros = (
@@ -210,9 +240,8 @@ class HtmlBranch(Branch):
   typography = property(GetTypography, SetTypography,
                         doc='(Typography) The typography rules.')
 
-  def AppendRawText(self, text):
-    """
-    Appends plain text.
+  def AppendRawText(self, text: str) -> None:
+    """Appends plain text.
 
     Ignores typography and paragraph detection.
     """
@@ -220,7 +249,7 @@ class HtmlBranch(Branch):
     self.__text_accu.append(text)
     self.__line_tail = self.__text_sep = ''
 
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     paras = self.__AUTO_PARA_DELIMITER.split(text)
 
     # Write the tail of the previous paragraph.
@@ -242,14 +271,13 @@ class HtmlBranch(Branch):
   __NBSP_TRIM_REGEXP = re.compile(r' *' + NBSP + r' *')
   __MULTIPLE_SPACES = re.compile(r' {2,}')
 
-  def AppendLineText(self, text):
-    """
-    Appends text to the current line.
+  def AppendLineText(self, text: str) -> None:
+    """Appends text to the current line.
 
     Faster equivalent of AppendText() when the text to append is newlines-free.
 
     Args:
-      text: (str) The non-empty string to append. Must not contain any '\n'.
+      text: The non-empty string to append. Must not contain any '\n'.
     """
     text = self.__NBSP_TRIM_REGEXP.sub(NBSP, text)
     text = self.__MULTIPLE_SPACES.sub(' ', text)
@@ -291,9 +319,8 @@ class HtmlBranch(Branch):
       self.__text_accu.append(text)
       self.__line_tail = text
 
-  def AppendNewline(self):
-    """
-    Appends a line break to the current paragraph.
+  def AppendNewline(self) -> None:
+    """Appends a line break to the current paragraph.
 
     Drops pending trailing spaces in the current line.
     Cancels the effect of RequireNonBreakingSpace() if it has just been called.
@@ -302,9 +329,8 @@ class HtmlBranch(Branch):
     """
     self.__line_tail = self.__text_sep = ''
 
-  def RequireNonBreakingSpace(self):
-    """
-    Requests a non-breaking space (NBSP) to be present.
+  def RequireNonBreakingSpace(self) -> None:
+    """Requests a non-breaking space (NBSP) to be present.
 
     Inserts a new NBSP only if:
     * not at the beginning of a line
@@ -315,20 +341,19 @@ class HtmlBranch(Branch):
     if tail and tail[-1] != NBSP:
       self.__text_sep = NBSP
 
-  def GetTailChar(self):
+  def GetTailChar(self) -> Optional[str]:
     """Returns the tail character of the current line."""
     tail = self.__text_sep or self.__line_tail
     return tail[-1] if tail else None
 
-  def AutoParaTryOpen(self, *, except_tag=None):
-    """
-    Opens a new paragraph, if possible.
+  def AutoParaTryOpen(self, *, except_tag: Optional[str]=None) -> bool:
+    """Opens a new paragraph, if possible.
 
     Args:
-      except_tag: (str) Does not open a new paragraph with this tag.
+      except_tag: Does not open a new paragraph with this tag.
 
     Returns:
-      (bool) Whether a tag was opened.
+      Whether a tag was opened.
     """
     auto_para_tag = self.__current_elem_info.auto_para_tag
     if auto_para_tag and auto_para_tag != except_tag:
@@ -337,12 +362,11 @@ class HtmlBranch(Branch):
     else:
       return False
 
-  def AutoParaTryClose(self):
-    """
-    Closes the current element if is an automatically-closeable paragraph.
+  def AutoParaTryClose(self) -> bool:
+    """Closes the current element if is an automatically-closeable paragraph.
 
     Returns:
-      (bool) Whether a tag was closed.
+      Whether a tag was closed.
     """
     if self.__current_elem_info.level == TagLevel.AUTO_PARAGRAPH:
       self.__CloseCurrentElement(discard_if_empty=True)
@@ -350,9 +374,8 @@ class HtmlBranch(Branch):
     else:
       return False
 
-  def __FlushText(self):
-    """
-    Flushes the text accumulator to the branch.
+  def __FlushText(self) -> None:
+    """Flushes the text accumulator to the branch.
 
     Drops the pending separator, if any.
     """
@@ -370,14 +393,14 @@ class HtmlBranch(Branch):
       self.__line_tail = text
     self.__text_sep = ''
 
-  def OpenTag(self, tag, level, *, auto_para_tag=None):
-    """
-    Opens a new child tag in the current element, and makes it current.
+  def OpenTag(self, tag: str, level: TagLevel, *,
+              auto_para_tag: Optional[str]=None) -> None:
+    """Opens a new child tag in the current element, and makes it current.
 
     Args:
-      tag: (str) The name of the tag, such as 'p' or 'h1'.
-      level: (TagLevel) The level of the new element.
-      auto_para_tag: (str) The tag to use for auto-paragraphs,
+      tag: The name of the tag, such as 'p' or 'h1'.
+      level: The level of the new element.
+      auto_para_tag: The tag to use for auto-paragraphs,
         None if the element does not support auto-paragraphs.
         Must be None for non-block elements.
     """
@@ -407,9 +430,8 @@ class HtmlBranch(Branch):
 
     self.AutoParaTryOpen()
 
-  def CloseTag(self, tag):
-    """
-    Closes the first ancestor element with a given tag name.
+  def CloseTag(self, tag: str) -> None:
+    """Closes the first ancestor element with a given tag name.
 
     Automatically closes intermediate paragraph elements as needed.
     Fails if encounters intermediate non-paragraph elements.
@@ -417,10 +439,10 @@ class HtmlBranch(Branch):
     Discards the paragraph elements closed that are empty.
 
     Args:
-      tag: (str) The name of the tag to close.
+      tag: The name of the tag to close.
 
     Raises:
-      NodeError if the given tag cannot be found or closed.
+      NodeError: The given tag cannot be found or closed.
     """
     while True:
       if self.__current_elem.tag == tag:
@@ -436,11 +458,10 @@ class HtmlBranch(Branch):
             f'got <{self.__current_elem.tag}>')
 
   def __CloseCurrentElement(self, *, discard_if_empty):
-    """
-    Closes the current element.
+    """Closes the current element.
 
     Args:
-      discard_if_empty: (bool) Whether to remove the element if it's empty.
+      discard_if_empty: Whether to remove the element if it's empty.
 
     Raises:
       NodeError if the given tag cannot be found or closed.
@@ -470,19 +491,18 @@ class HtmlBranch(Branch):
       closed_elem.tail = '\n'
 
   def RegisterTargetAction(self, unused_call_node, target, action):
-    """
-    Executes an action against a target element.
+    """Executes an action against a target element.
 
     The action may be executed later, asynchronously.
 
     Args:
-      call_node: (CallNode) The macro being called.
-      target: (str) The target given by the user.
+      call_node: The macro being called.
+      target: The target given by the user.
       action: (Callable[[Element], None) The method to call with the targeted
         element.
 
     Raises:
-      NodeError on error
+      NodeError
     """
     if target == 'current':
       # Current element, possibly automatically created.
@@ -526,16 +546,16 @@ class HtmlBranch(Branch):
       raise NodeError(f'no element found for target: {target}')
     action(elem_info.elem)
 
-  def CreateSubBranch(self):
+  def CreateSubBranch(self) -> HtmlBranch:
     return HtmlBranch(parent=self)
 
-  def _AppendSubBranch(self, sub_branch):
+  def _AppendSubBranch(self, sub_branch: HtmlBranch) -> None:
     self.__FlushText()
     self.AutoParaTryClose()
     self.__current_elem.append(sub_branch.__root_elem)
     self.AutoParaTryOpen()
 
-  def _Render(self, writer):
+  def _Render(self, writer: StringIO) -> None:
     self.__Finalize()
 
     # Post-process all elements.
@@ -552,14 +572,13 @@ class HtmlBranch(Branch):
     writer.write(etree.tostring(self.__tree, encoding=str))
     writer.write('\n')
 
-  def __Finalize(self):
-    """
-    Prepares the branch for rendering.
+  def __Finalize(self) -> None:
+    """Prepares the branch for rendering.
 
     Recurses in sub-branches.
 
     Raises:
-      NodeError if an element is still open.
+      NodeError: An element is still open.
     """
     # Close paragraphs automatically. Fail if some elements are still open.
     self.__FlushText()
@@ -577,9 +596,9 @@ class HtmlBranch(Branch):
         self._InlineXmlElement(branch.__root_elem)
 
   @classmethod
-  def __PostProcessElementsRecurse(cls, elem, *, strip_spaces=False):
-    """
-    Finalizes an element: strips spaces, processes "delete if empty".
+  def __PostProcessElementsRecurse(
+      cls, elem, *, strip_spaces: bool=False) -> None:
+    """Finalizes an element: strips spaces, processes "delete if empty".
 
     Strips spaces on <body> children only.
 
@@ -612,20 +631,20 @@ class HtmlBranch(Branch):
       elem.text = None
 
   @classmethod
-  def _RemoveElementIfEmpty(cls, elem, *,
-                            preserve_tail, ignore_attribs=False):
-    """
-    Removes an element if it is empty: no text, no children.
+  def _RemoveElementIfEmpty(
+      cls, elem, *,
+      preserve_tail: bool, ignore_attribs: bool=False) -> bool:
+    """Removes an element if it is empty: no text, no children.
 
     Args:
-      elem: (Element) The element to remove.
-      preserve_tail: (bool) Whether to preserve element tail, if any, by
-        appending it to the before element.
-      ignore_attribs: (bool) Whether to remove the element even if it has
-        attributes; fails if false and the element has attributes.
+      elem: The element to remove.
+      preserve_tail: Whether to preserve element tail, if any, by appending it
+        to the before element.
+      ignore_attribs: Whether to remove the element even if it has attributes;
+        fails if false and the element has attributes.
 
     Returns:
-      (bool) Whether the element was empty and has been removed.
+      Whether the element was empty and has been removed.
     """
     if (elem.text and elem.text.strip(_STRIPPABLE)) or len(elem):
       return False
@@ -651,16 +670,16 @@ class HtmlBranch(Branch):
     return True
 
   @staticmethod
-  def _AppendTextToXml(text, *, tail_elem=None, text_elem=None):
-    """
-    Appends text to an XML element.
+  def _AppendTextToXml(text: Optional[str], *,
+                       tail_elem=None, text_elem=None) -> None:
+    """Appends text to an XML element.
 
     Appends the text to tail_elem tail if valid, else to text_elem text.
 
     Args:
-      tail_elem: (Element) If not None, appends to this element's tail.
-      text_elem: (Element) If tail_elem is None, appends to this element's text.
-      text: (str) The text to append, not XML-escaped.
+      text: The text to append, not XML-escaped.
+      tail_elem: If not None, appends to this element's tail.
+      text_elem: If tail_elem is None, appends to this element's text.
     """
     if text:
       if tail_elem is not None:
@@ -670,15 +689,11 @@ class HtmlBranch(Branch):
         text_elem.text = (text_elem.text or '') + text
 
   @classmethod
-  def _InlineXmlElement(cls, elem):
-    """
-    Replaces an lxml Element with its contents.
+  def _InlineXmlElement(cls, elem) -> None:
+    """Replaces an lxml Element with its contents.
 
     Handles text and tail properly.
     The attributes of the element are lost.
-
-    Args:
-      elem: (Element) The element to inline.
     """
     parent_elem = elem.getparent()
     previous_elem = elem.getprevious()
@@ -709,10 +724,10 @@ class HtmlBranch(Branch):
 
 class Typography(ABC):
 
-  name: str
-  macros_container = None
+  name: ClassVar[str]
+  macros_container: Any = None
 
-  def __init__(self):
+  def __init__(self) -> None:
     super().__init__()
     assert self.name  # pylint: disable=no-member
     if self.macros_container is None:
@@ -722,20 +737,19 @@ class Typography(ABC):
 
   @staticmethod
   @abstractmethod
-  def FormatNumber(number):
-    """
-    Formats a number to a string.
+  def FormatNumber(number: str) -> str:
+    """Formats a number to a string.
 
     Args:
-      number: (str) The number to format. Prefixed with '-' if negative.
+      number: The number to format. Prefixed with '-' if negative.
         Can use '.' or ',' as decimal separator.
 
     Returns:
-      (str) The formatted number.
+      The formatted number.
     """
 
   @staticmethod
-  def FormatNumberCustom(number, thousands_sep):
+  def FormatNumberCustom(number: str, thousands_sep: str) -> str:
     number_match = _NUMBER_REGEXP.match(number)
     if number_match is None:
       return number
@@ -766,7 +780,7 @@ class NeutralTypography(Typography):
   macros_container = __import__('core_macros').SpecialCharacters
 
   @staticmethod
-  def FormatNumber(number):
+  def FormatNumber(number: str) -> str:
     return number
 
 
@@ -776,7 +790,7 @@ class EnglishTypography(Typography):
   name = 'english'
 
   @staticmethod
-  def FormatNumber(number):
+  def FormatNumber(number: str) -> str:
     return Typography.FormatNumberCustom(number, ',')
 
   TextBacktick = AppendTextMacro('text.backtick', "‘")
@@ -790,7 +804,7 @@ class FrenchTypography(Typography):
 
   # pylint: disable=arguments-differ
   @staticmethod
-  def FormatNumber(number):
+  def FormatNumber(number: str) -> str:
     return Typography.FormatNumberCustom(number, NBSP)
 
   TextBacktick = AppendTextMacro('text.backtick', "‘")
@@ -798,21 +812,22 @@ class FrenchTypography(Typography):
 
   @staticmethod
   @macro(public_name='text.guillemet.open')
-  def TextGuillemetOpen(executor, unused_call_node):
+  def TextGuillemetOpen(executor: Executor, _: CallNode) -> None:
     branch = executor.current_branch
     branch.AppendLineText('«')
     branch.RequireNonBreakingSpace()
 
   @staticmethod
   @macro(public_name='text.guillemet.close')
-  def TextGuillemetClose(executor, unused_call_node):
+  def TextGuillemetClose(executor: Executor, _: CallNode) -> None:
     branch = executor.current_branch
     branch.RequireNonBreakingSpace()
     branch.AppendLineText('»')
 
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents')
-  def TextPunctuationDouble(executor, unused_call_node, contents):
+  def TextPunctuationDouble(executor: Executor, _: CallNode,
+                            contents: str) -> None:
     if not contents:
       return
     branch = executor.current_branch
@@ -836,7 +851,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='par')
-  def Par(executor, unused_call_node):
+  def Par(executor: Executor, _: CallNode) -> None:
     """Tries to close/open a new automatic paragraph."""
     branch = executor.current_branch
     branch.AutoParaTryClose()
@@ -845,9 +860,9 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.open', args_signature='tag,level_name')
-  def TagOpen(executor, call_node, tag, level_name):
-    """
-    Opens a new XML tag.
+  def TagOpen(executor: Executor, call_node: CallNode,
+              tag: str, level_name: str) -> None:
+    """Opens a new XML tag.
 
     Args:
       tag: The name of the tag to open, such as 'span' or 'h1'.
@@ -875,9 +890,8 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.close', args_signature='tag')
-  def TagClose(executor, unused_call_node, tag):
-    """
-    Closes the current XML tag.
+  def TagClose(executor: Executor, _: CallNode, tag: str) -> None:
+    """Closes the current XML tag.
 
     Automatically closes intermediate paragraph elements as needed.
     Fails if encounters intermediate non-paragraph elements.
@@ -891,9 +905,8 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.body.raw', args_signature='text')
-  def TagBodyRaw(executor, unused_call_node, text):
-    """
-    Appends raw text to the current tag body.
+  def TagBodyRaw(executor: Executor, _: CallNode, text: str) -> None:
+    """Appends raw text to the current tag body.
 
     Ignores typography and paragraph detection.
     """
@@ -901,9 +914,9 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.delete.ifempty', args_signature='target')
-  def TagDeleteIfEmpty(executor, call_node, target):
-    """
-    Delete the specified element if it is empty: no text, no children.
+  def TagDeleteIfEmpty(executor: Executor, call_node: CallNode,
+                       target: str) -> None:
+    """Delete the specified element if it is empty: no text, no children.
 
     Ignores attributes.
 
@@ -917,9 +930,9 @@ class Macros:
 
   @staticmethod
   @macro(public_name='tag.attr.set', args_signature='target,attr_name,value')
-  def TagAttrSet(executor, call_node, target, attr_name, value):
-    """
-    Sets an attribute in an element.
+  def TagAttrSet(executor: Executor, call_node: CallNode,
+                 target: str, attr_name: str, value: str) -> None:
+    """Sets an attribute in an element.
 
     Args:
       target: The element to set the attribute into.
@@ -929,21 +942,22 @@ class Macros:
     Macros.__TagAttrSet(executor, call_node, target, attr_name, value)
 
   @staticmethod
-  def __TagAttrSet(executor, call_node, target, attr_name, value):
+  def __TagAttrSet(executor: Executor, call_node: CallNode,
+                   target: str, attr_name: str, value: str) -> None:
     if not attr_name.strip():
       raise executor.MacroFatalError(call_node,
                                      'attribute name cannot be empty')
 
-    def Action(elem):
+    def Action(elem) -> None:
       elem.set(attr_name, value)
 
     executor.current_branch.RegisterTargetAction(call_node, target, Action)
 
   @staticmethod
   @macro(public_name='tag.class.add', args_signature='target,class_name')
-  def TagClassAdd(executor, call_node, target, class_name):
-    """
-    Adds a CSS class to an element.
+  def TagClassAdd(executor: Executor, call_node: CallNode,
+                  target: str, class_name: str) -> None:
+    """Adds a CSS class to an element.
 
     Args:
       target: The element to add the class to.
@@ -951,7 +965,7 @@ class Macros:
     """
     class_names = Macros._ParseClassNames(class_name)
 
-    def Action(elem):
+    def Action(elem) -> None:
       if not class_names:
         return
 
@@ -967,15 +981,14 @@ class Macros:
 
   @staticmethod
   @macro(public_name='typo.name', text_compatible=True)
-  def TypoName(executor, unused_call_node):
+  def TypoName(executor: Executor, _: CallNode) -> None:
     """Prints the name of the current typography."""
     executor.AppendText(executor.current_branch.typography.name)
 
   @staticmethod
   @macro(public_name='typo.set', args_signature='typo_name')
-  def TypoSet(executor, call_node, typo_name):
-    """
-    Sets the typography rules to apply in the current branch.
+  def TypoSet(executor: Executor, call_node: CallNode, typo_name: str) -> None:
+    """Sets the typography rules to apply in the current branch.
 
     Args:
       typo_name: The name of the typography rules, see TYPOGRAPHIES.
@@ -990,10 +1003,8 @@ class Macros:
 
   @staticmethod
   @macro(public_name='typo.number', args_signature='number')
-  def TypoNumber(executor, call_node, number):
-    """
-    Formats a number according to the current typography rules.
-    """
+  def TypoNumber(executor: Executor, call_node: CallNode, number: str) -> None:
+    """Formats a number according to the current typography rules."""
     # Reject invalid values.
     if _NUMBER_REGEXP.match(number) is None:
       raise executor.MacroFatalError(call_node, f'invalid integer: {number}')
@@ -1002,9 +1013,8 @@ class Macros:
 
   @staticmethod
   @macro(public_name='typo.newline')
-  def TypoNewline(executor, unused_call_node):
-    """
-    Prepares the typography engine for a new line.
+  def TypoNewline(executor: Executor, _: CallNode) -> None:
+    """Prepares the typography engine for a new line.
 
     Concrete effect: ensures that the typographic spaces required after some
     characters are effectively inserted before the line is broken, instead of
@@ -1015,6 +1025,6 @@ class Macros:
     executor.current_branch.AppendNewline()
 
   @classmethod
-  def _ParseClassNames(cls, class_names):
+  def _ParseClassNames(cls, class_names: str) -> list[str]:
     return [cn for cn in cls.__CLASS_NAME_SEPARATOR_REGEXP.split(class_names)
             if cn]

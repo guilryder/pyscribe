@@ -1,17 +1,22 @@
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
+from __future__ import annotations
+
 __author__ = 'Guillaume Ryder'
 
 import io
 import os
+from os import PathLike
 import pathlib
 from pathlib import PurePath
 import sys
+from typing import Mapping, Optional, TextIO, Union
 
 from branches import TextBranch
-from log import Filename, FormatMessage, NodeError
+from log import FatalError as FatalErrorT, Filename, FormatMessage, Logger, \
+  MessageT, NodeError
 from macros import *
-from parsing import ParseFile
+from parsing import CallNode, ParseFile, NodesT
 
 
 ENCODING = 'utf-8'
@@ -22,63 +27,44 @@ MAX_NESTED_INCLUDES = 25
 
 
 class ExecutionContext:
-  """
-  Entry of an execution context stack.
+  """Entry of an execution context stack.
 
   Each node inherits the symbols of its ancestors.
 
   Fields:
-    parent: (ExecutionContext) The parent of the context, if any.
     macros: (Dict[str, callable]) The symbols of this context.
       Symbols of the parent entries are not duplicated in this dictionary.
       Each macro symbol has a name and a callback. See AddMacro for details.
   """
 
-  def __init__(self, parent=None):
-    """
-    Args:
-      parent: (ExecutionContext) The parent of the context to create, or None.
-    """
+  parent: Optional[ExecutionContext]
+
+  def __init__(self, parent: Optional[ExecutionContext]=None):
     self.parent = parent
-    self.macros = {}
+    self.macros: dict = {}
 
-  def AddMacro(self, name, callback):
-    """
-    Adds a macro to this context.
-
-    The macro callback is a Python callable with the following signature:
-    callable(executor, call_node)
-
-    where:
-      executor: (Executor) The executor to run the macro against.
-      location: (Location) The location of the caller of the macro.
-      args: (List[List[node]]) The arguments passed to the macro.
-
-    The callable has 'args_signature' attribute containing the signature
-    of the macro arguments as a string: '' if the macro has no arguments,
-    else 'name1,name2,...,nameN'.
+  def AddMacro(self, name: str, callback) -> None:
+    """Adds a macro to this context.
 
     Args:
-      name: (str) The name of the symbol, without '$' prefix.
-      callback: (runnable) The macro callback.
+      name: The name of the symbol, without '$' prefix.
+      callback: The macro callback.
     """
     assert hasattr(callback, 'args_signature'), (
         f'args_signature missing for {name}')
     self.macros[name] = callback
 
-  def AddMacros(self, macros):
-    """
-    Adds some macros to this context.
+  def AddMacros(self, macros) -> None:
+    """Adds some macros to this context.
 
     Args:
-      macros: (Dict[str, callable]) The macros to add.
+      macros: The macros to add.
     """
     for name, callback in macros.items():
       self.AddMacro(name, callback)
 
-  def LookupMacro(self, name, text_compatible):
-    """
-    Finds the macro with the given name in this context.
+  def LookupMacro(self, name: str, text_compatible: bool):
+    """Finds the macro with the given name in this context.
 
     If several macros have the same name, gives the priority to the macro
     defined in the deeper call stack entry.
@@ -86,16 +72,16 @@ class ExecutionContext:
     If the macro must be text-compatible, skips text-incompatible matches.
 
     Args:
-      name: (str) The name of the macro to find.
-      text_compatible: (bool) Whether the macro must be text-compatible.
+      name: The name of the macro to find.
+      text_compatible: Whether the macro must be text-compatible.
 
     Returns:
-      (callable) The macro callback, None if no macro has been found.
+      The macro callback, None if no macro has been found.
     """
     # Walk the stack of contexts. A cache does not improve peformance much
     # because most macros are found near the top of the stack:
     # 50% in top context, 20% in second context.
-    context = self
+    context: Optional[ExecutionContext] = self
     while context:
       callback = context.macros.get(name)
       if callback and (not text_compatible or callback.text_compatible):
@@ -103,6 +89,8 @@ class ExecutionContext:
       context = context.parent
     return None
 
+
+PathLikeT = Union[str, PathLike[str]]
 
 class FileSystem:
   # pylint: disable=no-self-use
@@ -112,70 +100,78 @@ class FileSystem:
   Path = PurePath
 
   @classmethod
-  def basename(cls, path):
+  def basename(cls, path: PathLikeT) -> str:
     return os.path.basename(path)
 
-  def getcwd(self):
+  def getcwd(self) -> PurePath:
     return pathlib.Path.cwd()
 
   @staticmethod
-  def lexists(path):
+  def lexists(path: PathLikeT) -> bool:
     return os.path.lexists(path)
 
-  def makedirs(self, path, exist_ok=False):
+  def makedirs(self, path: PathLikeT, exist_ok: bool=False) -> None:
     return os.makedirs(path, exist_ok=exist_ok)
 
   @staticmethod
-  def open(file, *, mode):
-    return io.open(file, mode=mode, encoding=ENCODING)
+  def open(file: PathLikeT, *, mode: str) -> TextIO:
+    return io.open(
+        file, mode=mode, encoding=ENCODING)  # type: ignore[return-value]
 
   @classmethod
-  def relpath(cls, path, start):
+  def relpath(cls, path: PathLikeT, start: PathLikeT) -> str:
     return os.path.relpath(path, start)
 
   @classmethod
-  def MakeAbsolute(cls, cur_dir, path):
-    """
-    Makes a path absolute and normalized.
+  def MakeAbsolute(cls, cur_dir: PurePath, path: PathLikeT) -> PurePath:
+    """Makes a path absolute and normalized.
 
     Removes '.' and resolves '..' path parts.
 
     Args:
-      cur_dir: (cls.Path) The path to the current directory, used if the path is
+      cur_dir: The path to the current directory, used if the path is
         relative.
-      path: (cls.Path) The path to make absolute.
+      path: The path to make absolute.
     """
     return cls.Path(os.path.normpath(cur_dir / path))
 
 
 class Executor:
-  """
-  Executes input files.
+  """Executes input files.
 
   At any time, the effective execution context is the concatenation of:
   1) the call context: self.context
   2) the branch context: self.current_branch.context
 
   Fields:
-    logger: (Logger) The logger used to print all error messages.
-    fs: (FileSystem) The file system abstraction.
-    __current_dir: (fs.Path) The absolute path of the current directory.
-    __output_path_prefix: (fs.Path) The absolute path prefix of all output
-      files; treated as a string prefix, not necessarily a directory.
-    opened_paths: (set[fs.Path]) The absolute paths of the readers and writers
-      opened so far.
-    system_branch: (Branch) The first branch of the executor, of type text.
     root_branches: (List[Branch]) All root branches, including system.
     current_branch: (Branch) The currently selected branch.
-    call_context: (ExecutionContext) The top of the execution contexts stack.
-    __current_text_writer: (None|writer) The writer to send text-only output to.
-      If set, the executor is in text-only mode: executing text-incompatible
-      macros fails. If None, the executor is in normal mode.
     __call_stack: (List[CallNode, callback]) The current macro call stack,
       pre-allocated to MAX_NESTED_CALLS frames.
     __call_stack_size: (int) The number of frames in __call_stack.
     __include_stack: (List[Filename]) The stack of included file names.
   """
+
+  logger: Logger
+  fs: FileSystem
+  __current_dir: PurePath  # The absolute path of the current directory.
+
+  # The absolute path prefix of all output files; treated as a string prefix,
+  # not necessarily a directory.
+  __output_path_prefix: PurePath
+
+  # The absolute paths of the readers and writers opened so far.
+  opened_paths: set[PurePath]
+
+  system_branch: TextBranch  # The first branch of the executor, of type text.
+
+  # The top of the execution contexts stack.
+  call_context: ExecutionContext
+
+  #  The writer to send text-only output to.
+  # If set, the executor is in text-only mode: executing text-incompatible
+  # macros fails. If None, the executor is in normal mode.
+  __current_text_writer: Optional[TextIO]
 
   def __init__(self, *, logger, fs=FileSystem(),
                current_dir, output_path_prefix):
@@ -199,27 +195,25 @@ class Executor:
     for macros_container in GetPublicMacrosContainers():
       self.system_branch.context.AddMacros(GetPublicMacros(macros_container))
 
-  def AddConstants(self, constants):
-    """
-    Adds constant macros to the system branch.
+  def AddConstants(self, constants: Mapping[str, str]) -> None:
+    """Adds constant macros to the system branch.
 
     Args:
-      constants: (Dict[name, str]) The constants to add.
+      constants: The constants to add, keyed by name.
     """
     context = self.system_branch.context
     for name, value in constants.items():
       context.AddMacro(name, AppendTextCallback(value))
 
-  def GetOutputWriter(self, filename_suffix):
-    """
-    Creates a writer for the given output file.
+  def GetOutputWriter(self, filename_suffix: str) -> TextIO:
+    """Creates a writer for the given output file.
 
     Args:
       filename_suffix: The path suffix of the file to write, relative to
         __output_path_prefix. Must be empty, or start with a dot and contain no
         directory separator.
 
-    Throws:
+    Raises:
       NodeError
     """
     fs = self.fs
@@ -245,19 +239,19 @@ class Executor:
     self.opened_paths.add(path)
     return writer
 
-  def ResolveFilePath(self, path, directory, default_ext=None):
-    """
-    Normalizes a user-entered, possibly relative file path.
+  def ResolveFilePath(self, path: str, directory: PathLikeT,
+                      default_ext: Optional[str]=None) -> PurePath:
+    """Normalizes a user-entered, possibly relative file path.
 
     Args:
-        path: (fs.Path) The path to resolve.
-        directory: (str|fs.Path) The path of the directory to resolve path
-          against if it is relative. Can be relative to current_dir.
-        default_ext: (str|None) The extension to append to the path if it has
-          none and it refers to a non-existing file.
+      path: The path to resolve.
+      directory: The path of the directory to resolve path against if it is
+        relative. Can be relative to current_dir.
+      default_ext: The extension to append to the path if it has none and it
+        refers to a non-existing file.
 
     Returns:
-      (Path) The resolved path, always absolute.
+      The resolved path, always absolute.
     """
     return self.ResolveFilePathStatic(
         path,
@@ -266,19 +260,21 @@ class Executor:
         fs=self.fs)
 
   @staticmethod
-  def ResolveFilePathStatic(path, *, abs_directory, default_ext=None, fs):
-    """
-    Normalizes a user-entered, possibly relative file path.
+  def ResolveFilePathStatic(path: str, *,
+                            abs_directory: PurePath,
+                            default_ext: Optional[str]=None,
+                            fs: FileSystem) -> PurePath:
+    """Normalizes a user-entered, possibly relative file path.
 
     Args:
-        path: (fs.Path) The path to resolve.
-        abs_directory: (fs.Path|None) The absolute path of the directory to
-          resolve path against if it is relative.
-        default_ext: (str|None) The extension to append to the path if it has
-          none and it refers to a non-existing file.
+      path: The path to resolve.
+      abs_directory: The absolute path of the directory to resolve path against
+        if it is relative.
+      default_ext: The extension to append to the path if it has none and it
+        refers to a non-existing file.
 
     Returns:
-      (fs.Path) The resolved path, always absolute.
+      The resolved path, always absolute.
     """
     assert abs_directory.is_absolute()
     abs_path = fs.MakeAbsolute(abs_directory, path)
@@ -287,17 +283,16 @@ class Executor:
       abs_path = abs_path.with_suffix(default_ext)
     return abs_path
 
-  def ExecuteFile(self, path):
-    """
-    Executes the given PyScribe file.
+  def ExecuteFile(self, path: PurePath) -> None:
+    """Executes the given PyScribe file.
 
     Args:
-      path: (Path) The absolute path of the file to execute.
+      path: The absolute path of the file to execute.
 
-    Throws:
-      FatalError on file execution error
-      NodeError if too many nested includes
-      OSError if unable to open the file
+    Raises:
+      FatalError: File execution error
+      NodeError: Too many nested includes
+      OSError: Unable to open the file
     """
     assert path.is_absolute()
     self.opened_paths.add(path)
@@ -313,28 +308,27 @@ class Executor:
       finally:
         self.__include_stack.pop()
 
-  def RenderBranches(self):
+  def RenderBranches(self) -> None:
     """Renders all root branches with an output file.
 
     Do not close the writers: tests need to be able to call StringIO.getvalue(),
     and production closes the files automatically.
 
-    Throws:
+    Raises:
       FatalError
       NodeError
-      OSError on output file write error
+      OSError: Output file write error
     """
     for branch in self.root_branches:
       branch.Render()
 
-  def ExecuteNodes(self, nodes):
-    """
-    Executes the given nodes in the current call context.
+  def ExecuteNodes(self, nodes) -> None:
+    """Executes the given nodes in the current call context.
 
     Args:
-      nodes: (List[node]) The nodes to execute.
+      nodes: The nodes to execute.
 
-    Throws:
+    Raises:
       FatalError
     """
     for node in nodes:
@@ -343,14 +337,13 @@ class Executor:
       except NodeError as e:
         raise self.FatalError(node.location, e) from e
 
-  def ExecuteInCallContext(self, nodes, call_context):
-    """
-    Executes the given nodes in the given call context.
+  def ExecuteInCallContext(
+      self, nodes: NodesT, call_context: Optional[ExecutionContext]) -> None:
+    """Executes the given nodes in the given call context.
 
     Args:
-      nodes: (List[node]) The nodes to execute.
-      call_context: (ExecutionContext|None)
-        The call context to execute the nodes in, None for current.
+      nodes: The nodes to execute.
+      call_context: The call context to execute the nodes in, None for current.
     """
     if call_context is None:
       self.ExecuteNodes(nodes)
@@ -362,14 +355,13 @@ class Executor:
       finally:
         self.call_context = old_call_context
 
-  def ExecuteInBranchContext(self, nodes, branch_context):
-    """
-    Executes the given nodes in the given branch context.
+  def ExecuteInBranchContext(self, nodes: NodesT,
+                             branch_context: ExecutionContext) -> None:
+    """Executes the given nodes in the given branch context.
 
     Args:
-      nodes: (List[node]) The nodes to execute.
-      call_context: (ExecutionContext)
-        The branch context to execute the nodes in.
+      nodes: The nodes to execute.
+      call_context: The branch context to execute the nodes in.
     """
     old_branch_context = self.current_branch.context
     self.current_branch.context = branch_context
@@ -378,7 +370,7 @@ class Executor:
     finally:
       self.current_branch.context = old_branch_context
 
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     """Appends a block of text to the current branch."""
     text_writer = self.__current_text_writer
     if text_writer is None:
@@ -386,7 +378,7 @@ class Executor:
     else:
       text_writer.write(text)
 
-  def RegisterBranch(self, branch):
+  def RegisterBranch(self, branch) -> None:
     """
     Registers a branch and its sub-branches. Gives them a name if necessary.
 
@@ -400,7 +392,7 @@ class Executor:
       if sub_branch.parent is None:
         self.root_branches.append(sub_branch)
 
-  def EvalText(self, nodes):
+  def EvalText(self, nodes: NodesT) -> str:
     """
     Evaluates the given nodes into text.
 
@@ -413,7 +405,7 @@ class Executor:
     Returns:
       (str) The nodes execution result.
 
-    Throws:
+    Raises:
       FatalError
     """
     with io.StringIO() as text_writer:
@@ -432,26 +424,26 @@ class Executor:
     call_nodes = [call_node for call_node, callback in reversed(call_stack)]
     return self.logger.LocationError(location, message, call_stack=call_nodes)
 
-  def MacroFatalError(self, call_node, message, *, call_frame_skip=1):
+  def MacroFatalError(self, call_node: CallNode, message: MessageT, *,
+                      call_frame_skip: int=1) -> FatalErrorT:
     """Logs and raises a macro fatal error."""
     return self.FatalError(call_node.location,
                            f'${call_node.name}: {FormatMessage(message)}',
                            call_frame_skip=call_frame_skip)
 
-  def LookupMacro(self, name, text_compatible):
-    """
-    Finds the macro with the given name in the active contexts.
+  def LookupMacro(self, name: str, text_compatible: bool):
+    """Finds the macro with the given name in the active contexts.
 
     Looks for the macro:
     1) in the call context
     2) in the context of the current branch.
 
     Args:
-      name: (str) The name of the macro to retrieve.
-      text_compatible: (bool) Whether the macro must be text-compatible.
+      name: The name of the macro to retrieve.
+      text_compatible: Whether the macro must be text-compatible.
 
     Returns:
-      (callable) The macro callback, None if no macro has been found.
+      The macro callback, None if no macro has been found.
     """
     for context in (self.call_context, self.current_branch.context):
       callback = context.LookupMacro(name, text_compatible)
@@ -460,11 +452,10 @@ class Executor:
     return None
 
   def CallMacro(self, call_node):
-    """
-    Invokes a macro.
+    """Invokes a macro.
 
     Args:
-      call_node: (CallNode) The macro call description.
+      call_node: The macro call description.
     """
     text_compatible = (self.__current_text_writer is not None)
     callback = self.LookupMacro(call_node.name, text_compatible=text_compatible)
@@ -498,16 +489,18 @@ class Executor:
       # Pop the call stack frame.
       self.__call_stack_size = call_stack_size_orig
 
-  def CheckArgumentCount(self, call_node, macro_callback,
-                         min_args_count, max_args_count=None):
+  def CheckArgumentCount(self, call_node: CallNode,
+                         macro_callback,
+                         min_args_count: int,
+                         max_args_count: Optional[int]=None) -> None:
     """
     Raises an exception if a macro call has an invalid number of arguments.
 
     Args:
-      call_node: (CallNode) The macro call.
-      macro_callback: (callback) The callback of the macro called.
-      min_args_count: (int) The minimum number of arguments of the macro.
-      max_args_count: (int|None) The maximum number of arguments of the macro,
+      call_node: The macro call.
+      macro_callback: The callback of the macro called.
+      min_args_count: The minimum number of arguments of the macro.
+      max_args_count: The maximum number of arguments of the macro,
         same as min_args_count if None, unlimited if < 0.
 
     Raises:

@@ -1,37 +1,41 @@
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
+from __future__ import annotations
+
 __author__ = 'Guillaume Ryder'
 
-
-import io
+from io import StringIO
+from typing import Any, Optional
 
 from branches import AbstractSimpleBranch
+from execution import Executor
 from macros import *
+from parsing import CallNode
 
 
 _SEPARATOR_CHARS = ' \t\n\r\\[]{}%'
 
 
 class LatexWriter:
-  """
-  Wraps a writer with logic to handle $latex.sep.
+  """Wraps a writer with logic to handle $latex.sep."""
 
-  Fields:
-    __writer: (writer) The wrapped writer. Can be StringIO or any other writer.
-    __sep_begin: (bool) Whether $latex.sep was called at the beginning of the
-      writer, before any text was appended.
-    __sep_end: (bool) Whether $latex.sep was called since the last time text has
-      been written. Cannot be true if the writer is empty.
-    __last_char: (None|str) The last character written, if any.
-  """
+  __writer: StringIO
 
-  def __init__(self, writer):
+  # Whether $latex.sep was called at the beginning of the writer,
+  # before any text was appended.
+  __sep_begin = False
+
+  # Whether $latex.sep was called since the last time text has been written.
+  # Cannot be true if the writer is empty.
+  __sep_end = False
+
+  # The last character written, if any.
+  __last_char: Optional[str] = None
+
+  def __init__(self, writer: StringIO):
     self.__writer = writer
-    self.__sep_begin = False
-    self.__sep_end = False
-    self.__last_char = None
 
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     """Writes text. Writes a space first if requested by AppendSep()."""
     if not text:
       return
@@ -50,9 +54,8 @@ class LatexWriter:
     self.__writer.write(text)
     self.__last_char = text[-1]
 
-  def AppendSep(self):
-    """
-    Writes a space character if necessary to avoid LaTeX syntax errors.
+  def AppendSep(self) -> None:
+    """Writes a space character if necessary to avoid LaTeX syntax errors.
 
     Does nothing if followed by a write of one of _SEPARATOR_CHARS.
     Else, writes a space character.
@@ -63,9 +66,8 @@ class LatexWriter:
     else:
       self.__sep_end = True
 
-  def AppendLeafLatexWriter(self, leaf_latex_writer):
-    """
-    Writes the contents of another LatexWriter backed by a StringIO writer.
+  def AppendLeafLatexWriter(self, leaf_latex_writer: LatexWriter) -> None:
+    """Writes the contents of another LatexWriter backed by a StringIO writer.
 
     Closes the StringIO of leaf_latex_writer to detect attempts to render the
     same leaf multiple times.
@@ -83,31 +85,29 @@ class LatexWriter:
 
 
 class LatexBranch(AbstractSimpleBranch):
-  """
-  Branch for LaTeX code.
-  """
+  """Branch for LaTeX code."""
 
   type_name = 'latex'
 
-  def __init__(self, *args, **kwargs):
+  def __init__(self, *args: Any, **kwargs: Any):
     super().__init__(*args, **kwargs)
 
     if self.parent is None:
       self.context.AddMacros(GetPublicMacros(Macros))
 
-  def _CreateLeaf(self):
-    return LatexWriter(io.StringIO())
+  def _CreateLeaf(self) -> LatexWriter:
+    return LatexWriter(StringIO())
 
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     self._current_leaf.AppendText(text)
 
-  def AppendSep(self):
+  def AppendSep(self) -> None:
     self._current_leaf.AppendSep()
 
-  def CreateSubBranch(self):
+  def CreateSubBranch(self) -> LatexBranch:
     return LatexBranch(parent=self)
 
-  def _Render(self, writer):
+  def _Render(self, writer: StringIO) -> None:
     render_latex_writer = LatexWriter(writer)
     for leaf_latex_writer in self._IterLeaves():
       render_latex_writer.AppendLeafLatexWriter(leaf_latex_writer)
@@ -129,7 +129,7 @@ class Macros:
 
   @staticmethod
   @macro(public_name='latex.sep')
-  def LatexSep(executor, unused_call_node):
+  def LatexSep(executor: Executor, _: CallNode) -> None:
     r"""
     Inserts a space after a LaTeX command if necessary to avoid syntax errors.
 

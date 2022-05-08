@@ -4,35 +4,43 @@
 __author__ = 'Guillaume Ryder'
 
 import argparse
+from pathlib import PurePath
 import sys
+from typing import Optional
 
 from branch_macros import BRANCH_TYPES
-from execution import PYSCRIBE_EXT, Executor, FileSystem
+from execution import PYSCRIBE_EXT, Executor, FileSystem, PathLikeT
 import log
 
 
 class Main:
 
-  def __init__(self, *, input_args=None, fs=FileSystem(), main_file=sys.argv[0],
-               ArgumentParser=argparse.ArgumentParser):
+  __input_args: Optional[list[str]]
+  __fs: FileSystem
+  __main_file: PurePath
+  __ArgumentParser: type[argparse.ArgumentParser]
+
+  def __init__(
+      self, *, input_args: Optional[list[str]]=None,
+      fs: FileSystem=FileSystem(), main_file: str=sys.argv[0],
+      ArgumentParser: type[argparse.ArgumentParser]=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__fs = fs
     self.__main_file = fs.Path(main_file)
     self.__ArgumentParser = ArgumentParser
 
-  def Run(self):
+  def Run(self) -> None:
     self.__LoadEnvironment()
     self.__ParseArguments()
     self.__Execute()
 
-  def __LoadEnvironment(self):
+  def __LoadEnvironment(self) -> None:
     """Retrieves the environment: current directory."""
     # pylint: disable=attribute-defined-outside-init
     self.__current_dir = self.__fs.getcwd()
 
-  def __ParseArguments(self):
-    """
-    Parses the command-line arguments given at construction.
+  def __ParseArguments(self) -> None:
+    """Parses the command-line arguments given at construction.
 
     Quits on error or if --help is passed.
 
@@ -42,14 +50,14 @@ class Main:
     """
     fs = self.__fs
     # pylint: disable=attribute-defined-outside-init
-    def ParseDefine(value):
+    def ParseDefine(value: str) -> tuple[str, str]:
       name, sep, text = value.partition('=')
       if not sep:
         raise argparse.ArgumentTypeError(
             f'invalid value, expected format: name=text; got: {value}')
       return name, text
 
-    def ValidateBasename(value):
+    def ValidateBasename(value: str) -> str:
       if value != fs.basename(value):
         raise argparse.ArgumentTypeError(
             f'expected basename without separator, got: {value}')
@@ -107,7 +115,7 @@ class Main:
 
     self.__args = args
 
-  def __Execute(self):
+  def __Execute(self) -> None:
     """Executes the action specified on the command-line."""
     fs = self.__fs
     constants = self.__constants
@@ -153,21 +161,22 @@ class Main:
       sys.exit(1)
 
 
-def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
-                          input_path, output_basename_prefix):
-  """
-  Returns the standard constant definitions for files and directories.
+def _ComputePathConstants(
+    *, fs: FileSystem,
+    current_dir: PurePath, lib_dir: PurePath, output_dir: PurePath,
+    input_path: PurePath, output_basename_prefix: str) -> dict[str, str]:
+  """Returns the standard constant definitions for files and directories.
 
   Args:
-    current_dir: (fs.Path) The current directory used to resolve relative paths.
-    lib_dir: (fs.Path) The path to the directory that contains core.psc.
-    output_dir: (fs.Path) The path to the output directory.
-    input_path: (fs.Path) The absolute path to the executed top-level file.
-    output_basename_prefix: (str) The basename prefix of all output files.
+    current_dir: The current directory used to resolve relative paths.
+    lib_dir: The path to the directory that contains core.psc.
+    output_dir: The path to the output directory.
+    input_path: The absolute path to the executed top-level file.
+    output_basename_prefix: The basename prefix of all output files.
       Defaults to the basename of input_filename without extension if empty.
 
   Returns:
-    Dict[str, str]
+    The constants keyed by name.
   """
   output_dir = fs.MakeAbsolute(current_dir, output_dir)
   input_dir = input_path.parent
@@ -175,7 +184,7 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
   input_basename_noext = input_path.stem
   output_basename_prefix = output_basename_prefix or input_basename_noext
 
-  constants = {
+  constants: dict[str, PathLikeT] = {
       'dir.lib': lib_dir,
       'dir.output': output_dir,
       'dir.input': input_dir,

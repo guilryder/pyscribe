@@ -1,44 +1,46 @@
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
 
+from __future__ import annotations
+
 __author__ = 'Guillaume Ryder'
 
 from abc import ABC, abstractmethod
 from io import StringIO
+from typing import ClassVar, Optional
 
 from log import NodeError
 from macros import *
 
-
 class Branch(ABC):
-  """
-  Output branch: append-only stream of text nodes and sub-branches.
+  """Output branch: append-only stream of text nodes and sub-branches.
 
   Details of sub-branches is an implementation detail of the root branch.
   No method other than the ones declared below can be called on them.
 
   Fields:
-    type_name: (str) The name of the type of the branch,
-      as returned by $branch.type.
     parent: (Branch) The parent of this branch, None if the branch is root.
     root: (Branch) The root ancestor of this branch, self if the branch is root.
     context: (ExecutionContext) The execution context of the branch.
-    name: (str) The name of the branch.
     sub_branches: (List[Branch]) The direct sub-branches of this branch.
-    attached: (bool) Whether the branch has been inserted in its parent branch;
-      always true for root branches.
-    writer: (stream) The output writer of the branch (root branch only).
-      Must have a write() method.
   """
 
-  type_name: str  # must be set in implementations
+  type_name: ClassVar[str]  # as returned by $branch.type
+  name: Optional[str]
+  # Whether the branch has been inserted in its parent branch.
+  # Always true for root branches.
+  attached: bool
+  #  The output writer of the root branch. None for child branches.
+  writer: Optional[StringIO]
 
-  def __init__(self, *, parent, parent_context=None, name=None, writer=None):
+  def __init__(self, *, parent, parent_context=None,
+               name: Optional[str]=None, writer: Optional[StringIO]=None):
     """
     Args:
       parent: (branch) The parent branch, None for top-level branches.
       parent_context: (ExecutionContext) The parent of the execution context
         of the branch. Defaults to parent.context if parent is set.
-      name: (str) The name of the branch; optional.
+      name: The name of the branch; optional.
+      writer: Set if and only if the branch is root.
     """
     from execution import ExecutionContext  # pylint: disable=import-outside-toplevel
     if parent and not parent_context:
@@ -47,7 +49,7 @@ class Branch(ABC):
     self.root = parent.root if parent else self
     self.context = ExecutionContext(parent=parent_context)
     self.name = name
-    self.sub_branches = []
+    self.sub_branches: list = []
     self.attached = not parent
 
     self.context.AddMacro('branch.type', AppendTextCallback(self.type_name))
@@ -58,11 +60,11 @@ class Branch(ABC):
     else:
       self.writer = writer
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return f'<{self.__class__.__name__}: {self.name}>'
 
   @abstractmethod
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     """Appends a block of text to the branch."""
 
   @abstractmethod
@@ -76,7 +78,7 @@ class Branch(ABC):
       (Branch) The new sub-branch, unattached.
     """
 
-  def AppendSubBranch(self, sub_branch):
+  def AppendSubBranch(self, sub_branch) -> None:
     """
     Appends an existing sub-branch to this branch.
 
@@ -102,7 +104,7 @@ class Branch(ABC):
     sub_branch.attached = True
 
   @abstractmethod
-  def _AppendSubBranch(self, sub_branch):
+  def _AppendSubBranch(self, sub_branch) -> None:
     """
     Appends an existing sub-branch to this branch.
 
@@ -123,16 +125,16 @@ class Branch(ABC):
     for sub_branch in self.sub_branches:
       yield from sub_branch.IterBranches()
 
-  def Render(self):
+  def Render(self) -> None:
     """
     Renders this branch and its sub-branches recursively.
 
     Can be called on root branches only.
 
-    Throws:
+    Raises:
       FatalError
       NodeError
-      OSError on output file write error
+      OSError: Output file write error.
     """
     writer = self.writer
     if writer is not None:
@@ -140,18 +142,16 @@ class Branch(ABC):
       writer.flush()
 
   @abstractmethod
-  def _Render(self, writer):
-    """
-    Renders the branch and its sub-branches recursively.
+  def _Render(self, writer: StringIO) -> None:
+    """Renders the branch and its sub-branches recursively.
 
     Args:
-      write: (stream) The stream to render the output text to.
-        Must have a write() method.
+      writer: The stream to render the output text to.
 
-    Throws:
+    Raises:
       FatalError
       NodeError
-      OSError on output file write error
+      OSError: Output file write error.
     """
 
 
@@ -176,11 +176,11 @@ class AbstractSimpleBranch(Branch):
   def _CreateLeaf(self):
     """Returns a new, blank leaf node."""
 
-  def __AppendLeaf(self):
+  def __AppendLeaf(self) -> None:
     self._current_leaf = self._CreateLeaf()
     self.__nodes.append(self._current_leaf)
 
-  def _AppendSubBranch(self, sub_branch):
+  def _AppendSubBranch(self, sub_branch) -> None:
     self.__nodes.append(sub_branch)
     self.__AppendLeaf()
 
@@ -199,16 +199,16 @@ class TextBranch(AbstractSimpleBranch):
 
   type_name = 'text'
 
-  def _CreateLeaf(self):
+  def _CreateLeaf(self) -> StringIO:
     return StringIO()
 
-  def AppendText(self, text):
+  def AppendText(self, text: str) -> None:
     self._current_leaf.write(text)
 
-  def CreateSubBranch(self):
+  def CreateSubBranch(self) -> TextBranch:
     return TextBranch(parent=self)
 
-  def _Render(self, writer):
+  def _Render(self, writer: StringIO) -> None:
     for leaf in self._IterLeaves():
       writer.write(leaf.getvalue())
       # Safety check: prevent future access to the leaf.

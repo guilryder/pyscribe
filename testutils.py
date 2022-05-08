@@ -10,10 +10,13 @@ import errno
 import io
 import os
 import pathlib
+from pathlib import PurePath
 import sys
+from typing import Any, IO, NoReturn, Optional, TextIO
 import unittest
 
 import execution
+from execution import PathLikeT
 from log import FatalError, Filename, Location, Logger, LoggerFormat, NodeError
 from macros import macro, GetPublicMacros
 
@@ -21,7 +24,7 @@ from macros import macro, GetPublicMacros
 __import__('tests')  # for unittest hooks
 
 
-def loc(display_path, lineno, dir_path='/cur'):
+def loc(display_path: str, lineno: int, dir_path: str='/cur') -> Location:
   return Location(Filename(display_path, dir_path), lineno)
 
 TEST_LOCATION = loc('file.txt', 42)
@@ -162,34 +165,38 @@ class FakeLogger(Logger):
       top='{location!r}: {message}\n',
       stack_frame='  {call_node.location!r}: ${call_node.name}\n')
 
-  def __init__(self):
+  info_messages: list[str]
+
+  def __init__(self) -> None:
     self.err_file = io.StringIO()
     self.info_messages = []
     super().__init__(fmt=self.FORMAT,
                      err_file=self.err_file,
                      info_file=None)
 
-  def ConsumeStdErr(self):
+  def ConsumeStdErr(self) -> str:
     """Returns the errors logged so far, then clears them."""
     output = self.err_file.getvalue().strip()
     self.err_file.seek(0)
     self.err_file.truncate()
     return output
 
-  def LogInfo(self, message):
+  def LogInfo(self, message: str) -> None:
     self.info_messages.append(message)
 
 
 class FakeFileSystem(execution.FileSystem):
 
-  def __init__(self):
+  created_dirs: set[str]
+
+  def __init__(self) -> None:
     super().__init__()
-    self.stdout = None
-    self.stderr = None
-    self.created_dirs = None
+    self.stdout = None  # type: ignore[assignment]
+    self.stderr = None  # type: ignore[assignment]
+    self.created_dirs = None  # type: ignore[assignment]
     self.cwd = self.Path('/cur')
 
-  def InitializeForWrites(self):
+  def InitializeForWrites(self) -> None:
     self.stdout = io.StringIO()
     self.stderr = io.StringIO()
     self.created_dirs = set()
@@ -197,37 +204,37 @@ class FakeFileSystem(execution.FileSystem):
   Path = pathlib.PurePosixPath
 
   @classmethod
-  def basename(cls, path):
+  def basename(cls, path: PathLikeT) -> str:
     return str(cls.Path(path).name)
 
-  def getcwd(self):
+  def getcwd(self) -> PurePath:
     return self.cwd
 
   @staticmethod
-  def lexists(path):
+  def lexists(path: PathLikeT) -> bool:
     raise NotImplementedError
 
-  def makedirs(self, path, exist_ok=False):
+  def makedirs(self, path: PathLikeT, exist_ok: bool=False) -> None:
     if not exist_ok:
       raise NotImplementedError
     self.created_dirs.add(str(path))
 
   @staticmethod
-  def open(*args, **kwargs):
+  def open(*args: Any, **kwargs: Any) -> Any:
     raise NotImplementedError
 
   @classmethod
-  def relpath(cls, path, start):
+  def relpath(cls, path: PathLikeT, start: PathLikeT) -> str:
     return cls._ToPosix(os.path.relpath(path, start))
 
   @classmethod
-  def MakeAbsolute(cls, cur_dir, path):
+  def MakeAbsolute(cls, cur_dir: PathLikeT, path: PathLikeT) -> PurePath:
     absolute_path = cls.Path(path)
     if not absolute_path.is_absolute():
       absolute_path = cur_dir / absolute_path
 
     # Normalize like the Posix os.path.normpath(): remove '.' and resolve '..'.
-    parts = []
+    parts: list[str] = []
     for part in absolute_path.parts:
       if part == '..':
         if len(parts) > 1:
@@ -240,7 +247,7 @@ class FakeFileSystem(execution.FileSystem):
     return result
 
   @staticmethod
-  def _ToPosix(path):
+  def _ToPosix(path: PathLikeT) -> str:
     return pathlib.Path(path).as_posix()
 
 
@@ -251,7 +258,7 @@ TESTDATA_DIR = REAL_PYSCRIBE_DIR / 'testdata'
 
 class TestCase(unittest.TestCase):
 
-  def __FailureMessage(self, *lines):  # pragma: no cover
+  def __FailureMessage(self, *lines: Optional[str]) -> str:  # pragma: no cover
     return '\n'.join(filter(None, lines))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
@@ -279,13 +286,13 @@ class TestCase(unittest.TestCase):
     """
     if contents is None:
       class FakeErrorFile(io.StringIO):
-        def read(self):
+        def read(self, *args: Any) -> str:
           raise OSError('Fake read error')
       return FakeErrorFile('')
     else:
       return io.StringIO(contents, newline=None)
 
-  def FakeOutputFile(self):
+  def FakeOutputFile(self) -> TextIO:
     return io.StringIO()
 
   def OpenSourceFile(self, path):
@@ -515,17 +522,19 @@ class BranchTestCase(TestCase):
 class FakeArgumentParser(argparse.ArgumentParser):
   """Option parser that prints to self.stderr."""
 
-  def __init__(self, stderr):
+  def __init__(self, stderr: TextIO):
     super().__init__()
     self.__stderr = stderr
 
-  def exit(self, status=0, message=None, **unused_kwargs):
+  def exit(
+      self, status: int=0, message: Optional[str]=None,
+      **unused_kwargs: Any) -> NoReturn:
     if message:
       self.__stderr.write(message)
     sys.exit(status)
 
-  def error(self, message):
+  def error(self, message: str) -> NoReturn:
     self.exit(2, f'error: {message}\n')
 
-  def print_help(self, file=None, **kwargs):
+  def print_help(self, file: Optional[IO[str]]=None, **kwargs: Any) -> None:
     argparse.ArgumentParser.print_help(self, self.__stderr, **kwargs)

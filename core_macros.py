@@ -3,12 +3,15 @@
 
 __author__ = 'Guillaume Ryder'
 
+from collections.abc import Callable, Sequence
+from pathlib import PurePath
 import re
+from typing import Optional
 
-from execution import PYSCRIBE_EXT, ExecutionContext
+from execution import ExecutionContext, Executor, PYSCRIBE_EXT
 from log import FatalError, NodeError
 from macros import *
-from parsing import CallNode
+from parsing import CallNode, NodesT
 
 
 class SpecialCharacters:
@@ -36,38 +39,36 @@ class SpecialCharacters:
   @staticmethod
   @macro(public_name='text.punctuation.double', args_signature='contents',
          text_compatible=True)
-  def TextPunctuationDouble(executor, unused_call_node, contents):
+  def TextPunctuationDouble(executor: Executor, _: CallNode,
+                            contents: str) -> None:
     executor.AppendText(contents)
 
   @staticmethod
   @macro(public_name='-', text_compatible=True)
-  def TextSoftHyphenAlias(executor, call_node):
+  def TextSoftHyphenAlias(executor: Executor, call_node: CallNode) -> None:
     called_node = CallNode(call_node.location, 'text.softhyphen', [])
     executor.CallMacro(called_node)
 
 
 @macro(public_name='empty', text_compatible=True)
-def Empty(unused_executor, unused_call_node):
+def Empty(unused_executor: Executor, _: CallNode) -> None:
   pass
 
 
 @macro(public_name='eval.text', args_signature='text', text_compatible=True)
-def EvalText(executor, unused_call_node, text):
+def EvalText(executor: Executor, _: CallNode, text: str) -> None:
   executor.AppendText(text)
 
 
 @macro(public_name='log', args_signature='message', text_compatible=True)
-def Log(executor, unused_call_node, message):
-  """
-  Logs the given information message.
-  """
+def Log(executor: Executor, _: CallNode, message: str) -> None:
+  """Logs the given information message."""
   executor.logger.LogInfo(message)
 
 
 @macro(public_name='include', args_signature='path')
-def Include(executor, call_node, path):
-  """
-  Includes and executes the given PyScribe file.
+def Include(executor: Executor, call_node: CallNode, path: str) -> None:
+  """Includes and executes the given PyScribe file.
 
   Args:
     path: The path of the file, relative to the current file.
@@ -79,20 +80,21 @@ def Include(executor, call_node, path):
 
 
 @macro(public_name='include.text', args_signature='path', text_compatible=True)
-def IncludeText(executor, call_node, path):
-  """
-  Includes the given UTF-8 text file.
+def IncludeText(executor: Executor, call_node: CallNode, path: str) -> None:
+  """Includes the given UTF-8 text file.
 
   Args:
     path: The path of the file, relative to the current file, with extension.
   """
-  def Run(resolved_path):
+  def Run(resolved_path: PurePath) -> None:
     with executor.fs.open(resolved_path, mode='rt') as reader:
       executor.AppendText(reader.read())
   _IncludeFile(Run, executor, call_node, path, default_ext=None)
 
 
-def _IncludeFile(resolved_path_handler, executor, call_node, path, default_ext):
+def _IncludeFile(resolved_path_handler: Callable[[PurePath], None],
+                 executor: Executor, call_node: CallNode,
+                 path: str, default_ext: Optional[str]) -> None:
   try:
     directory = call_node.location.filename.dir_path
     resolved_path = executor.ResolveFilePath(path,
@@ -118,9 +120,9 @@ __SIGNATURE_REGEX = re.compile(
     re.VERBOSE)
 
 @macro(public_name='macro.new', args_signature='signature,*body')
-def MacroNew(executor, unused_call_node, signature, body):
-  """
-  Defines a new macro in the branch context.
+def MacroNew(executor: Executor, _: CallNode,
+             signature: str, body: NodesT) -> None:
+  """Defines a new macro in the branch context.
 
   See the signature format specification in ParseMacroSignature.
 
@@ -131,9 +133,8 @@ def MacroNew(executor, unused_call_node, signature, body):
   callback = MacroNewCallback(executor.call_context, macro_arg_names, body)
   executor.current_branch.context.AddMacro(macro_name, callback)
 
-def ParseMacroSignature(signature):
-  """
-  Parses the given macro signature.
+def ParseMacroSignature(signature: str) -> tuple[str, list[str]]:
+  """Parses the given macro signature.
 
   Accepted formats:
   - with arguments: 'name(arg1,...,argN)'
@@ -141,7 +142,7 @@ def ParseMacroSignature(signature):
   Spaces between tokens are ignored.
 
   Returns:
-    (Tuple[str, List[str]]) The macro name and list of arguments.
+    The macro name and list of arguments.
   """
 
   # Parse the macro name and arguments.
@@ -163,9 +164,10 @@ def ParseMacroSignature(signature):
     raise NodeError(f'duplicate argument in signature: {macro_arg_names[0]}')
   return macro_name, macro_arg_names
 
-def MacroNewCallback(macro_call_context, macro_arg_names, body):
-  """
-  The callback of a macro defined by MacroNew.
+def MacroNewCallback(
+    macro_call_context: ExecutionContext, macro_arg_names: Sequence[str],
+    body: NodesT):
+  """The callback of a macro defined by MacroNew.
 
   Allows $macro.wrap to add head and tail hooks to the initial macro body.
 
@@ -173,7 +175,7 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
   """
   @macro(args_signature=','.join(macro_arg_names), auto_args_parser=False,
          text_compatible=True, builtin=False)
-  def MacroCallback(executor, call_node):
+  def MacroCallback(executor: Executor, call_node: CallNode) -> None:
     executor.CheckArgumentCount(call_node, MacroCallback, len(macro_arg_names))
 
     # Execute the arguments in the current context.
@@ -204,9 +206,9 @@ def MacroNewCallback(macro_call_context, macro_arg_names, body):
 
 
 @macro(public_name='macro.override', args_signature='signature,original,*body')
-def MacroOverride(executor, unused_call_node, signature, original, body):
-  """
-  Overrides the definition of an existing macro.
+def MacroOverride(executor: Executor, _: CallNode,
+                  signature: str, original: str, body: NodesT) -> None:
+  """Overrides the definition of an existing macro.
 
   Args:
     signature: Same syntax as in $macro.new. The new macro may have a different
@@ -236,9 +238,9 @@ def MacroOverride(executor, unused_call_node, signature, original, body):
 
 
 @macro(public_name='macro.wrap', args_signature='macro_name,*head,*tail')
-def MacroWrap(executor, unused_call_node, macro_name, head, tail):
-  """
-  Wraps an existing non-builtin macro with head and tail contents.
+def MacroWrap(executor: Executor, _: CallNode,
+              macro_name: str, head: NodesT, tail: NodesT) -> None:
+  """Wraps an existing non-builtin macro with head and tail contents.
 
   The head and tail are executed in a context that does not contain the
   arguments of the wrapped macro.
@@ -255,15 +257,15 @@ def MacroWrap(executor, unused_call_node, macro_name, head, tail):
     macro_callback.tail_hooks.append(
         _MakeHook(tail, executor.call_context))
 
-def _MakeHook(nodes, call_context):
-  def Hook(executor):
+def _MakeHook(nodes: NodesT, call_context: ExecutionContext):
+  def Hook(executor: Executor) -> None:
     executor.ExecuteInCallContext(nodes, call_context=call_context)
   return Hook
 
 
 @macro(public_name='macro.call', args_signature='macro_name,arg1,...,argN',
        text_compatible=True, auto_args_parser=False)
-def MacroCall(executor, call_node):
+def MacroCall(executor: Executor, call_node: CallNode) -> None:
   """
   Calls a macro dynamically, by reflection.
 
@@ -285,7 +287,7 @@ def MacroCall(executor, call_node):
 
 
 @macro(public_name='macro.context.new', args_signature='*body')
-def MacroContextNew(executor, unused_call_node, body):
+def MacroContextNew(executor: Executor, _: CallNode, body: NodesT) -> None:
   """
   Executes code in a new execution context.
 
@@ -298,7 +300,8 @@ def MacroContextNew(executor, unused_call_node, body):
   executor.ExecuteInBranchContext(body, new_branch_context)
 
 
-def _LookupNonBuiltinMacro(executor, macro_name, verb):
+def _LookupNonBuiltinMacro(
+    executor: Executor, macro_name: str, verb: str):
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
   if macro_callback is None:

@@ -2,44 +2,41 @@
 
 __author__ = 'Guillaume Ryder'
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from os import PathLike
 import traceback
-from typing import Union
+from types import TracebackType
+from typing import Optional, TextIO, TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+  from parsing import CallNode
 
 
-def FormatMessage(message):
-  """
-  Formats a message.
+MessageT = Union[None, str, BaseException]
 
-  Args:
-    message: (str|Exception) The error message, can be None.
 
-  Returns:
-    (str) The message, never None.
-  """
+def FormatMessage(message: MessageT) -> str:
+  """Formats a message to text."""
   return str(message) if message else 'unknown error'
 
 
 class BaseError(Exception):
-  """
-  Base class for PyScribe-specific errors.
+  """Base class for PyScribe-specific errors."""
 
-  Fields:
-    message: (str) The error message, possibly with trailing newline.
-  """
+  # The error message, possibly with trailing newline.
+  message: str
 
-  def __init__(self, message=None):
+  def __init__(self, message: Optional[str]=None):
     super().__init__()
     self.message = FormatMessage(message).rstrip()
 
-  def __str__(self):
+  def __str__(self) -> str:
     return self.message
 
 
 class FatalError(BaseError):
-  """
-  Thrown when a fatal error is encountered.
+  """Thrown when a fatal error is encountered.
 
   Can be exposed as-is to the end user, includes any available contextual
   information: location, stacktrace.
@@ -47,8 +44,7 @@ class FatalError(BaseError):
 
 
 class NodeError(BaseError):
-  """
-  Thrown on error when executing a node.
+  """Thrown on error when executing a node.
 
   Translated into FatalError in Executor.ExecuteNodes().
 
@@ -75,7 +71,7 @@ class Filename:
     object.__setattr__(self, 'display_path', str(display_path))
     object.__setattr__(self, 'dir_path', str(dir_path))
 
-  def __str__(self):
+  def __str__(self) -> str:
     return self.display_path
 
 
@@ -86,7 +82,7 @@ class Location:
   filename: Filename
   lineno: int  # 1 for the first line, -1 if no line index is available.
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return f'{self.filename}:{self.lineno}'
 
 
@@ -118,12 +114,15 @@ LOGGER_FORMATS = {
 }
 
 
-class Logger:
-  """
-  Logs warnings and error messages.
-  """
 
-  def __init__(self, *, fmt, err_file, info_file):
+_ExcInfoT = tuple[type[BaseException], BaseException, TracebackType]
+_OptExcInfoT = Union[_ExcInfoT, tuple[None, None, None]]
+
+class Logger:
+  """Logs warnings and error messages."""
+
+  def __init__(self, *, fmt: Union[str, LoggerFormat],
+               err_file: TextIO, info_file: Optional[TextIO]):
     if isinstance(fmt, LoggerFormat):
       self.__fmt = fmt
     else:
@@ -131,48 +130,43 @@ class Logger:
     self.__err_file = err_file
     self.__info_file = info_file
 
-  def LocationError(self, location, message, *, call_stack=()):
-    """
-    Creates a FatalError for the given location.
-
-    Args:
-      location: (Location) The location of the error.
-      message: (str) The error message.
-      call_stack: (List[CallNode]) The macro call stack.
-    """
+  def LocationError(self, location: Location, message: MessageT, *,
+                    call_stack: Sequence['CallNode']=()) -> FatalError:
+    """Creates a FatalError for the given location."""
     top = self.__fmt.top.format(
         location=location, message=FormatMessage(message))
     stack = ''.join(self.__fmt.stack_frame.format(call_node=call_node)
                     for call_node in call_stack)
     return FatalError(top + stack)
 
-  def LogException(self, e, exc_info=(None, None, None), tb_limit=None):
-    """
-    Prints a log entry for the given exception.
+  def LogException(self, e: BaseException,
+                   exc_info: _OptExcInfoT=(None, None, None),
+                   tb_limit: Optional[int]=None) -> None:
+    """Prints a log entry for the given exception.
 
     See traceback.print_exception() for details on exc_info and tb_limit.
 
     Args:
-      e: (Exception) The exception to log.
-      exc_info: (etype, value, tb) The exception information returned by
-        sys.exc_info(), (None, None, None) if unavailable.
-      tb_limit: (int|None) The maximum number of stacktrace entries to print,
+      e: The exception to log.
+      exc_info: The exception information returned by sys.exc_info(),
+        (None, None, None) if unavailable.
+      tb_limit: The maximum number of stacktrace entries to print,
         None for unlimited.
     """
     print(str(e), file=self.__err_file)
     if exc_info != (None, None, None):
+      valid_exc_info: _ExcInfoT = exc_info  # type: ignore[assignment]
       if self.__fmt.name == 'python':
-        traceback.print_exception(*exc_info, file=self.__err_file,
+        traceback.print_exception(*valid_exc_info, file=self.__err_file,
                                   limit=tb_limit)
       else:
         print('Set --error_format=python for details.', file=self.__err_file)
 
-  def LogInfo(self, message):
-    """
-    Prints a log entry to stderr if --quiet is not set.
+  def LogInfo(self, message: str) -> None:
+    """Prints a log entry to stderr if --quiet is not set.
 
     Args:
-      message: (str) The message to log.
+      message: The message to log.
     """
     if self.__info_file:
       print(message, file=self.__info_file, flush=True)
