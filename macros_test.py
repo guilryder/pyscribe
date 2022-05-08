@@ -48,7 +48,7 @@ class MacroTest(TestCase):
   def testDefault(self):
     @macro()
     def MacroCallback():
-      pass  # pragma: no cover
+      raise NotImplementedError
     self.assertEqual(MacroCallback.public_name, None)
     self.assertEqual(MacroCallback.args_signature, '')
     self.assertEqual(MacroCallback.text_compatible, False)
@@ -58,7 +58,7 @@ class MacroTest(TestCase):
     @macro(public_name='name', args_signature=',,', auto_args_parser=False,
            text_compatible=True, builtin=False)
     def MacroCallback():
-      pass  # pragma: no cover
+      raise NotImplementedError
     self.assertEqual(MacroCallback.public_name, 'name')
     self.assertEqual(MacroCallback.args_signature, ',,')
     self.assertEqual(MacroCallback.text_compatible, True)
@@ -117,14 +117,14 @@ class MacroTest(TestCase):
   def testAutoParser_requiredThenOptional(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one?,two?,three')
-      def unused_MacroCallback():  # pragma: no cover
-        pass
+      def unused_MacroCallback():
+        raise NotImplementedError
 
   def testAutoParser_requiredThenOptionalThenRequired(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one,two?,three')
-      def unused_MacroCallback():  # pragma: no cover
-        pass
+      def unused_MacroCallback():
+        raise NotImplementedError
 
 
 class GetMacroSignatureTest(TestCase):
@@ -132,13 +132,13 @@ class GetMacroSignatureTest(TestCase):
   def testNoArgs(self):
     @macro()
     def MacroCallback():
-      pass  # pragma: no cover
+      raise NotImplementedError
     self.assertEqual(GetMacroSignature('name', MacroCallback), '$name')
 
   def testSomeArgs(self):
     @macro(args_signature='one,two,three')
     def MacroCallback():
-      pass  # pragma: no cover
+      raise NotImplementedError
     self.assertEqual(GetMacroSignature('name', MacroCallback),
                      '$name(one,two,three)')
 
@@ -149,17 +149,17 @@ class GetPublicMacrosTest(TestCase):
     @staticmethod
     @macro(public_name='public1')
     def PublicMacro1():
-      pass  # pragma: no cover
+      raise NotImplementedError
 
     @staticmethod
     @macro()
     def Privatemacro():
-      pass  # pragma: no cover
+      raise NotImplementedError
 
     @staticmethod
     @macro(public_name='public2')
     def PublicMacro2():
-      pass  # pragma: no cover
+      raise NotImplementedError
 
   def testOnClass(self):
     self.assertDictEqual(GetPublicMacros(self.TestClass),
@@ -199,12 +199,12 @@ def PublicMacro2():
       @staticmethod
       @macro(public_name='same')
       def Same1():
-        pass  # pragma: no cover
+        raise NotImplementedError
 
       @staticmethod
       @macro(public_name='same')
       def Same2():
-        pass  # pragma: no cover
+        raise NotImplementedError
 
     with self.assertRaises(AssertionError):
       GetPublicMacros(TestClassDuplicate)

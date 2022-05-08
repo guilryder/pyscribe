@@ -93,7 +93,7 @@ class MainTest(EndToEndTestCase):
 
   def testCustomOutput_relative(self):
     self.Execute('input.psc --output ignored/../custom')
-    self.assertEqual(self.fs.created_dirs, {self.fs.Path('/cur/custom')})
+    self.assertEqual(self.fs.created_dirs, {'/cur/custom'})
     self.assertEqual(self.GetStdFile('out'),
                      'Writing: /cur/custom/input.out')
     self.assertEqual(self.GetStdFile('err'), '')
@@ -102,7 +102,7 @@ class MainTest(EndToEndTestCase):
 
   def testCustomOutput_absolute(self):
     self.Execute('input.psc --output /custom')
-    self.assertEqual(self.fs.created_dirs, {self.fs.Path('/custom')})
+    self.assertEqual(self.fs.created_dirs, {'/custom'})
     self.assertEqual(self.GetStdFile('out'),
                      'Writing: /custom/input.out')
     self.assertEqual(self.GetStdFile('err'), '')

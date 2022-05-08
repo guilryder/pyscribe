@@ -5,6 +5,7 @@ __author__ = 'Guillaume Ryder'
 import io
 import os
 import pathlib
+from pathlib import PurePath
 import sys
 
 from branches import TextBranch
@@ -62,7 +63,7 @@ class ExecutionContext:
       callback: (runnable) The macro callback.
     """
     assert hasattr(callback, 'args_signature'), (
-        'args_signature missing for ' + name)
+        f'args_signature missing for {name}')
     self.macros[name] = callback
 
   def AddMacros(self, macros):
@@ -104,15 +105,33 @@ class ExecutionContext:
 
 
 class FileSystem:
+  # pylint: disable=no-self-use
+
   stdout = sys.stdout
   stderr = sys.stderr
-  Path = pathlib.PurePath
-  basename = staticmethod(os.path.basename)
-  getcwd = staticmethod(pathlib.Path.cwd)
-  lexists = staticmethod(os.path.lexists)
-  makedirs = staticmethod(os.makedirs)
-  open = staticmethod(io.open)
-  relpath = staticmethod(os.path.relpath)
+  Path = PurePath
+
+  @classmethod
+  def basename(cls, path):
+    return os.path.basename(path)
+
+  def getcwd(self):
+    return pathlib.Path.cwd()
+
+  @staticmethod
+  def lexists(path):
+    return os.path.lexists(path)
+
+  def makedirs(self, path, exist_ok=False):
+    return os.makedirs(path, exist_ok=exist_ok)
+
+  @staticmethod
+  def open(file, *, mode):
+    return io.open(file, mode=mode, encoding=ENCODING)
+
+  @classmethod
+  def relpath(cls, path, start):
+    return os.path.relpath(path, start)
 
   @classmethod
   def MakeAbsolute(cls, cur_dir, path):
@@ -220,7 +239,7 @@ class Executor:
 
     # Create the writer.
     try:
-      writer = fs.open(path, mode='wt', encoding=ENCODING, newline=None)
+      writer = fs.open(path, mode='wt')
     except OSError as e:
       raise NodeError(f'unable to write to file: {path}\n{e}') from e
     self.opened_paths.add(path)
@@ -262,10 +281,11 @@ class Executor:
       (fs.Path) The resolved path, always absolute.
     """
     assert abs_directory.is_absolute()
-    path = fs.MakeAbsolute(abs_directory, path)
-    if default_ext is not None and not path.suffix and not fs.lexists(path):
-      path = path.with_suffix(default_ext)
-    return path
+    abs_path = fs.MakeAbsolute(abs_directory, path)
+    if (default_ext is not None and not abs_path.suffix and
+        not fs.lexists(abs_path)):
+      abs_path = abs_path.with_suffix(default_ext)
+    return abs_path
 
   def ExecuteFile(self, path):
     """
@@ -282,7 +302,7 @@ class Executor:
     assert path.is_absolute()
     self.opened_paths.add(path)
     filename = Filename(path, path.parent)
-    with self.fs.open(path, encoding=ENCODING) as reader:
+    with self.fs.open(path, mode='rt') as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
         raise NodeError('too many nested includes')
 
@@ -407,10 +427,10 @@ class Executor:
 
   def FatalError(self, location, message, *, call_frame_skip=0):
     """Logs and raises a fatal error."""
-    call_stack = self.__call_stack[
-        :max(0, self.__call_stack_size - call_frame_skip)]
-    call_stack = [call_node for call_node, callback in reversed(call_stack)]
-    return self.logger.LocationError(location, message, call_stack=call_stack)
+    frame_count = max(0, self.__call_stack_size - call_frame_skip)
+    call_stack = self.__call_stack[:frame_count]
+    call_nodes = [call_node for call_node, callback in reversed(call_stack)]
+    return self.logger.LocationError(location, message, call_stack=call_nodes)
 
   def MacroFatalError(self, call_node, message, *, call_frame_skip=1):
     """Logs and raises a macro fatal error."""

@@ -32,7 +32,7 @@ class Helpers:
 
     @abstractmethod
     def exception(self, *unused_args):
-      pass  # pragma: no cover
+      raise NotImplementedError
 
     def testNoneMessage(self):
       self.assertEqual(self.exception().message, 'unknown error')
@@ -61,6 +61,12 @@ class NodeErrorTest(Helpers.ExceptionClassTestCase):
 class FilenameTest(TestCase):
 
   test_filename = Filename('file.txt', '/cur')
+
+  def testPathConstructor(self):
+    filename = Filename(pathlib.PurePosixPath('file.txt'),
+                        pathlib.PurePosixPath('/cur'))
+    self.assertEqual(filename.display_path, 'file.txt')
+    self.assertEqual(filename.dir_path, '/cur')
 
   def testStr(self):
     self.assertEqual(str(self.test_filename), 'file.txt')
@@ -106,6 +112,8 @@ class LoggerTest(TestCase):
       raise RuntimeError('fake error')
     except RuntimeError:
       exc_info = sys.exc_info()
+    else:
+      exc_info = (None, None, None)  # pragma: no cover
     logger.LogException(e, exc_info=exc_info, tb_limit=0)
 
   def assertOutputs(self, err=(), info=()):

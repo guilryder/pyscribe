@@ -2,14 +2,14 @@
 
 __author__ = 'Guillaume Ryder'
 
-from abc import ABCMeta, abstractmethod
-import io
+from abc import ABC, abstractmethod
+from io import StringIO
 
 from log import NodeError
 from macros import *
 
 
-class Branch(metaclass=ABCMeta):
+class Branch(ABC):
   """
   Output branch: append-only stream of text nodes and sub-branches.
 
@@ -30,9 +30,9 @@ class Branch(metaclass=ABCMeta):
       Must have a write() method.
   """
 
-  type_name = None  # must be set in implementations
+  type_name: str  # must be set in implementations
 
-  def __init__(self, parent, parent_context=None, name=None, writer=None):
+  def __init__(self, *, parent, parent_context=None, name=None, writer=None):
     """
     Args:
       parent: (branch) The parent branch, None for top-level branches.
@@ -83,13 +83,14 @@ class Branch(metaclass=ABCMeta):
     Checks that the sub-branch is valid.
 
     Args:
-      sub_branch: (Branch) The sub-branch to insert.
+      sub_branch: (Branch) The sub-branch to insert, must have self as parent.
 
     Raises:
       NodeError if the sub-branch is already attached or has not been created by
         this branch.
     """
     if sub_branch.parent is not self:
+      assert sub_branch.parent
       raise NodeError(
           f"expected a sub-branch created by branch '{self.name}'; "
           f"got one created by branch '{sub_branch.parent.name}'")
@@ -199,7 +200,7 @@ class TextBranch(AbstractSimpleBranch):
   type_name = 'text'
 
   def _CreateLeaf(self):
-    return io.StringIO()
+    return StringIO()
 
   def AppendText(self, text):
     self._current_leaf.write(text)

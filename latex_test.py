@@ -51,8 +51,8 @@ class LatexEndToEndTest(ExecutionTestCase):
 
   def testLatexSep_beforeWhitespace_noop(self):
     self.assertExecution(
-        'a$latex.sep'.join(('', ' ', '\t', '\n', '\r')) + 'a',
-        'a a\ta\na\ra')
+        'a$latex.sep'.join(('', ' ', '\t', '\n', '\r', '\r\n')) + 'a',
+        'a a\ta\na\na\na')
 
   def testLatexSep_beforeRegularCharacter(self):
     self.assertExecution(

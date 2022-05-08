@@ -3,14 +3,15 @@
 
 __author__ = 'Guillaume Ryder'
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
+import enum
 import re
 
 from lxml import etree
 # pylint: disable=len-as-condition
 
 from branches import Branch
-import execution
+from execution import ENCODING, ExecutionContext
 from log import NodeError
 from macros import *
 
@@ -50,40 +51,39 @@ def GetTagEmptyContents(tag_name):
   return _VOID_TAGS_TO_NONE.get(tag_name, '')
 
 
-class TagLevel:
+@enum.unique
+class TagLevel(str, enum.Enum):
   """
   Level of a tag, used automatically paragraphs on '\n\n'.
   """
 
-  by_name = {}
+  def __new__(cls, name, flags=frozenset()):
+    level = str.__new__(cls, name)
+    level._value_ = name
+    level.is_para = 'para' in flags
+    level.is_auto = 'auto' in flags
+    level.is_inline = 'inline' in flags
+    return level
 
-  def __init__(self, name, is_para=False, is_auto=False, is_inline=False):
-    self.is_para = is_para
-    self.is_auto = is_auto
-    self.is_inline = is_inline
-    if name is not None:
-      assert name not in self.by_name
-      self.by_name[name] = self
+  # Block-level element.
+  # Can contain sub-blocks, paragraphs, and inline tags.
+  # Example: <body>, <div> sometimes.
+  BLOCK = 'block'
 
-# Block-level element.
-# Can contain sub-blocks, paragraphs, and inline tags.
-# Example: <body>, <div> sometimes.
-TagLevel.BLOCK = TagLevel('block')
+  # Paragraph element to be closed manually.
+  # Can contain only inline tags.
+  # Example: <h1>, <ul>, <hr/>, <div> sometimes.
+  PARAGRAPH = ('para', {'para'})
 
-# Paragraph element to be closed manually.
-# Can contain only inline tags.
-# Example: <h1>, <ul>, <hr/>, <div> sometimes.
-TagLevel.PARAGRAPH = TagLevel('para', is_para=True)
+  # Paragraph element that can be closed automatically.
+  # Can contain only inline tags.
+  # Example: <p>, <div> sometimes.
+  AUTO_PARAGRAPH = ('autopara', {'para', 'auto'})
 
-# Paragraph element that can be closed automatically.
-# Can contain only inline tags.
-# Example: <p>, <div> sometimes.
-TagLevel.AUTO_PARAGRAPH = TagLevel('autopara', is_para=True, is_auto=True)
-
-# Inline-level element. Inside a block or a paragraph.
-# Can contain only inline tags.
-# Example: <span>, <em>.
-TagLevel.INLINE = TagLevel('inline', is_inline=True)
+  # Inline-level element. Inside a block or a paragraph.
+  # Can contain only inline tags.
+  # Example: <span>, <em>.
+  INLINE = ('inline', {'inline'})
 
 
 class HtmlBranch(Branch):
@@ -130,14 +130,14 @@ class HtmlBranch(Branch):
       self.level = level
       self.auto_para_tag = auto_para_tag
 
-  __XML_HEADER = f'<?xml version="1.0" encoding="{execution.ENCODING}"?>\n'
+  __XML_HEADER = f'<?xml version="1.0" encoding="{ENCODING}"?>\n'
   __XHTML_STUB = bytes(f"""\
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
 <head>
 <meta http-equiv="Content-Type"
-      content="application/xhtml+xml; charset={execution.ENCODING}"/>
+      content="application/xhtml+xml; charset={ENCODING}"/>
 </head>
 </html>
 """, encoding='ascii')
@@ -157,9 +157,9 @@ class HtmlBranch(Branch):
     context = self.context
     if parent is None:
       context.AddMacros(GetPublicMacros(Macros))
-      context = execution.ExecutionContext(parent=context)
+      context = ExecutionContext(parent=context)
     self.__typography_context = context
-    context = execution.ExecutionContext(parent=context)
+    context = ExecutionContext(parent=context)
     self.context = context
 
     # Set a typography for root branches.
@@ -174,7 +174,9 @@ class HtmlBranch(Branch):
 
       # Create a sub-branch for the <head>.
       self.__head_branch = HtmlBranch(parent=self, name='head')
-      self.__tree.find('head').append(self.__head_branch.__root_elem)
+      head_elem = self.__tree.find('head')
+      assert head_elem is not None
+      head_elem.append(self.__head_branch.__root_elem)
       self.__head_branch.attached = True
     else:
       # Sub-branch: create a placeholder element in the DOM.
@@ -318,7 +320,7 @@ class HtmlBranch(Branch):
     tail = self.__text_sep or self.__line_tail
     return tail[-1] if tail else None
 
-  def AutoParaTryOpen(self, except_tag=None):
+  def AutoParaTryOpen(self, *, except_tag=None):
     """
     Opens a new paragraph, if possible.
 
@@ -368,7 +370,7 @@ class HtmlBranch(Branch):
       self.__line_tail = text
     self.__text_sep = ''
 
-  def OpenTag(self, tag, level, auto_para_tag=None):
+  def OpenTag(self, tag, level, *, auto_para_tag=None):
     """
     Opens a new child tag in the current element, and makes it current.
 
@@ -433,7 +435,7 @@ class HtmlBranch(Branch):
             f'expected current tag to be <{tag}>, '
             f'got <{self.__current_elem.tag}>')
 
-  def __CloseCurrentElement(self, discard_if_empty):
+  def __CloseCurrentElement(self, *, discard_if_empty):
     """
     Closes the current element.
 
@@ -453,6 +455,7 @@ class HtmlBranch(Branch):
     if not current_elem_info.level.is_inline:
       self.__line_tail = ''
     new_elem_info = current_elem_info.parent
+    assert new_elem_info is not None
     new_elem = new_elem_info.elem
     self.__current_elem_info = new_elem_info
     self.__current_elem = new_elem
@@ -509,10 +512,10 @@ class HtmlBranch(Branch):
       elem_info_predicate = lambda elem_info: elem_info.level.is_para
     else:
       # Deepest element with the given tag.
-      tag = self.__TAG_TARGET_REGEXP.match(target)
-      if tag is None:
+      tag_match = self.__TAG_TARGET_REGEXP.match(target)
+      if tag_match is None:
         raise NodeError(f'invalid target: {target}')
-      tag = tag.group(1)
+      tag = tag_match.group(1)
       elem_info_predicate = lambda elem_info: elem_info.elem.tag == tag
 
     # Execute the action against the deepest element matching the predicate.
@@ -536,6 +539,7 @@ class HtmlBranch(Branch):
     self.__Finalize()
 
     # Post-process all elements.
+    assert self.__tree
     self.__PostProcessElementsRecurse(self.__tree.getroot())
 
     # Insert line breaks in <body>.
@@ -608,7 +612,7 @@ class HtmlBranch(Branch):
       elem.text = None
 
   @classmethod
-  def _RemoveElementIfEmpty(cls, elem,
+  def _RemoveElementIfEmpty(cls, elem, *,
                             preserve_tail, ignore_attribs=False):
     """
     Removes an element if it is empty: no text, no children.
@@ -629,6 +633,7 @@ class HtmlBranch(Branch):
     # Append the placeholder tail to the before element,
     # then delete the element.
     parent_elem = elem.getparent()
+    assert parent_elem is not None
     if preserve_tail:
       cls._AppendTextToXml((elem.tail or '').strip(_STRIPPABLE) or None,
                            tail_elem=elem.getprevious(),
@@ -646,7 +651,7 @@ class HtmlBranch(Branch):
     return True
 
   @staticmethod
-  def _AppendTextToXml(text, tail_elem=None, text_elem=None):
+  def _AppendTextToXml(text, *, tail_elem=None, text_elem=None):
     """
     Appends text to an XML element.
 
@@ -661,6 +666,7 @@ class HtmlBranch(Branch):
       if tail_elem is not None:
         tail_elem.tail = (tail_elem.tail or '') + text
       else:
+        assert text_elem is not None
         text_elem.text = (text_elem.text or '') + text
 
   @classmethod
@@ -676,6 +682,7 @@ class HtmlBranch(Branch):
     """
     parent_elem = elem.getparent()
     previous_elem = elem.getprevious()
+    assert parent_elem is not None
 
     # Append the head text of the branch to the before element
     # (previous element if any, else parent element).
@@ -700,8 +707,9 @@ class HtmlBranch(Branch):
       parent_elem.text = GetTagEmptyContents(parent_elem.tag)
 
 
-class Typography(metaclass=ABCMeta):
+class Typography(ABC):
 
+  name: str
   macros_container = None
 
   def __init__(self):
@@ -709,11 +717,12 @@ class Typography(metaclass=ABCMeta):
     assert self.name  # pylint: disable=no-member
     if self.macros_container is None:
       self.macros_container = self
-    self.context = execution.ExecutionContext(parent=None)
+    self.context = ExecutionContext(parent=None)
     self.context.AddMacros(GetPublicMacros(self.macros_container))
 
+  @staticmethod
   @abstractmethod
-  def FormatNumber(self, number):
+  def FormatNumber(number):
     """
     Formats a number to a string.
 
@@ -727,8 +736,10 @@ class Typography(metaclass=ABCMeta):
 
   @staticmethod
   def FormatNumberCustom(number, thousands_sep):
-    sign, before_decimal, decimal_sep, after_decimal = (
-        _NUMBER_REGEXP.match(number).groups())
+    number_match = _NUMBER_REGEXP.match(number)
+    if number_match is None:
+      return number
+    sign, before_decimal, decimal_sep, after_decimal = number_match.groups()
 
     # Use an en-dash as minus sign.
     if sign == '-':
@@ -777,6 +788,7 @@ class FrenchTypography(Typography):
 
   name = 'french'
 
+  # pylint: disable=arguments-differ
   @staticmethod
   def FormatNumber(number):
     return Typography.FormatNumberCustom(number, NBSP)
@@ -810,9 +822,9 @@ class FrenchTypography(Typography):
 
 
 TYPOGRAPHIES = {
-    typography_type.name: typography_type()
-    for typography_type in (
-        NeutralTypography, EnglishTypography, FrenchTypography)
+    typography.name: typography
+    for typography in (
+        NeutralTypography(), EnglishTypography(), FrenchTypography())
 }
 
 
@@ -851,14 +863,15 @@ class Macros:
         raise executor.MacroFatalError(
             call_node, f'cannot use void tag as autopara: <{auto_para_tag}>')
     else:
-      level = TagLevel.by_name.get(level_name)
+      try:
+        level = TagLevel(level_name)
+      except ValueError as e:
+        known = ', '.join(sorted(TagLevel))
+        raise executor.MacroFatalError(
+            call_node,
+            f'unknown level: {level_name}; expected one of: {known}.') from e
       auto_para_tag = None
-    if not level:
-      known = ', '.join(sorted(TagLevel.by_name))
-      raise executor.MacroFatalError(
-          call_node, f'unknown level: {level_name}; expected one of: {known}.')
-
-    executor.current_branch.OpenTag(tag, level, auto_para_tag)
+    executor.current_branch.OpenTag(tag, level, auto_para_tag=auto_para_tag)
 
   @staticmethod
   @macro(public_name='tag.close', args_signature='tag')
@@ -984,8 +997,8 @@ class Macros:
     # Reject invalid values.
     if _NUMBER_REGEXP.match(number) is None:
       raise executor.MacroFatalError(call_node, f'invalid integer: {number}')
-    text = executor.current_branch.root.typography.FormatNumber(number)
-    executor.AppendText(text)
+    branch = executor.current_branch
+    executor.AppendText(branch.root.typography.FormatNumber(number))
 
   @staticmethod
   @macro(public_name='typo.newline')

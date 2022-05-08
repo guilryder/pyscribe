@@ -57,11 +57,11 @@ def BranchCreateRoot(executor, call_node, branch_type, name_or_ref,
         f'unknown branch type: {branch_type}; expected one of: {known}')
 
   # Create the branch.
-  __CreateBranch(
-      executor, call_node, name_or_ref,
-      lambda: branch_class(parent=None,
-                           parent_context=executor.current_branch.context,
-                           writer=executor.GetOutputWriter(filename_suffix)))
+  branch_factory = lambda: branch_class(
+      parent=None,
+      parent_context=executor.current_branch.context,
+      writer=executor.GetOutputWriter(filename_suffix))
+  __CreateBranch(executor, call_node, name_or_ref, branch_factory)
 
 
 @macro(public_name='branch.create.sub', args_signature='name_or_ref')
@@ -134,6 +134,7 @@ def __CreateBranch(executor, call_node, name_or_ref, branch_factory):
   executor.RegisterBranch(branch)
 
   if is_reference:
+    assert branch.name
     executor.current_branch.context.AddMacro(
         name_or_ref[1:],
         ExecuteCallback([TextNode(call_node.location, branch.name)]))

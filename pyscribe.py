@@ -43,11 +43,11 @@ class Main:
     fs = self.__fs
     # pylint: disable=attribute-defined-outside-init
     def ParseDefine(value):
-      (name, sep, text) = value.partition('=')
+      name, sep, text = value.partition('=')
       if not sep:
         raise argparse.ArgumentTypeError(
             f'invalid value, expected format: name=text; got: {value}')
-      return (name, text)
+      return name, text
 
     def ValidateBasename(value):
       if value != fs.basename(value):
@@ -63,7 +63,7 @@ class Main:
     parser.add_argument('--error_format', metavar='FORMAT',
                         dest='error_format',
                         default='simple',
-                        choices=sorted(log.Logger.FORMATS),
+                        choices=sorted(log.LOGGER_FORMATS),
                         help='error reporting format; default: %(default)s')
     parser.add_argument('-f', '--format', metavar='FORMAT',
                         dest='format',
@@ -179,7 +179,7 @@ def _ComputePathConstants(*, fs, current_dir, lib_dir, output_dir,
       'dir.lib': lib_dir,
       'dir.output': output_dir,
       'dir.input': input_dir,
-      'dir.input.rel.output': fs.relpath(input_dir, output_dir),
+      'dir.input.rel.output': str(fs.relpath(input_dir, output_dir)),
       'file.input.basename': input_basename,
       'file.input.basename.noext': input_basename_noext,
       'file.output.basename.prefix': output_basename_prefix,

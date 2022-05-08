@@ -85,13 +85,13 @@ class macro:
       optional = arg_signature.endswith('?')
       if optional:
         arg_signature = arg_signature[:-1]
-      return (optional, (arg_signature, args_parser))
+      return optional, (arg_signature, args_parser)
 
     # Split the list of arguments in two: first required, then optional.
     parsers_list = [ParseArgSignature(sig) for sig in args_signature.split(',')]
     parsers_grouped_by_optional = [
         (optional, [parser[1] for parser in parsers])
-        for (optional, parsers)
+        for optional, parsers
         in itertools.groupby(parsers_list, operator.itemgetter(0))
     ]
     optionals = [parser[0] for parser in parsers_grouped_by_optional]
@@ -99,7 +99,8 @@ class macro:
         'Invalid args signature: optional arguments must be grouped at the end')
 
     parsers_keyed_by_optional = defaultdict(list, parsers_grouped_by_optional)
-    return [parsers_keyed_by_optional[optional] for optional in (False, True)]
+    return (parsers_keyed_by_optional.get(False, []),
+            parsers_keyed_by_optional.get(True, []))
 
   def __call__(self, callback):
     # If automatic arguments parsing is enabled, wrap the callback.
@@ -109,17 +110,17 @@ class macro:
     if arg_parsers is None:
       standard_callback = callback
     else:
-      (required_arg_parsers, optional_arg_parsers) = arg_parsers
+      required_arg_parsers, optional_arg_parsers = arg_parsers
       min_args_count = len(required_arg_parsers)
       max_args_count = min_args_count + len(optional_arg_parsers)
-      arg_parsers = required_arg_parsers + optional_arg_parsers
+      named_arg_parsers = required_arg_parsers + optional_arg_parsers
       def ArgsParsingWrapper(executor, call_node):
-        executor.CheckArgumentCount(call_node, ArgsParsingWrapper,
+        executor.CheckArgumentCount(call_node, standard_callback,
                                     min_args_count=min_args_count,
                                     max_args_count=max_args_count)
         args_iter = iter(call_node.args)
         extra_args = {}
-        for name, parser in arg_parsers:
+        for name, parser in named_arg_parsers:
           extra_args[name] = parser(executor, next(args_iter, None))
         return callback(executor, call_node, **extra_args)
       standard_callback = ArgsParsingWrapper

@@ -16,7 +16,7 @@ class ExecutorTest(TestCase):
 
   @macro(public_name='name')
   def MacroCallback(self):
-    pass  # pragma: no cover
+    raise NotImplementedError
 
   def setUp(self):
     super().setUp()

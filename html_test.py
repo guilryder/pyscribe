@@ -50,7 +50,9 @@ class AppendTextToXmlTest(TestCase):
     initial_xml_string = '<root>' + initial_xml_string + '</root>'
     expected_xml_string = '<root>' + expected_xml_string + '</root>'
     tree = ParseXml(initial_xml_string)
-    HtmlBranch._AppendTextToXml(text, tree.find('//tail'), tree.find('//text'))
+    HtmlBranch._AppendTextToXml(text,
+                                tail_elem=tree.find('//tail'),
+                                text_elem=tree.find('//text'))
     self.assertTextEqual(XmlToString(tree),
                          expected_xml_string,
                          'output mismatch')
@@ -388,22 +390,25 @@ class StructureExecutionTest(HtmlExecutionTestCase):
 
 class NeutralTypographyTest(HtmlExecutionTestCase):
 
+  typo = NeutralTypography
+
   def InputHook(self, text):
     return '$typo.set[neutral]' + text
 
+  def testFormatNumber_invalid(self):
+    self.assertEqual(self.typo.FormatNumber('invalid'), 'invalid')
+
   def testFormatNumber_zero(self):
-    self.assertEqual(NeutralTypography.FormatNumber('0'), '0')
+    self.assertEqual(self.typo.FormatNumber('0'), '0')
 
   def testFormatNumber_small(self):
-    self.assertEqual(NeutralTypography.FormatNumber('123'), '123')
+    self.assertEqual(self.typo.FormatNumber('123'), '123')
 
   def testFormatNumber_negative(self):
-    self.assertEqual('-12345678',
-                     NeutralTypography.FormatNumber('-12345678'))
+    self.assertEqual(self.typo.FormatNumber('-12345678'), '-12345678')
 
   def testFormatNumber_positive(self):
-    self.assertEqual('+12345678',
-                     NeutralTypography.FormatNumber('+12345678'))
+    self.assertEqual(self.typo.FormatNumber('+12345678'), '+12345678',)
 
   def testTypoNumber(self):
     self.assertExecution('before $typo.number[-12345678] after',
@@ -470,6 +475,9 @@ class EnglishTypographyTest(HtmlExecutionTestCase):
 
   def InputHook(self, text):
     return '$typo.set[english]' + text
+
+  def testFormatNumber_invalid(self):
+    self.assertEqual(self.typo.FormatNumber('invalid'), 'invalid')
 
   def testFormatNumber_zero(self):
     self.assertEqual(self.typo.FormatNumber('0'), '0')
@@ -642,6 +650,9 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
 
   def InputHook(self, text):
     return '$typo.set[french]' + text
+
+  def testFormatNumber_invalid(self):
+    self.assertEqual(self.typo.FormatNumber('invalid'), 'invalid')
 
   def testFormatNumber_zero(self):
     self.assertEqual(self.typo.FormatNumber('0'), '0')

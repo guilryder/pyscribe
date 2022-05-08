@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
-# pragma: no cover
 
 __author__ = 'Guillaume Ryder'
 

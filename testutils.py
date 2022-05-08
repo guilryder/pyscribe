@@ -14,7 +14,7 @@ import sys
 import unittest
 
 import execution
-from log import FatalError, Filename, Location, Logger, NodeError
+from log import FatalError, Filename, Location, Logger, LoggerFormat, NodeError
 from macros import macro, GetPublicMacros
 
 
@@ -157,17 +157,17 @@ class FakeLogger(Logger):
   Example output: GetOutput() == 'file.txt:42: some error'
   """
 
-  FORMAT = (
-      '{location!r}: {message}\n',
-      '  {call_node.location!r}: ${call_node.name}\n')
+  FORMAT = LoggerFormat(
+      name='test',
+      top='{location!r}: {message}\n',
+      stack_frame='  {call_node.location!r}: ${call_node.name}\n')
 
   def __init__(self):
     self.err_file = io.StringIO()
     self.info_messages = []
-    super().__init__(fmt='test',
+    super().__init__(fmt=self.FORMAT,
                      err_file=self.err_file,
-                     info_file=None,
-                     fmt_definition=self.FORMAT)
+                     info_file=None)
 
   def ConsumeStdErr(self):
     """Returns the errors logged so far, then clears them."""
@@ -186,8 +186,8 @@ class FakeFileSystem(execution.FileSystem):
     super().__init__()
     self.stdout = None
     self.stderr = None
-    self.cwd = self.Path('/cur')
     self.created_dirs = None
+    self.cwd = self.Path('/cur')
 
   def InitializeForWrites(self):
     self.stdout = io.StringIO()
@@ -196,21 +196,25 @@ class FakeFileSystem(execution.FileSystem):
 
   Path = pathlib.PurePosixPath
 
-  basename = staticmethod(os.path.basename)
+  @classmethod
+  def basename(cls, path):
+    return str(cls.Path(path).name)
 
   def getcwd(self):
     return self.cwd
 
-  def lexists(self, path):
-    raise NotImplementedError()  # pragma: no cover
+  @staticmethod
+  def lexists(path):
+    raise NotImplementedError
 
   def makedirs(self, path, exist_ok=False):
     if not exist_ok:
-      raise NotImplementedError()  # pragma: no cover
-    self.created_dirs.add(path)
+      raise NotImplementedError
+    self.created_dirs.add(str(path))
 
-  def open(self, *args, **kwargs):
-    raise NotImplementedError()  # pragma: no cover
+  @staticmethod
+  def open(*args, **kwargs):
+    raise NotImplementedError
 
   @classmethod
   def relpath(cls, path, start):
@@ -247,25 +251,25 @@ TESTDATA_DIR = REAL_PYSCRIBE_DIR / 'testdata'
 
 class TestCase(unittest.TestCase):
 
-  def __FailureMessage(self, *lines):  #pragma: no cover
+  def __FailureMessage(self, *lines):  # pragma: no cover
     return '\n'.join(filter(None, lines))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
     """Same as assertEqual but prints expected/actual even if msg is set."""
-    if not actual == expected:  #pragma: no cover
+    if not actual == expected:  # pragma: no cover
       fmt = fmt or (lambda x: x)
       raise self.failureException(self.__FailureMessage(
           msg, f'Actual:   {fmt(actual)}\nExpected: {fmt(expected)}'))
 
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
-    if not actual == expected:  #pragma: no cover
+    if not actual == expected:  # pragma: no cover
       if '\xa0' in actual or '\xa0' in expected:
         actual, expected = repr(actual), repr(expected)
       raise self.failureException(self.__FailureMessage(
           msg, f'Actual:\n{actual}\nExpected:\n{expected}'))
 
-  def FakeInputFile(self, contents, **kwargs):
+  def FakeInputFile(self, contents):
     """
     Returns a fake input file supporting the read() and close() methods.
 
@@ -279,38 +283,34 @@ class TestCase(unittest.TestCase):
           raise OSError('Fake read error')
       return FakeErrorFile('')
     else:
-      return io.StringIO(contents, **kwargs)
+      return io.StringIO(contents, newline=None)
 
-  def FakeOutputFile(self, **kwargs):
-    return io.StringIO(**kwargs)
+  def FakeOutputFile(self):
+    return io.StringIO()
 
-  def OpenSourceFile(self, path, **kwargs):
-    kwargs.setdefault('encoding', 'utf-8')
+  def OpenSourceFile(self, path):
     real_suffix = path.relative_to(FAKE_PYSCRIBE_DIR)
     real_path = os.path.normpath(REAL_PYSCRIBE_DIR / real_suffix)
-    return open(real_path, **kwargs)  # pylint: disable=unspecified-encoding
+    return open(real_path, mode='rt', encoding='utf-8')
 
   def GetFileSystem(self, inputs):
     class TestFileSystem(FakeFileSystem):
-      # pylint: disable=no-self-argument
+      # pylint: disable=no-self-argument,arguments-differ
       def __init__(fs):
-        super(TestFileSystem, fs).__init__()
+        super().__init__()
         fs.__output_writers = {}
 
-      # pylint: disable=arguments-renamed
       def lexists(fs, path):
         return str(path) in inputs
 
-      def open(fs, filename, mode='rt', **kwargs):  # pylint: disable=inconsistent-return-statements
-        # pylint: disable=arguments-differ
-        assert kwargs.pop('encoding', None) == 'utf-8'
+      def open(fs, filename, *, mode):
         filename = str(fs.MakeAbsolute(fs.getcwd(), filename))
         if mode == 'rt':
           # Open an input file.
           if filename in inputs:
-            return self.FakeInputFile(inputs[filename], **kwargs)
+            return self.FakeInputFile(inputs[filename])
           elif filename.startswith(str(FAKE_PYSCRIBE_DIR)):
-            return self.OpenSourceFile(fs.Path(filename), mode=mode, **kwargs)
+            return self.OpenSourceFile(fs.Path(filename))
           else:
             raise FileNotFoundError(errno.ENOENT, 'File not found', filename)
         elif mode == 'wt':
@@ -319,11 +319,11 @@ class TestCase(unittest.TestCase):
               'Output file already open: ' + filename)
           if 'not_writeable' in str(filename):
             raise PermissionError(errno.EACCES, 'File not writeable', filename)
-          writer = self.FakeOutputFile(**kwargs)
+          writer = self.FakeOutputFile()
           fs.__output_writers[filename] = writer
           return writer
         else:  # pragma: no cover
-          assert False, 'Unsupported mode: ' + mode
+          raise AssertionError(f'Unsupported mode: {mode}')
 
       def GetOutputs(fs):
         outputs = {}
@@ -356,8 +356,7 @@ class ExecutionTestCase(TestCase):
 
   def CreateBranch(self, executor, branch_class, **kwargs):
     name = kwargs.setdefault('name', 'root')
-    writer = executor.fs.open(self.GetBranchFilename(name),
-                              mode='wt', encoding='utf-8')
+    writer = executor.fs.open(self.GetBranchFilename(name), mode='wt')
     branch = branch_class(
         parent=None, parent_context=executor.system_branch.context,
         writer=writer, **kwargs)
@@ -425,8 +424,7 @@ class ExecutionTestCase(TestCase):
                                   current_dir=fs.Path('/cur'),
                                   output_path_prefix=fs.Path('/output'))
     executor.system_branch.writer = fs.open(
-        self.GetBranchFilename(executor.system_branch.name), 'wt',
-        encoding='utf-8')
+        self.GetBranchFilename(executor.system_branch.name), mode='wt')
     output_branch = self.GetExecutionBranch(executor)
     executor.current_branch = output_branch
     output_branch.context.AddMacros(self.additional_builtin_macros)
@@ -521,8 +519,9 @@ class FakeArgumentParser(argparse.ArgumentParser):
     super().__init__()
     self.__stderr = stderr
 
-  def exit(self, status=0, message='', **unused_kwargs):
-    self.__stderr.write(message)
+  def exit(self, status=0, message=None, **unused_kwargs):
+    if message:
+      self.__stderr.write(message)
     sys.exit(status)
 
   def error(self, message):

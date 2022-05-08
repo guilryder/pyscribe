@@ -84,9 +84,9 @@ class PeekableIteratorTest(TestCase):
   def testEmpty(self):
     it = PeekableIterator([])
     self.assertIs(it.peek(), None)
-    self.assertIs(next(it), None)
+    self.assertEqual(list(it), [])
     self.assertIs(it.peek(), None)
-    self.assertIs(next(it), None)
+    self.assertEqual(list(it), [])
 
   def testOneElement_peekFirst(self):
     elem1 = '1'
@@ -94,14 +94,14 @@ class PeekableIteratorTest(TestCase):
     self.assertIs(it.peek(), elem1)
     self.assertIs(next(it), elem1)
     self.assertIs(it.peek(), None)
-    self.assertIs(next(it), None)
+    self.assertEqual(list(it), [])
 
   def testOneElement_nextFirst(self):
     elem1 = '1'
     it = PeekableIterator([elem1])
     self.assertIs(next(it), elem1)
     self.assertIs(it.peek(), None)
-    self.assertIs(next(it), None)
+    self.assertEqual(list(it), [])
     self.assertIs(it.peek(), None)
 
   def testThreeElements(self):
@@ -113,7 +113,7 @@ class PeekableIteratorTest(TestCase):
     self.assertIs(it.peek(), elem3)
     self.assertIs(next(it), elem3)
     self.assertIs(it.peek(), None)
-    self.assertIs(next(it), None)
+    self.assertEqual(list(it), [])
 
 
 class ParsingTest(TestCase):
@@ -132,7 +132,7 @@ class ParsingTest(TestCase):
     logger = FakeLogger()
 
     # Create a fake input file and parse it.
-    input_file = self.FakeInputFile(input_text, newline=None)
+    input_file = self.FakeInputFile(input_text)
     try:
       nodes = ParseFile(input_file, filename, logger=logger)
     except FatalError as e:

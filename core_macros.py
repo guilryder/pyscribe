@@ -5,7 +5,7 @@ __author__ = 'Guillaume Ryder'
 
 import re
 
-from execution import ENCODING, PYSCRIBE_EXT, ExecutionContext
+from execution import PYSCRIBE_EXT, ExecutionContext
 from log import FatalError, NodeError
 from macros import *
 from parsing import CallNode
@@ -87,7 +87,7 @@ def IncludeText(executor, call_node, path):
     path: The path of the file, relative to the current file, with extension.
   """
   def Run(resolved_path):
-    with executor.fs.open(resolved_path, encoding=ENCODING) as reader:
+    with executor.fs.open(resolved_path, mode='rt') as reader:
       executor.AppendText(reader.read())
   _IncludeFile(Run, executor, call_node, path, default_ext=None)
 
@@ -161,7 +161,7 @@ def ParseMacroSignature(signature):
     for macro_arg_name in macro_arg_names:
       macro_arg_names.remove(macro_arg_name)
     raise NodeError(f'duplicate argument in signature: {macro_arg_names[0]}')
-  return (macro_name, macro_arg_names)
+  return macro_name, macro_arg_names
 
 def MacroNewCallback(macro_call_context, macro_arg_names, body):
   """
