@@ -10,12 +10,13 @@ from os import PathLike
 import pathlib
 from pathlib import PurePath
 import sys
-from typing import Mapping, Optional, TextIO, Union
+from typing import Any, Mapping, Optional, TextIO, Union
 
-from branches import TextBranch
-from log import FatalError as FatalErrorT, Filename, FormatMessage, Logger, \
-  MessageT, NodeError
-from macros import *
+from branches import Branch, TextBranch
+from log import FatalError as FatalErrorT, Filename, FormatMessage, Location, \
+  Logger, MessageT, NodeError
+from macros import AppendTextCallback, GetMacroSignature, GetPublicMacros, \
+  GetPublicMacrosContainers, MacrosT, StandardMacroT
 from parsing import CallNode, ParseFile, NodesT
 
 
@@ -26,24 +27,24 @@ MAX_NESTED_CALLS = 100
 MAX_NESTED_INCLUDES = 25
 
 
-class ExecutionContext:
+class ExecutionContext:  # pylint: disable=function-redefined
   """Entry of an execution context stack.
 
   Each node inherits the symbols of its ancestors.
-
-  Fields:
-    macros: (Dict[str, callable]) The symbols of this context.
-      Symbols of the parent entries are not duplicated in this dictionary.
-      Each macro symbol has a name and a callback. See AddMacro for details.
   """
 
   parent: Optional[ExecutionContext]
 
+  # The symbols of this context.
+  # Symbols of the parent entries are not duplicated in this dictionary.
+  # Each macro symbol has a name and a callback. See AddMacro for details.
+  macros: MacrosT
+
   def __init__(self, parent: Optional[ExecutionContext]=None):
     self.parent = parent
-    self.macros: dict = {}
+    self.macros = {}
 
-  def AddMacro(self, name: str, callback) -> None:
+  def AddMacro(self, name: str, callback: StandardMacroT) -> None:
     """Adds a macro to this context.
 
     Args:
@@ -54,7 +55,7 @@ class ExecutionContext:
         f'args_signature missing for {name}')
     self.macros[name] = callback
 
-  def AddMacros(self, macros) -> None:
+  def AddMacros(self, macros: MacrosT) -> None:
     """Adds some macros to this context.
 
     Args:
@@ -63,7 +64,8 @@ class ExecutionContext:
     for name, callback in macros.items():
       self.AddMacro(name, callback)
 
-  def LookupMacro(self, name: str, text_compatible: bool):
+  def LookupMacro(self, name: str, text_compatible: bool) -> (
+      Optional[StandardMacroT]):
     """Finds the macro with the given name in this context.
 
     If several macros have the same name, gives the priority to the macro
@@ -142,14 +144,6 @@ class Executor:
   At any time, the effective execution context is the concatenation of:
   1) the call context: self.context
   2) the branch context: self.current_branch.context
-
-  Fields:
-    root_branches: (List[Branch]) All root branches, including system.
-    current_branch: (Branch) The currently selected branch.
-    __call_stack: (List[CallNode, callback]) The current macro call stack,
-      pre-allocated to MAX_NESTED_CALLS frames.
-    __call_stack_size: (int) The number of frames in __call_stack.
-    __include_stack: (List[Filename]) The stack of included file names.
   """
 
   logger: Logger
@@ -163,7 +157,10 @@ class Executor:
   # The absolute paths of the readers and writers opened so far.
   opened_paths: set[PurePath]
 
-  system_branch: TextBranch  # The first branch of the executor, of type text.
+  system_branch: TextBranch  # # The first branch of the executor, of type text.
+  root_branches: list[Branch[Any]]  # All root branches, including system.
+  branches: dict[str, Branch[Any]]  # All branches by name.
+  current_branch: Branch[Any]  # The currently selected branch.
 
   # The top of the execution contexts stack.
   call_context: ExecutionContext
@@ -173,8 +170,13 @@ class Executor:
   # macros fails. If None, the executor is in normal mode.
   __current_text_writer: Optional[TextIO]
 
-  def __init__(self, *, logger, fs=FileSystem(),
-               current_dir, output_path_prefix):
+  # The current macro call stack, pre-allocated to MAX_NESTED_CALLS frames.
+  __call_stack: list[Optional[tuple[CallNode, StandardMacroT]]]
+  __call_stack_size: int  # The number of frames in __call_stack.
+  __include_stack: list[Filename]  # The stack of included file names.
+
+  def __init__(self, *, logger: Logger, fs: FileSystem=FileSystem(),
+               current_dir: PurePath, output_path_prefix: PurePath):
     assert current_dir.is_absolute()
     assert output_path_prefix.is_absolute(), str(output_path_prefix)
     self.logger = logger
@@ -322,7 +324,7 @@ class Executor:
     for branch in self.root_branches:
       branch.Render()
 
-  def ExecuteNodes(self, nodes) -> None:
+  def ExecuteNodes(self, nodes: NodesT) -> None:
     """Executes the given nodes in the current call context.
 
     Args:
@@ -378,7 +380,7 @@ class Executor:
     else:
       text_writer.write(text)
 
-  def RegisterBranch(self, branch) -> None:
+  def RegisterBranch(self, branch: Branch[Any]) -> None:
     """
     Registers a branch and its sub-branches. Gives them a name if necessary.
 
@@ -417,10 +419,12 @@ class Executor:
         self.__current_text_writer = old_text_writer
       return text_writer.getvalue()
 
-  def FatalError(self, location, message, *, call_frame_skip=0):
+  def FatalError(self, location: Location, message: MessageT, *,
+                 call_frame_skip: int=0) -> FatalErrorT:
     """Logs and raises a fatal error."""
     frame_count = max(0, self.__call_stack_size - call_frame_skip)
-    call_stack = self.__call_stack[:frame_count]
+    call_stack: list[tuple[CallNode, StandardMacroT]] = (
+        self.__call_stack[:frame_count])  # type: ignore[assignment]
     call_nodes = [call_node for call_node, callback in reversed(call_stack)]
     return self.logger.LocationError(location, message, call_stack=call_nodes)
 
@@ -431,7 +435,8 @@ class Executor:
                            f'${call_node.name}: {FormatMessage(message)}',
                            call_frame_skip=call_frame_skip)
 
-  def LookupMacro(self, name: str, text_compatible: bool):
+  def LookupMacro(
+      self, name: str, text_compatible: bool) -> Optional[StandardMacroT]:
     """Finds the macro with the given name in the active contexts.
 
     Looks for the macro:
@@ -451,7 +456,7 @@ class Executor:
         return callback
     return None
 
-  def CallMacro(self, call_node):
+  def CallMacro(self, call_node: CallNode) -> None:
     """Invokes a macro.
 
     Args:
@@ -490,7 +495,7 @@ class Executor:
       self.__call_stack_size = call_stack_size_orig
 
   def CheckArgumentCount(self, call_node: CallNode,
-                         macro_callback,
+                         macro_callback: StandardMacroT,
                          min_args_count: int,
                          max_args_count: Optional[int]=None) -> None:
     """

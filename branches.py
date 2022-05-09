@@ -5,51 +5,63 @@ from __future__ import annotations
 __author__ = 'Guillaume Ryder'
 
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from io import StringIO
-from typing import ClassVar, Optional
+from typing import \
+  Any, ClassVar, Generic, Optional, TextIO, TYPE_CHECKING, TypeVar, Union
 
 from log import NodeError
 from macros import *
 
-class Branch(ABC):
+if TYPE_CHECKING:
+  from execution import ExecutionContext as _ExecutionContextT
+else:
+  _ExecutionContextT = 'ExecutionContext'
+
+
+_SelfBranchT = TypeVar('_SelfBranchT', bound='Branch[Any]')
+_SubBranchT = TypeVar('_SubBranchT', bound='Branch[Any]')
+
+
+class Branch(ABC, Generic[_SubBranchT]):
   """Output branch: append-only stream of text nodes and sub-branches.
 
   Details of sub-branches is an implementation detail of the root branch.
   No method other than the ones declared below can be called on them.
-
-  Fields:
-    parent: (Branch) The parent of this branch, None if the branch is root.
-    root: (Branch) The root ancestor of this branch, self if the branch is root.
-    context: (ExecutionContext) The execution context of the branch.
-    sub_branches: (List[Branch]) The direct sub-branches of this branch.
   """
 
   type_name: ClassVar[str]  # as returned by $branch.type
+  parent: Optional[Branch[Any]]  # None if root
+  root: Branch[Any]  # self if the branch is root
+  context: _ExecutionContextT
   name: Optional[str]
+  # The direct sub-branches of this branch.
+  sub_branches: list[_SubBranchT]
   # Whether the branch has been inserted in its parent branch.
   # Always true for root branches.
   attached: bool
   #  The output writer of the root branch. None for child branches.
-  writer: Optional[StringIO]
+  writer: Optional[TextIO]
 
-  def __init__(self, *, parent, parent_context=None,
-               name: Optional[str]=None, writer: Optional[StringIO]=None):
+  def __init__(self, *, parent: Optional[Branch[Any]],
+               parent_context: Optional[_ExecutionContextT]=None,
+               name: Optional[str]=None, writer: Optional[TextIO]=None):
     """
     Args:
-      parent: (branch) The parent branch, None for top-level branches.
-      parent_context: (ExecutionContext) The parent of the execution context
+      parent: The parent branch, None for top-level branches.
+      parent_context: The parent of the execution context
         of the branch. Defaults to parent.context if parent is set.
       name: The name of the branch; optional.
       writer: Set if and only if the branch is root.
     """
-    from execution import ExecutionContext  # pylint: disable=import-outside-toplevel
+    from execution import ExecutionContext  # pylint: disable=import-outside-toplevel,redefined-outer-name
     if parent and not parent_context:
       parent_context = parent.context
     self.parent = parent
     self.root = parent.root if parent else self
     self.context = ExecutionContext(parent=parent_context)
     self.name = name
-    self.sub_branches: list = []
+    self.sub_branches = []
     self.attached = not parent
 
     self.context.AddMacro('branch.type', AppendTextCallback(self.type_name))
@@ -68,27 +80,25 @@ class Branch(ABC):
     """Appends a block of text to the branch."""
 
   @abstractmethod
-  def CreateSubBranch(self):
-    """
-    Creates a new sub-branch for this branch.
+  def CreateSubBranch(self) -> _SubBranchT:
+    """Creates a new sub-branch for this branch.
 
     Does not insert the sub-branch into this branch.
 
     Returns:
-      (Branch) The new sub-branch, unattached.
+      The new sub-branch, unattached.
     """
 
-  def AppendSubBranch(self, sub_branch) -> None:
-    """
-    Appends an existing sub-branch to this branch.
+  def AppendSubBranch(self, sub_branch: _SubBranchT) -> None:
+    """Appends an existing sub-branch to this branch.
 
     Checks that the sub-branch is valid.
 
     Args:
-      sub_branch: (Branch) The sub-branch to insert, must have self as parent.
+      sub_branch: The sub-branch to insert, must have self as parent.
 
     Raises:
-      NodeError if the sub-branch is already attached or has not been created by
+      NodeError: The sub-branch is already attached or has not been created by
         this branch.
     """
     if sub_branch.parent is not self:
@@ -104,23 +114,17 @@ class Branch(ABC):
     sub_branch.attached = True
 
   @abstractmethod
-  def _AppendSubBranch(self, sub_branch) -> None:
-    """
-    Appends an existing sub-branch to this branch.
+  def _AppendSubBranch(self, sub_branch: _SubBranchT) -> None:
+    """Appends an existing sub-branch to this branch.
 
     Does not need to check that the sub-branch is valid.
 
     Args:
-      sub_branch: (Branch) The sub-branch to insert.
+      sub_branch: The sub-branch to insert.
     """
 
-  def IterBranches(self):
-    """
-    Iterates over the branch and all its sub-branches.
-
-    Yields:
-      (Branch) A branch.
-    """
+  def IterBranches(self: _SelfBranchT) -> Iterator[Branch[Any]]:
+    """Iterates over the branch and all its sub-branches recursively."""
     yield self
     for sub_branch in self.sub_branches:
       yield from sub_branch.IterBranches()
@@ -142,7 +146,7 @@ class Branch(ABC):
       writer.flush()
 
   @abstractmethod
-  def _Render(self, writer: StringIO) -> None:
+  def _Render(self, writer: TextIO) -> None:
     """Renders the branch and its sub-branches recursively.
 
     Args:
@@ -155,47 +159,47 @@ class Branch(ABC):
     """
 
 
-class AbstractSimpleBranch(Branch):
-  """
-  Branch that renders into linear content.
+LeafT = TypeVar('LeafT')
+
+class AbstractSimpleBranch(Branch[_SubBranchT], Generic[_SubBranchT, LeafT]):
+  """Branch that renders into linear content.
 
   The branch is a tree of leaves and sub-branches.
-
-  Fields:
-    __nodes: (List[leaf|Branch]) The content leaves and sub-branches of branch.
-      Invariant: the last element is always _current_leaf.
-    _current_leaf: (leaf) The last leaf of the branch.
   """
 
-  def __init__(self, *args, **kwargs):
+  # The content leaves and sub-branches of branch.
+  # Invariant: the last element is always _current_leaf.
+  __nodes: list[Union[LeafT, _SubBranchT]]
+
+  _current_leaf: LeafT  # The last leaf of the branch.
+
+  def __init__(self, *args: Any, **kwargs: Any) -> None:
     super().__init__(*args, **kwargs)
     self.__nodes = []
     self.__AppendLeaf()
 
   @abstractmethod
-  def _CreateLeaf(self):
+  def _CreateLeaf(self) -> LeafT:
     """Returns a new, blank leaf node."""
 
   def __AppendLeaf(self) -> None:
     self._current_leaf = self._CreateLeaf()
     self.__nodes.append(self._current_leaf)
 
-  def _AppendSubBranch(self, sub_branch) -> None:
+  def _AppendSubBranch(self, sub_branch: _SubBranchT) -> None:
     self.__nodes.append(sub_branch)
     self.__AppendLeaf()
 
-  def _IterLeaves(self):
+  def _IterLeaves(self) -> Iterator[LeafT]:
     for node in self.__nodes:
       if isinstance(node, AbstractSimpleBranch):
         yield from node._IterLeaves()
       else:
-        yield node
+        yield node  # type: ignore # node is a LeafT
 
 
-class TextBranch(AbstractSimpleBranch):
-  """
-  Branch for plain-text.
-  """
+class TextBranch(AbstractSimpleBranch['TextBranch', StringIO]):
+  """Branch that writes plain text."""
 
   type_name = 'text'
 
@@ -208,7 +212,7 @@ class TextBranch(AbstractSimpleBranch):
   def CreateSubBranch(self) -> TextBranch:
     return TextBranch(parent=self)
 
-  def _Render(self, writer: StringIO) -> None:
+  def _Render(self, writer: TextIO) -> None:
     for leaf in self._IterLeaves():
       writer.write(leaf.getvalue())
       # Safety check: prevent future access to the leaf.

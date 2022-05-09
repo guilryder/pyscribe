@@ -105,7 +105,10 @@ class TestsManager:
 
   def TypeCheck(self):
     """Runs the type checker against all source files."""
-    subprocess.call([sys.executable, '-m', 'mypy'] + list(self.__python_files))
+    checked_files = [file for file in self.__python_files
+                     if not file.endswith('_test.py') and
+                        file != 'testutils.py']
+    subprocess.call([sys.executable, '-m', 'mypy'] + checked_files)
 
   def Lint(self):
     """Runs the linter against all source files."""

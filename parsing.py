@@ -5,6 +5,7 @@ from __future__ import annotations
 
 __author__ = 'Guillaume Ryder'
 
+from abc import ABC, abstractmethod
 import collections
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
@@ -12,14 +13,20 @@ import enum
 import inspect
 import itertools
 import re
-from typing import Any, NoReturn, Optional, TextIO, TYPE_CHECKING, TypeVar
+from typing import Any, Callable, Generic, NoReturn, Optional, Protocol, \
+  TextIO, TYPE_CHECKING, TypeVar, Union
 
 from log import Filename, Location
-from macros import MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 if TYPE_CHECKING:
   from execution import Executor
   from log import FatalError, Logger
+
+
+MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
+VALID_MACRO_NAME_PATTERN = (
+    r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)')
+VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
 
 class TokenType(enum.Enum):
@@ -41,10 +48,14 @@ class Token:
     return f'({self.type} l{self.lineno} {self.value!r})'
 
 
-class Node:
+class Node(ABC):
   """Base class for nodes."""
 
   location: Location
+
+  @abstractmethod
+  def Execute(self, executor: 'Executor') -> None:
+    raise NotImplementedError
 
 
 NodesT = Sequence[Node]
@@ -87,7 +98,7 @@ class CallNode(Node):
     return f'${self.name}{args}'
 
 
-def CompactTextNodes(nodes) -> Iterator[Node]:
+def CompactTextNodes(nodes: Iterable[Node]) -> Iterator[Node]:
   """Merges consecutive text nodes located on the same line.
 
   Args:
@@ -97,11 +108,12 @@ def CompactTextNodes(nodes) -> Iterator[Node]:
     The input nodes with consecutive text nodes merged. The location of a
     merged text node is the location of the first original text node.
   """
-  def GroupingKey(node) -> tuple[type[Node], Location]:
+  def GroupingKey(node: Node) -> tuple[type[Node], Location]:
     return type(node), node.location
   for (node_type, location), nodes_grp in itertools.groupby(nodes, GroupingKey):
     if issubclass(node_type, TextNode):
-      yield TextNode(location, ''.join(node.text for node in nodes_grp))
+      yield TextNode(location, ''.join(node.text  # type: ignore[attr-defined]
+                                       for node in nodes_grp))
     else:
       yield from nodes_grp
 
@@ -143,27 +155,43 @@ class RuleType(enum.Flag):
   SPECIAL_CHAR_OTHER = enum.auto()
   ALL = REGULAR | SPECIAL_CHAR_LATEX | SPECIAL_CHAR_OTHER
 
-def rule(regexp, rule_type=RuleType.REGULAR):
+RuleResult = Union[None, Token, Iterable[Token]]
+
+RuleResultT_co = TypeVar('RuleResultT_co', bound=RuleResult, covariant=True)
+
+RawRuleT = Callable[['Lexer', str], RuleResultT_co]
+
+class RuleT(Protocol, Generic[RuleResultT_co]):
+  rule_name: str
+  regexp: str
+  rule_type: RuleType
+
+  def __call__(self, value: str) -> RuleResultT_co:
+    raise NotImplementedError
+
+Rule = RuleT[RuleResult]
+
+def rule(regexp: str, rule_type: RuleType=RuleType.REGULAR) -> (
+    Callable[[RawRuleT[RuleResultT_co]], RuleT[RuleResultT_co]]):
   """Decorator for rule methods; see RegexpParser."""
-  def wrapper(func):
+  def wrapper(func: RawRuleT[RuleResultT_co]) -> RuleT[RuleResultT_co]:
     name_match = _RULE_METHOD_NAME_PATTERN.match(func.__name__)
     assert name_match, f'Invalid @rule function name: {func.__name__}'
-    func.rule_name = name_match.group('name')
-    func.regexp = regexp
-    func.rule_type = rule_type
-    return func
+    rule_func: RuleT[RuleResultT_co] = func  # type: ignore[assignment]
+    rule_func.rule_name = name_match.group('name')
+    rule_func.regexp = regexp
+    rule_func.rule_type = rule_type
+    return rule_func
   return wrapper
 
 
 class RegexpParser:
-  """
-  Regexp-based parser.
+  """Regexp-based parser.
 
   Creates a parsing rule for each method of an object decorated with @rule.
-
-  Fields:
-    __rules: (OrderedDict[name, method])
   """
+
+  __rules: collections.OrderedDict[str, Rule]
 
   def __init__(self, rules_container: object):
     """
@@ -184,15 +212,16 @@ class RegexpParser:
         for rule in self.__rules.values())
     self.__regexp = re.compile(full_pattern, re.MULTILINE)
 
-  def Parse(self, input_text):
+  def Parse(self, input_text: str) -> (
+      Iterator[tuple[str, Optional[Rule], Optional[str]]]):
     """Parses the given input text.
 
     Args:
       input_text: The text to parse.
 
     Yields:
-      (Tuple[str, callable|None, str|None]) The non-overlapping matches of the
-      rules, each as a Tuple[text_before, rule_callable, matched_text].
+      The non-overlapping matches of the rules, each as a
+      tuple[text_before, rule, matched_text].
       'text_before' is the text between the previous match (or the beginning of
       the string for the first match) and the current match.
       'rule_callable' and 'matched_text' are the rule and the text that matched,
@@ -203,7 +232,7 @@ class RegexpParser:
 
     for match in self.__regexp.finditer(input_text):
       match_begin, match_end = match.span()
-      rule_name = match.lastgroup
+      rule_name: str = match.lastgroup  # type: ignore[assignment]
       yield (input_text[last_end:match_begin],
              rules[rule_name], match.group(rule_name))
       last_end = match_end
@@ -218,7 +247,20 @@ class Lexer:
                               re.MULTILINE | re.DOTALL)
   __LINE_REGEXP = re.compile(r'[ \t]*(\n+)[ \t]*')
 
-  def __init__(self, context, input_text):
+  context: ParsingContext
+  __parser: RegexpParser
+
+  __filename: Filename
+  __lineno: int
+
+  __skip_spaces: bool
+  __enabled_rule_types: RuleType
+  __text_processor: Callable[[str], Iterator[Token]]
+
+  __input_text: str
+  __tokens: Iterator[Token]
+
+  def __init__(self, context: ParsingContext, input_text: str):
     # Strip whitespace around the input text.
     input_text_match = self.__GLOBAL_STRIP_REGEXP.match(input_text)
     assert input_text_match
@@ -232,10 +274,10 @@ class Lexer:
     self.__parser = RegexpParser(self)
     self.__tokens = self.__MergeTextTokensSameLine(self.__Parse())
 
-    def SetEnabledRuleTypes(bitset):
+    def SetEnabledRuleTypes(bitset: RuleType) -> None:
       self.__enabled_rule_types = bitset
 
-    self.__preproc_instr_callbacks = {
+    self.__preproc_instr_callbacks: dict[str, Callable[[], None]] = {
         'whitespace.preserve': self.__PreprocessWhitespacePreserve,
         'whitespace.skip': self.__PreprocessWhitespaceSkip,
         'special.chars.escape.all': lambda: SetEnabledRuleTypes(
@@ -245,7 +287,7 @@ class Lexer:
         'special.chars.latex.mode': lambda: SetEnabledRuleTypes(
             RuleType.REGULAR | RuleType.SPECIAL_CHAR_OTHER),
     }
-    self.__text_processor = self.__TextProcessorPreserveWhitespace
+    self.__PreprocessWhitespacePreserve()
 
   def __iter__(self) -> Iterator[Token]:
     """Returns the tokens iterator."""
@@ -292,13 +334,14 @@ class Lexer:
         self.__skip_spaces = (bool(text_before) and text_before[-1] == '\n')
       if rule_callable is not None:
         if self.__enabled_rule_types & rule_callable.rule_type:
-          token = rule_callable(matched_text)
+          token = rule_callable(matched_text)  # type: ignore[arg-type]
           if isinstance(token, Iterable):
             yield from token
           elif token is not None:
             yield token
         else:
-          yield Token(TokenType.TEXT, self.__lineno, matched_text)
+          yield Token(TokenType.TEXT, self.__lineno,
+                      matched_text)  # type: ignore[arg-type]
 
   def __TextProcessorPreserveWhitespace(self, text: str) -> Iterator[Token]:
     """Yields tokens for a block of text, preserving whitespace.

@@ -3,6 +3,7 @@
 
 __author__ = 'Guillaume Ryder'
 
+from abc import ABC
 from collections.abc import Callable, Sequence
 from pathlib import PurePath
 import re
@@ -11,7 +12,8 @@ from typing import Optional
 from execution import ExecutionContext, Executor, PYSCRIBE_EXT
 from log import FatalError, NodeError
 from macros import *
-from parsing import CallNode, NodesT
+from parsing import \
+  CallNode, NodesT, VALID_MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
 
 
 class SpecialCharacters:
@@ -164,9 +166,15 @@ def ParseMacroSignature(signature: str) -> tuple[str, list[str]]:
     raise NodeError(f'duplicate argument in signature: {macro_arg_names[0]}')
   return macro_name, macro_arg_names
 
+_HookT = Callable[[Executor], None]
+
+class _NonBuiltinMacroT(ABC, StandardMacroT):
+  head_hooks: list[_HookT]
+  tail_hooks: list[_HookT]
+
 def MacroNewCallback(
     macro_call_context: ExecutionContext, macro_arg_names: Sequence[str],
-    body: NodesT):
+    body: NodesT) -> _NonBuiltinMacroT:
   """The callback of a macro defined by MacroNew.
 
   Allows $macro.wrap to add head and tail hooks to the initial macro body.
@@ -176,13 +184,13 @@ def MacroNewCallback(
   @macro(args_signature=','.join(macro_arg_names), auto_args_parser=False,
          text_compatible=True, builtin=False)
   def MacroCallback(executor: Executor, call_node: CallNode) -> None:
-    executor.CheckArgumentCount(call_node, MacroCallback, len(macro_arg_names))
+    executor.CheckArgumentCount(call_node, callback, len(macro_arg_names))
 
     # Execute the arguments in the current context.
     arg_call_context = executor.call_context
 
     # Execute the head hooks, if any.
-    for hook in MacroCallback.head_hooks:
+    for hook in callback.head_hooks:
       hook(executor)
 
     # Execute the body in the macro definition context augmented with arguments.
@@ -197,12 +205,13 @@ def MacroNewCallback(
     executor.ExecuteInCallContext(body, body_call_context)
 
     # Execute the tail hooks, if any.
-    for hook in MacroCallback.tail_hooks:
+    for hook in callback.tail_hooks:
       hook(executor)
 
-  MacroCallback.head_hooks = []
-  MacroCallback.tail_hooks = []
-  return MacroCallback
+  callback: _NonBuiltinMacroT = MacroCallback  # type: ignore[assignment]
+  callback.head_hooks = []
+  callback.tail_hooks = []
+  return callback
 
 
 @macro(public_name='macro.override', args_signature='signature,original,*body')
@@ -257,7 +266,7 @@ def MacroWrap(executor: Executor, _: CallNode,
     macro_callback.tail_hooks.append(
         _MakeHook(tail, executor.call_context))
 
-def _MakeHook(nodes: NodesT, call_context: ExecutionContext):
+def _MakeHook(nodes: NodesT, call_context: ExecutionContext) -> _HookT:
   def Hook(executor: Executor) -> None:
     executor.ExecuteInCallContext(nodes, call_context=call_context)
   return Hook
@@ -301,11 +310,11 @@ def MacroContextNew(executor: Executor, _: CallNode, body: NodesT) -> None:
 
 
 def _LookupNonBuiltinMacro(
-    executor: Executor, macro_name: str, verb: str):
+    executor: Executor, macro_name: str, verb: str) -> _NonBuiltinMacroT:
   """Looks up a non-built-in macro by name."""
   macro_callback = executor.LookupMacro(macro_name, text_compatible=False)
   if macro_callback is None:
     raise NodeError(f'cannot {verb} a non-existing macro: {macro_name}')
   if macro_callback.builtin:
     raise NodeError(f'cannot {verb} a built-in macro: {macro_name}')
-  return macro_callback
+  return macro_callback  # type: ignore[return-value]

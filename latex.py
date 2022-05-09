@@ -5,7 +5,7 @@ from __future__ import annotations
 __author__ = 'Guillaume Ryder'
 
 from io import StringIO
-from typing import Any, Optional
+from typing import Any, Generic, Optional, TextIO, TypeVar
 
 from branches import AbstractSimpleBranch
 from execution import Executor
@@ -15,11 +15,13 @@ from parsing import CallNode
 
 _SEPARATOR_CHARS = ' \t\n\r\\[]{}%'
 
+_WriterT = TypeVar('_WriterT', bound=TextIO)
 
-class LatexWriter:
+
+class LatexWriter(Generic[_WriterT]):
   """Wraps a writer with logic to handle $latex.sep."""
 
-  __writer: StringIO
+  __writer: _WriterT
 
   # Whether $latex.sep was called at the beginning of the writer,
   # before any text was appended.
@@ -32,7 +34,7 @@ class LatexWriter:
   # The last character written, if any.
   __last_char: Optional[str] = None
 
-  def __init__(self, writer: StringIO):
+  def __init__(self, writer: _WriterT):
     self.__writer = writer
 
   def AppendText(self, text: str) -> None:
@@ -66,7 +68,8 @@ class LatexWriter:
     else:
       self.__sep_end = True
 
-  def AppendLeafLatexWriter(self, leaf_latex_writer: LatexWriter) -> None:
+  def AppendLeafLatexWriter(
+      self, leaf_latex_writer: LatexWriter[StringIO]) -> None:
     """Writes the contents of another LatexWriter backed by a StringIO writer.
 
     Closes the StringIO of leaf_latex_writer to detect attempts to render the
@@ -84,7 +87,7 @@ class LatexWriter:
       self.AppendSep()
 
 
-class LatexBranch(AbstractSimpleBranch):
+class LatexBranch(AbstractSimpleBranch['LatexBranch', LatexWriter[StringIO]]):
   """Branch for LaTeX code."""
 
   type_name = 'latex'
@@ -95,7 +98,7 @@ class LatexBranch(AbstractSimpleBranch):
     if self.parent is None:
       self.context.AddMacros(GetPublicMacros(Macros))
 
-  def _CreateLeaf(self) -> LatexWriter:
+  def _CreateLeaf(self) -> LatexWriter[StringIO]:
     return LatexWriter(StringIO())
 
   def AppendText(self, text: str) -> None:
@@ -107,7 +110,7 @@ class LatexBranch(AbstractSimpleBranch):
   def CreateSubBranch(self) -> LatexBranch:
     return LatexBranch(parent=self)
 
-  def _Render(self, writer: StringIO) -> None:
+  def _Render(self, writer: TextIO) -> None:
     render_latex_writer = LatexWriter(writer)
     for leaf_latex_writer in self._IterLeaves():
       render_latex_writer.AppendLeafLatexWriter(leaf_latex_writer)
@@ -135,4 +138,5 @@ class Macros:
 
     Typical usage: \command$latex.sep
     """
-    executor.current_branch.AppendSep()
+    branch: LatexBranch = executor.current_branch  # type: ignore[assignment]
+    branch.AppendSep()

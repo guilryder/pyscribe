@@ -7,18 +7,52 @@ from collections.abc import Collection
 import inspect
 import itertools
 import operator
-import re
-from typing import Any, Optional
+from typing import Any, Callable, cast, Optional, Protocol, TYPE_CHECKING, Union
+
+from parsing import *
+
+if TYPE_CHECKING:
+  from execution import ExecutionContext, Executor as _ExecutorT
+else:
+  _ExecutorT = 'Executor'
 
 
-MACRO_NAME_PATTERN = r'(?:[\\]|-|[a-zA-Z0-9_.]*[a-zA-Z0-9_])'
-VALID_MACRO_NAME_PATTERN = (
-    r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)')
-VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
+_Value = Optional[Union[str, NodesT]]
+
+_ArgsParser = Callable[[_ExecutorT, Optional[NodesT]], _Value]
+
+# The first argument is the parameter name without special prefixes/suffixes.
+_NamedArgsParser = tuple[str, _ArgsParser]
+
+# Parsers for the required and optional arguments of a macro.
+_NamedArgsParsers = tuple[list[_NamedArgsParser], list[_NamedArgsParser]]
+
+
+class StandardMacroT(Protocol):
+  public_name: str
+  # 'name1,name2,...,nameN', or '' if the macro has no arguments.
+  args_signature: str
+  text_compatible: bool
+  builtin: bool
+
+  def __call__(self, __executor: _ExecutorT, __call_node: CallNode) -> _Value:
+    raise NotImplementedError
+
+
+# Actual type: Callable[Concatenate[_ExecutorT, CallNode, ...], _Value]
+MacroT = Callable[..., _Value]
+
+
+# Macros keyed by name.
+MacrosT = dict[str, StandardMacroT]
+
 
 
 class macro:
   """Decorator for macro callbacks."""
+
+  __arg_parsers: Optional[_NamedArgsParsers]
+  __attributes: dict[str, Any]
 
   def __init__(self, public_name: Optional[str]=None, args_signature: str='',
                auto_args_parser: bool=True, text_compatible: bool=False,
@@ -51,33 +85,33 @@ class macro:
     )
 
   @staticmethod
-  def __BuildArgParsers(args_signature: str):
+  def __BuildArgParsers(args_signature: str) -> _NamedArgsParsers:
     """Builds argument parsers for the given signature.
 
     Args:
       args_signature: The signature of the macro.
 
     Returns:
-      (List[arg parser], List[arg parser]) The required and optional argument
-      parsers of the macro. Each argument parser is a Tuple[name, parser],
-      where 'name' is the parameter name without special prefixes/suffixes,
-      and 'parser' is a Callable[[Executor, List[node], object].
+      The required and optional argument parsers of the macro.
       Parsers for nodes arguments return their argument as is.
       Parsers for text-only arguments call Executor.EvalText.
     """
     if not args_signature:
       return [], []
 
-    def TextArgParser(executor, arg) -> Optional[str]:
+    def TextArgParser(
+        executor: _ExecutorT, arg: Optional[NodesT]) -> Optional[str]:
       if arg is None:
         return None
       else:
         return executor.EvalText(arg)
 
-    def NodesArgParser(unused_executor, arg):
+    def NodesArgParser(
+        unused_executor: _ExecutorT, arg: Optional[NodesT]) -> Optional[NodesT]:
       return arg
 
-    def ParseArgSignature(arg_signature: str):
+    def ParseArgSignature(arg_signature: str) -> tuple[bool, _NamedArgsParser]:
+      args_parser: _ArgsParser
       if arg_signature.startswith('*'):
         args_parser = NodesArgParser
         arg_signature = arg_signature[1:]
@@ -98,24 +132,23 @@ class macro:
     optionals = [parser[0] for parser in parsers_grouped_by_optional]
     assert len(optionals) <= 2 and optionals != [True, False], (
         'Invalid args signature: optional arguments must be grouped at the end')
-
     parsers_keyed_by_optional = defaultdict(list, parsers_grouped_by_optional)
     return (parsers_keyed_by_optional.get(False, []),
             parsers_keyed_by_optional.get(True, []))
 
-  def __call__(self, callback):
+  def __call__(self, callback: MacroT) -> StandardMacroT:
     # If automatic arguments parsing is enabled, wrap the callback.
-    # standard_callback takes (executor, call_node) as parameters.
-    # callback takes (executor, call_node, **kwargs).
     arg_parsers = self.__arg_parsers
     if arg_parsers is None:
-      standard_callback = callback
+      # args_signature set later.
+      standard_callback = cast(StandardMacroT, callback)
     else:
       required_arg_parsers, optional_arg_parsers = arg_parsers
       min_args_count = len(required_arg_parsers)
       max_args_count = min_args_count + len(optional_arg_parsers)
       named_arg_parsers = required_arg_parsers + optional_arg_parsers
-      def ArgsParsingWrapper(executor, call_node):
+      def ArgsParsingWrapper(
+          executor: _ExecutorT, call_node: CallNode) -> _Value:
         executor.CheckArgumentCount(call_node, standard_callback,
                                     min_args_count=min_args_count,
                                     max_args_count=max_args_count)
@@ -124,7 +157,8 @@ class macro:
         for name, parser in named_arg_parsers:
           extra_args[name] = parser(executor, next(args_iter, None))
         return callback(executor, call_node, **extra_args)
-      standard_callback = ArgsParsingWrapper
+      # args_signature set later.
+      standard_callback = cast(StandardMacroT, ArgsParsingWrapper)
 
     # Save the @macro attributes in the callback.
     for name, value in self.__attributes.items():
@@ -132,7 +166,7 @@ class macro:
     return standard_callback
 
 
-def GetMacroSignature(name: str, callback) -> str:
+def GetMacroSignature(name: str, callback: StandardMacroT) -> str:
   """Returns the full signature of a macro.
 
   Args:
@@ -149,7 +183,7 @@ def GetMacroSignature(name: str, callback) -> str:
     return f'${name}'
 
 
-def GetPublicMacros(container: Any):
+def GetPublicMacros(container: Any) -> MacrosT:
   """
   Returns the public macros declared by a module or class.
 
@@ -162,7 +196,7 @@ def GetPublicMacros(container: Any):
     The public macros, keyed by name.
   """
   if not hasattr(container, 'public_macros'):
-    public_macros = {}
+    public_macros: MacrosT = {}
     for _, symbol in inspect.getmembers(container):
       public_name = getattr(symbol, 'public_name', None)
       if public_name is not None:
@@ -170,7 +204,7 @@ def GetPublicMacros(container: Any):
             f'duplicate public name "{public_name}" in {container}')
         public_macros[public_name] = symbol
     container.public_macros = public_macros
-  return container.public_macros
+  return cast(MacrosT, container.public_macros)
 
 
 def GetPublicMacrosContainers() -> Collection[Any]:
@@ -182,9 +216,10 @@ def GetPublicMacrosContainers() -> Collection[Any]:
       __import__('builtin_macros'))
 
 
-def ExecuteCallback(nodes, call_context=None, **kwargs):
-  """
-  Creates a macro callback that executes the given nodes.
+def ExecuteCallback(
+    nodes: NodesT, call_context: Optional['ExecutionContext']=None,
+    **kwargs: Any) -> StandardMacroT:
+  """Creates a macro callback that executes the given nodes.
 
   The nodes are executed in the current call context of the given executor
   (current when ExecuteCallback is called, not when the returned callback is
@@ -194,22 +229,23 @@ def ExecuteCallback(nodes, call_context=None, **kwargs):
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, unused_call_node) -> None:
+  def MacroCallback(executor: _ExecutorT, unused_call_node: CallNode) -> None:
     executor.ExecuteInCallContext(nodes, call_context=call_context)
   return MacroCallback
 
 
-def AppendTextCallback(text: str, **kwargs: Any):
+def AppendTextCallback(text: str, **kwargs: Any) -> StandardMacroT:
   """Creates a macro callback that writes the given text.
 
   The callback expects no arguments.
   """
   kwargs.setdefault('text_compatible', True)
   @macro(**kwargs)
-  def MacroCallback(executor, unused_call_node) -> None:
+  def MacroCallback(executor: _ExecutorT, unused_call_node: CallNode) -> None:
     executor.AppendText(text)
   return MacroCallback
 
-def AppendTextMacro(public_name: str, text: str):
+def AppendTextMacro(public_name: str, text: str) -> StandardMacroT:
   """Creates a method to define a macro that writes the given text."""
-  return staticmethod(AppendTextCallback(text, public_name=public_name))
+  return staticmethod(  # type: ignore[return-value]
+      AppendTextCallback(text, public_name=public_name))

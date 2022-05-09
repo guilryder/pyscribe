@@ -3,19 +3,22 @@
 
 __author__ = 'Guillaume Ryder'
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
+from typing import Any, Type
 
-from branches import Branch
+from branches import Branch, TextBranch
 from execution import Executor
+from html import HtmlBranch
+from latex import LatexBranch
 from log import NodeError
 from macros import *
 from parsing import CallNode, NodesT, TextNode
 
 
-__BRANCH_CLASSES = (
-    __import__('html').HtmlBranch,
-    __import__('latex').LatexBranch,
-    __import__('branches').TextBranch,
+__BRANCH_CLASSES: Iterable[Type[Branch[Any]]] = (
+    HtmlBranch,
+    LatexBranch,
+    TextBranch,
 )
 BRANCH_TYPES = {branch_class.type_name: branch_class
                 for branch_class in __BRANCH_CLASSES}
@@ -97,7 +100,7 @@ def BranchAppend(executor: Executor, _: CallNode, branch_name: str) -> None:
   executor.current_branch.AppendSubBranch(sub_branch)
 
 
-def __ParseBranchName(executor: Executor, branch_name: str) -> Branch:
+def __ParseBranchName(executor: Executor, branch_name: str) -> Branch[Any]:
   """Parses a branch name.
 
   Args:
@@ -113,7 +116,7 @@ def __ParseBranchName(executor: Executor, branch_name: str) -> Branch:
 
 
 def __CreateBranch(executor: Executor, call_node: CallNode, name_or_ref: str,
-                   branch_factory: Callable[[], Branch]) -> None:
+                   branch_factory: Callable[[], Branch[Any]]) -> None:
   """Creates a new root branch or sub-branch.
 
   Args:
