@@ -117,13 +117,13 @@ class MacroTest(TestCase):
   def testAutoParser_requiredThenOptional(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one?,two?,three')
-      def unused_MacroCallback():
+      def MacroCallback():  # pragma: no cover
         raise NotImplementedError
 
   def testAutoParser_requiredThenOptionalThenRequired(self):
     with self.assertRaises(AssertionError):
       @macro(public_name='name', args_signature='one,two?,three')
-      def unused_MacroCallback():
+      def MacroCallback():  # pragma: no cover
         raise NotImplementedError
 
 

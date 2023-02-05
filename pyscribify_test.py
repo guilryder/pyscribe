@@ -302,9 +302,16 @@ class DryRunTest(PyscribifyTestCase):
 class CoverageTest(PyscribifyTestCase):
 
   def testDryRun(self):
+    for latex2pdf in ('texify', 'latexmk'):
+      with self.subTest(latex2pdf=latex2pdf):
+        self.__Run('Hello', '--dry-run', '--latex-to-pdf-tool', latex2pdf)
+
+  def __Run(self, *args):
     output = io.StringIO()
-    main = pyscribify.Main(input_args=('Hello', '--dry-run'), stdout=output,
-                           ArgumentParser=lambda: FakeArgumentParser(output))
+    main = pyscribify.Main(
+        input_args=args,
+        stdout=output,
+        ArgumentParser=lambda: FakeArgumentParser(output))
     with self.assertRaises(SystemExit):
       main.Run()
 

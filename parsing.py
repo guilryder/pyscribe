@@ -633,7 +633,7 @@ class Parser:
           if call_nest_count == 0:
             raise MakeLocationError(
                 token.lineno, "syntax error: no macro argument to close")
-          break
+          break  # pragma: no cover - actually covered
 
         else:
           # Other: error
