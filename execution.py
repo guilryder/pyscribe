@@ -27,7 +27,7 @@ MAX_NESTED_CALLS = 100
 MAX_NESTED_INCLUDES = 25
 
 
-class ExecutionContext:  # pylint: disable=function-redefined
+class ExecutionContext:
   """Entry of an execution context stack.
 
   Each node inherits the symbols of its ancestors.
@@ -95,8 +95,6 @@ class ExecutionContext:  # pylint: disable=function-redefined
 PathLikeT = Union[str, PathLike[str]]
 
 class FileSystem:
-  # pylint: disable=no-self-use
-
   stdout = sys.stdout
   stderr = sys.stderr
   Path = PurePath

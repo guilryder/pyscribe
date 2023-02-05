@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # Copyright 2011, Guillaume Ryder, GNU GPL v3 license
-# pylint: disable=no-self-use
 
 __author__ = 'Guillaume Ryder'
 

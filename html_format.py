@@ -220,7 +220,6 @@ class HtmlBranch(Branch['HtmlBranch']):
     return None  # pragma: no cover
 
   def SetTypography(self, typography: Typography) -> None:
-    # pylint: disable=attribute-defined-outside-init
     self.__typography = typography
     self.__typography_context.macros = (
         typography.context.macros if typography else {})
@@ -493,6 +492,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     Raises:
       NodeError
     """
+    # pylint: disable=unnecessary-lambda-assignment
     elem_info_predicate: Callable[[HtmlBranch.ElementInfo], bool]
     if target == 'current':
       # Current element, possibly automatically created.
@@ -506,7 +506,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     elif target == 'parent':
       # Parent element.
       elem_info_predicate = (
-          lambda elem_info: elem_info != self.__current_elem_info != elem_info)
+          lambda elem_info: elem_info != self.__current_elem_info)
     elif target == 'previous':
       # Previous element.
       elem_info: Optional[HtmlBranch.ElementInfo] = self.__current_elem_info
@@ -722,7 +722,7 @@ class Typography(ABC):
 
   def __init__(self) -> None:
     super().__init__()
-    assert self.name  # pylint: disable=no-member
+    assert self.name
     if self.macros_container is None:
       self.macros_container = self
     self.context = ExecutionContext(parent=None)
@@ -795,7 +795,6 @@ class FrenchTypography(Typography):
 
   name = 'french'
 
-  # pylint: disable=arguments-differ
   @staticmethod
   def FormatNumber(number: str) -> str:
     return Typography.FormatNumberCustom(number, NBSP)

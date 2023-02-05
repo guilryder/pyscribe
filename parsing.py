@@ -153,6 +153,7 @@ class RuleType(enum.Flag):
   REGULAR = enum.auto()
   SPECIAL_CHAR_LATEX = enum.auto()
   SPECIAL_CHAR_OTHER = enum.auto()
+  # pylint: disable=unsupported-binary-operation
   ALL = REGULAR | SPECIAL_CHAR_LATEX | SPECIAL_CHAR_OTHER
 
 RuleResult = Union[None, Token, Iterable[Token]]

@@ -4,7 +4,7 @@
 
 __author__ = 'Guillaume Ryder'
 
-from html import *
+from html_format import *
 from testutils import *
 
 

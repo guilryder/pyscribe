@@ -8,7 +8,7 @@ from typing import Any, Type
 
 from branches import Branch, TextBranch
 from execution import Executor
-from html import HtmlBranch
+from html_format import HtmlBranch
 from latex import LatexBranch
 from log import NodeError
 from macros import *
@@ -62,12 +62,14 @@ def BranchCreateRoot(executor: Executor, call_node: CallNode,
     known = ', '.join(sorted(BRANCH_TYPES))
     raise NodeError(
         f'unknown branch type: {branch_type}; expected one of: {known}')
+  branch_class_safe = branch_class  # mypy workaround
 
   # Create the branch.
-  branch_factory = lambda: branch_class(
-      parent=None,
-      parent_context=executor.current_branch.context,
-      writer=executor.GetOutputWriter(filename_suffix))
+  def branch_factory() -> Branch[Any]:
+    return branch_class_safe(
+        parent=None,
+        parent_context=executor.current_branch.context,
+        writer=executor.GetOutputWriter(filename_suffix))
   __CreateBranch(executor, call_node, name_or_ref, branch_factory)
 
 
