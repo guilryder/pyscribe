@@ -4,13 +4,13 @@ from __future__ import annotations
 
 __author__ = 'Guillaume Ryder'
 
+from collections.abc import Mapping
 import io
 import os
-from os import PathLike
 import pathlib
 from pathlib import PurePath
 import sys
-from typing import Any, Mapping, Optional, TextIO, Union
+from typing import Any, TextIO
 
 from branches import Branch, TextBranch
 from log import FatalError as FatalErrorT, Filename, FormatMessage, Location, \
@@ -33,14 +33,14 @@ class ExecutionContext:
   Each node inherits the symbols of its ancestors.
   """
 
-  parent: Optional[ExecutionContext]
+  parent: ExecutionContext | None
 
   # The symbols of this context.
   # Symbols of the parent entries are not duplicated in this dictionary.
   # Each macro symbol has a name and a callback. See AddMacro for details.
   macros: MacrosT
 
-  def __init__(self, parent: Optional[ExecutionContext]=None):
+  def __init__(self, parent: ExecutionContext | None=None):
     self.parent = parent
     self.macros = {}
 
@@ -65,7 +65,7 @@ class ExecutionContext:
       self.AddMacro(name, callback)
 
   def LookupMacro(self, name: str, text_compatible: bool) -> (
-      Optional[StandardMacroT]):
+      StandardMacroT | None):
     """Finds the macro with the given name in this context.
 
     If several macros have the same name, gives the priority to the macro
@@ -83,7 +83,7 @@ class ExecutionContext:
     # Walk the stack of contexts. A cache does not improve peformance much
     # because most macros are found near the top of the stack:
     # 50% in top context, 20% in second context.
-    context: Optional[ExecutionContext] = self
+    context: ExecutionContext | None = self
     while context:
       callback = context.macros.get(name)
       if callback and (not text_compatible or callback.text_compatible):
@@ -92,7 +92,7 @@ class ExecutionContext:
     return None
 
 
-PathLikeT = Union[str, PathLike[str]]
+PathLikeT = str | os.PathLike[str]
 
 class FileSystem:
   stdout = sys.stdout
@@ -166,10 +166,10 @@ class Executor:
   #  The writer to send text-only output to.
   # If set, the executor is in text-only mode: executing text-incompatible
   # macros fails. If None, the executor is in normal mode.
-  __current_text_writer: Optional[TextIO]
+  __current_text_writer: TextIO | None
 
   # The current macro call stack, pre-allocated to MAX_NESTED_CALLS frames.
-  __call_stack: list[Optional[tuple[CallNode, StandardMacroT]]]
+  __call_stack: list[tuple[CallNode, StandardMacroT] | None]
   __call_stack_size: int  # The number of frames in __call_stack.
   __include_stack: list[Filename]  # The stack of included file names.
 
@@ -240,7 +240,7 @@ class Executor:
     return writer
 
   def ResolveFilePath(self, path: str, directory: PathLikeT,
-                      default_ext: Optional[str]=None) -> PurePath:
+                      default_ext: str | None=None) -> PurePath:
     """Normalizes a user-entered, possibly relative file path.
 
     Args:
@@ -262,7 +262,7 @@ class Executor:
   @staticmethod
   def ResolveFilePathStatic(path: str, *,
                             abs_directory: PurePath,
-                            default_ext: Optional[str]=None,
+                            default_ext: str | None=None,
                             fs: FileSystem) -> PurePath:
     """Normalizes a user-entered, possibly relative file path.
 
@@ -338,7 +338,7 @@ class Executor:
         raise self.FatalError(node.location, e) from e
 
   def ExecuteInCallContext(
-      self, nodes: NodesT, call_context: Optional[ExecutionContext]) -> None:
+      self, nodes: NodesT, call_context: ExecutionContext | None) -> None:
     """Executes the given nodes in the given call context.
 
     Args:
@@ -434,7 +434,7 @@ class Executor:
                            call_frame_skip=call_frame_skip)
 
   def LookupMacro(
-      self, name: str, text_compatible: bool) -> Optional[StandardMacroT]:
+      self, name: str, text_compatible: bool) -> StandardMacroT | None:
     """Finds the macro with the given name in the active contexts.
 
     Looks for the macro:
@@ -495,7 +495,7 @@ class Executor:
   def CheckArgumentCount(self, call_node: CallNode,
                          macro_callback: StandardMacroT,
                          min_args_count: int,
-                         max_args_count: Optional[int]=None) -> None:
+                         max_args_count: int | None=None) -> None:
     """
     Raises an exception if a macro call has an invalid number of arguments.
 

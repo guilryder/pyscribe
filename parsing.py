@@ -7,14 +7,14 @@ __author__ = 'Guillaume Ryder'
 
 from abc import ABC, abstractmethod
 import collections
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 import enum
 import inspect
 import itertools
 import re
-from typing import Any, Callable, Generic, NoReturn, Optional, Protocol, \
-  TextIO, TYPE_CHECKING, TypeVar, Union
+from typing import Any, Generic, NoReturn, Protocol, \
+  TextIO, TYPE_CHECKING, TypeVar
 
 from log import Filename, Location
 
@@ -54,7 +54,7 @@ class Node(ABC):
   location: Location
 
   @abstractmethod
-  def Execute(self, executor: 'Executor') -> None:
+  def Execute(self, executor: Executor) -> None:
     raise NotImplementedError
 
 
@@ -68,7 +68,7 @@ class TextNode(Node):
   location: Location
   text: str
 
-  def Execute(self, executor: 'Executor') -> None:
+  def Execute(self, executor: Executor) -> None:
     executor.AppendText(self.text)
 
   def __str__(self) -> str:
@@ -86,7 +86,7 @@ class CallNode(Node):
   name: str  # The name of the macro called, without '$' prefix.
   args: Sequence[NodesT]  # The macro arguments.
 
-  def Execute(self, executor: 'Executor') -> None:
+  def Execute(self, executor: Executor) -> None:
     executor.CallMacro(self)
 
   def __str__(self) -> str:
@@ -133,13 +133,13 @@ class ParsingContext:
   """Context for parsing an input file."""
 
   filename: Filename  # The name of the file parsed.
-  logger: 'Logger'
+  logger: Logger
 
   def MakeLocation(self, lineno: int) -> Location:
     """Builds a Location object for this context."""
     return Location(self.filename, lineno)
 
-  def MakeLocationError(self, *args: Any, **kwargs: Any) -> 'FatalError':
+  def MakeLocationError(self, *args: Any, **kwargs: Any) -> FatalError:
     """Returns a fatal error for the current location.
 
     See Logger.LocationError() for parameters.
@@ -156,7 +156,7 @@ class RuleType(enum.Flag):
   # pylint: disable=unsupported-binary-operation
   ALL = REGULAR | SPECIAL_CHAR_LATEX | SPECIAL_CHAR_OTHER
 
-RuleResult = Union[None, Token, Iterable[Token]]
+RuleResult = None | Token | Iterable[Token]
 
 RuleResultT_co = TypeVar('RuleResultT_co', bound=RuleResult, covariant=True)
 
@@ -214,7 +214,7 @@ class RegexpParser:
     self.__regexp = re.compile(full_pattern, re.MULTILINE)
 
   def Parse(self, input_text: str) -> (
-      Iterator[tuple[str, Optional[Rule], Optional[str]]]):
+      Iterator[tuple[str, Rule | None, str | None]]):
     """Parses the given input text.
 
     Args:
@@ -395,7 +395,7 @@ class Lexer:
   def __Location(self) -> Location:
     return Location(self.__filename, self.__lineno)
 
-  def __UpdateLineno(self, text: Optional[str]) -> None:
+  def __UpdateLineno(self, text: str | None) -> None:
     if text:
       self.__lineno += text.count('\n')
       self.__skip_spaces = (text[-1] == '\n')
@@ -570,7 +570,7 @@ class Parser:
     tokens = self.__tokens
 
     def MakeLocationError(
-        lineno: int, *args: Any, **kwargs: Any) -> 'FatalError':
+        lineno: int, *args: Any, **kwargs: Any) -> FatalError:
       raise context.MakeLocationError(MakeLocation(lineno), *args, **kwargs)
 
     def ParseNodes(call_nest_count: int) -> list[Node]:
@@ -654,7 +654,7 @@ class PeekableIterator(Iterator[_T]):
 
   def __init__(self, iterable: Iterable[_T]):
     self.__iterator = iter(iterable)
-    self.__next_value: Optional[_T] = None
+    self.__next_value: _T | None = None
     self.__has_next_value = False
 
   def __next__(self) -> _T:
@@ -667,7 +667,7 @@ class PeekableIterator(Iterator[_T]):
     else:
       return next(self.__iterator)
 
-  def peek(self) -> Optional[_T]:
+  def peek(self) -> _T | None:
     if self.__has_next_value:
       return self.__next_value
     else:

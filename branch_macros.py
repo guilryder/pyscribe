@@ -4,7 +4,7 @@
 __author__ = 'Guillaume Ryder'
 
 from collections.abc import Callable, Iterable
-from typing import Any, Type
+from typing import Any
 
 from branches import Branch, TextBranch
 from execution import Executor
@@ -15,7 +15,7 @@ from macros import *
 from parsing import CallNode, NodesT, TextNode
 
 
-__BRANCH_CLASSES: Iterable[Type[Branch[Any]]] = (
+__BRANCH_CLASSES: Iterable[type[Branch[Any]]] = (
     HtmlBranch,
     LatexBranch,
     TextBranch,

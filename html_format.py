@@ -9,7 +9,7 @@ from collections.abc import Callable
 from abc import ABC, abstractmethod
 import enum
 import re
-from typing import Any, ClassVar, Optional, TextIO
+from typing import Any, ClassVar, TextIO
 
 from lxml import etree
 from lxml.etree import _Element
@@ -48,7 +48,7 @@ _VOID_TAGS_TO_NONE = {
 _STRIPPABLE = ' \r\n\t'
 
 
-def GetTagEmptyContents(tag_name: str) -> Optional[str]:
+def GetTagEmptyContents(tag_name: str) -> str | None:
   """Returns the text an empty element of the given tag should have.
 
   Returns None or '' depending on the tag.
@@ -105,9 +105,9 @@ class HtmlBranch(Branch['HtmlBranch']):
       None if the element does not support auto-paragraphs.
       Must be None for non-block elements.
     """
-    def __init__(self, parent: Optional['HtmlBranch.ElementInfo'],
+    def __init__(self, parent: HtmlBranch.ElementInfo | None,
                  elem: _Element, level: TagLevel,
-                 auto_para_tag: Optional[str]=None):
+                 auto_para_tag: str | None=None):
       if auto_para_tag:
         assert level == TagLevel.BLOCK
         assert auto_para_tag not in _VOID_TAGS_TO_NONE
@@ -136,13 +136,13 @@ class HtmlBranch(Branch['HtmlBranch']):
 
   # The typography set for this branch.
   # If None, inherits the typography of the parent branch.
-  __typography: Optional[Typography]
+  __typography: Typography | None
 
   #  The context containing the macros of self.typography.
   __typography_context: ExecutionContext
 
   # The tree of the branch. Set for root branches only.
-  __tree: Optional[etree._ElementTree]
+  __tree: etree._ElementTree | None
 
   # The root element of the branch. Cannot be closed by the branch.
   # Ancestors and siblings of this element cannot be manipulated.
@@ -328,12 +328,12 @@ class HtmlBranch(Branch['HtmlBranch']):
     if tail and tail[-1] != NBSP:
       self.__text_sep = NBSP
 
-  def GetTailChar(self) -> Optional[str]:
+  def GetTailChar(self) -> str | None:
     """Returns the tail character of the current line."""
     tail = self.__text_sep or self.__line_tail
     return tail[-1] if tail else None
 
-  def AutoParaTryOpen(self, *, except_tag: Optional[str]=None) -> bool:
+  def AutoParaTryOpen(self, *, except_tag: str | None=None) -> bool:
     """Opens a new paragraph, if possible.
 
     Args:
@@ -381,7 +381,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     self.__text_sep = ''
 
   def OpenTag(self, tag: str, level: TagLevel, *,
-              auto_para_tag: Optional[str]=None) -> None:
+              auto_para_tag: str | None=None) -> None:
     """Opens a new child tag in the current element, and makes it current.
 
     Args:
@@ -469,7 +469,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     self.__current_elem = new_elem
 
     # If requested, discard the element if it's empty.
-    new_closed_elem: Optional[_Element] = closed_elem
+    new_closed_elem: _Element | None = closed_elem
     if discard_if_empty and self._RemoveElementIfEmpty(closed_elem,
                                                        preserve_tail=False):
       new_closed_elem = None
@@ -509,7 +509,7 @@ class HtmlBranch(Branch['HtmlBranch']):
           lambda elem_info: elem_info != self.__current_elem_info)
     elif target == 'previous':
       # Previous element.
-      elem_info: Optional[HtmlBranch.ElementInfo] = self.__current_elem_info
+      elem_info: HtmlBranch.ElementInfo | None = self.__current_elem_info
       while elem_info and elem_info.parent:
         prev_elem = elem_info.elem.getprevious()
         if prev_elem is not None:
@@ -662,9 +662,9 @@ class HtmlBranch(Branch['HtmlBranch']):
     return True
 
   @staticmethod
-  def _AppendTextToXml(text: Optional[str], *,
-                       tail_elem: Optional[_Element]=None,
-                       text_elem: Optional[_Element]=None) -> None:
+  def _AppendTextToXml(text: str | None, *,
+                       tail_elem: _Element | None=None,
+                       text_elem: _Element | None=None) -> None:
     """Appends text to an XML element.
 
     Appends the text to tail_elem tail if valid, else to text_elem text.

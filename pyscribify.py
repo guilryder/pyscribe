@@ -12,26 +12,26 @@ import shlex
 import shutil
 import subprocess
 import sys
-from typing import Any, Optional, TextIO
+from typing import Any, TextIO
 
 
 _FORMATS = ('html', 'latex')
 
 
-def _TryFindExecutable(filename: str, default: Optional[str]=None) -> str:
+def _TryFindExecutable(filename: str, default: str | None=None) -> str:
   return shutil.which(filename) or default or filename
 
 
 class Main:
 
-  __input_args: Optional[list[str]]
+  __input_args: list[str] | None
   __stdout: TextIO
   __ArgumentParser: type[argparse.ArgumentParser]
   __all_success: bool
   __pyscribe_dir: Path
 
   def __init__(
-      self, *, input_args: Optional[list[str]]=None, stdout: TextIO=sys.stdout,
+      self, *, input_args: list[str] | None=None, stdout: TextIO=sys.stdout,
       ArgumentParser: type[argparse.ArgumentParser]=argparse.ArgumentParser):
     self.__input_args = input_args
     self.__stdout = stdout

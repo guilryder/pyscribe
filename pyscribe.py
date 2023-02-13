@@ -6,7 +6,6 @@ __author__ = 'Guillaume Ryder'
 import argparse
 from pathlib import PurePath
 import sys
-from typing import Optional
 
 from branch_macros import BRANCH_TYPES
 from execution import PYSCRIBE_EXT, Executor, FileSystem, PathLikeT
@@ -15,13 +14,13 @@ import log
 
 class Main:
 
-  __input_args: Optional[list[str]]
+  __input_args: list[str] | None
   __fs: FileSystem
   __main_file: PurePath
   __ArgumentParser: type[argparse.ArgumentParser]
 
   def __init__(
-      self, *, input_args: Optional[list[str]]=None,
+      self, *, input_args: list[str] | None=None,
       fs: FileSystem=FileSystem(), main_file: str=sys.argv[0],
       ArgumentParser: type[argparse.ArgumentParser]=argparse.ArgumentParser):
     self.__input_args = input_args

@@ -11,7 +11,7 @@ import os
 import pathlib
 from pathlib import PurePath
 import sys
-from typing import Any, IO, NoReturn, Optional, TextIO
+from typing import Any, IO, NoReturn, TextIO
 import unittest
 
 import execution
@@ -257,7 +257,7 @@ TESTDATA_DIR = REAL_PYSCRIBE_DIR / 'testdata'
 
 class TestCase(unittest.TestCase):
 
-  def __FailureMessage(self, *lines: Optional[str]) -> str:  # pragma: no cover
+  def __FailureMessage(self, *lines: str | None) -> str:  # pragma: no cover
     return '\n'.join(filter(None, lines))
 
   def assertEqualExt(self, actual, expected, msg=None, fmt=repr):
@@ -297,7 +297,7 @@ class TestCase(unittest.TestCase):
   def OpenSourceFile(self, path):
     real_suffix = path.relative_to(FAKE_PYSCRIBE_DIR)
     real_path = os.path.normpath(REAL_PYSCRIBE_DIR / real_suffix)
-    return open(real_path, mode='rt', encoding='utf-8')
+    return open(real_path, encoding='utf-8')
 
   def GetFileSystem(self, inputs):
     class TestFileSystem(FakeFileSystem):
@@ -526,7 +526,7 @@ class FakeArgumentParser(argparse.ArgumentParser):
     self.__stderr = stderr
 
   def exit(
-      self, status: int=0, message: Optional[str]=None,
+      self, status: int=0, message: str | None=None,
       **unused_kwargs: Any) -> NoReturn:
     if message:
       self.__stderr.write(message)
@@ -535,5 +535,5 @@ class FakeArgumentParser(argparse.ArgumentParser):
   def error(self, message: str) -> NoReturn:
     self.exit(2, f'error: {message}\n')
 
-  def print_help(self, file: Optional[IO[str]]=None, **kwargs: Any) -> None:
+  def print_help(self, file: IO[str] | None=None, **kwargs: Any) -> None:
     argparse.ArgumentParser.print_help(self, self.__stderr, **kwargs)

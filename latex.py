@@ -5,7 +5,7 @@ from __future__ import annotations
 __author__ = 'Guillaume Ryder'
 
 from io import StringIO
-from typing import Any, Generic, Optional, TextIO, TypeVar
+from typing import Any, Generic, TextIO, TypeVar
 
 from branches import AbstractSimpleBranch
 from execution import Executor
@@ -32,7 +32,7 @@ class LatexWriter(Generic[_WriterT]):
   __sep_end = False
 
   # The last character written, if any.
-  __last_char: Optional[str] = None
+  __last_char: str | None = None
 
   def __init__(self, writer: _WriterT):
     self.__writer = writer

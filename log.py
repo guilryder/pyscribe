@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from os import PathLike
 import traceback
 from types import TracebackType
-from typing import Optional, TextIO, TYPE_CHECKING, Union
+from typing import TextIO, TYPE_CHECKING
 
 if TYPE_CHECKING:
   from parsing import CallNode
 
 
-MessageT = Union[None, str, BaseException]
+MessageT = None | str | BaseException
 
 
 def FormatMessage(message: MessageT) -> str:
@@ -27,7 +27,7 @@ class BaseError(Exception):
   # The error message, possibly with trailing newline.
   message: str
 
-  def __init__(self, message: Optional[str]=None):
+  def __init__(self, message: str | None=None):
     super().__init__()
     self.message = FormatMessage(message).rstrip()
 
@@ -66,8 +66,8 @@ class Filename:
   # Typically set to the current directory for stdin/stdout files.
   dir_path: str
 
-  def __init__(self, display_path: Union[PathLike[str], str],
-               dir_path: Union[PathLike[str], str]):
+  def __init__(self, display_path: PathLike[str] | str,
+               dir_path: PathLike[str] | str):
     object.__setattr__(self, 'display_path', str(display_path))
     object.__setattr__(self, 'dir_path', str(dir_path))
 
@@ -116,13 +116,13 @@ LOGGER_FORMATS = {
 
 
 _ExcInfoT = tuple[type[BaseException], BaseException, TracebackType]
-_OptExcInfoT = Union[_ExcInfoT, tuple[None, None, None]]
+_OptExcInfoT = _ExcInfoT | tuple[None, None, None]
 
 class Logger:
   """Logs warnings and error messages."""
 
-  def __init__(self, *, fmt: Union[str, LoggerFormat],
-               err_file: TextIO, info_file: Optional[TextIO]):
+  def __init__(self, *, fmt: str | LoggerFormat,
+               err_file: TextIO, info_file: TextIO | None):
     if isinstance(fmt, LoggerFormat):
       self.__fmt = fmt
     else:
@@ -141,7 +141,7 @@ class Logger:
 
   def LogException(self, e: BaseException,
                    exc_info: _OptExcInfoT=(None, None, None),
-                   tb_limit: Optional[int]=None) -> None:
+                   tb_limit: int | None=None) -> None:
     """Prints a log entry for the given exception.
 
     See traceback.print_exception() for details on exc_info and tb_limit.

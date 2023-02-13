@@ -7,7 +7,6 @@ from abc import ABC
 from collections.abc import Callable, Sequence
 from pathlib import PurePath
 import re
-from typing import Optional
 
 from execution import ExecutionContext, Executor, PYSCRIBE_EXT
 from log import FatalError, NodeError
@@ -96,7 +95,7 @@ def IncludeText(executor: Executor, call_node: CallNode, path: str) -> None:
 
 def _IncludeFile(resolved_path_handler: Callable[[PurePath], None],
                  executor: Executor, call_node: CallNode,
-                 path: str, default_ext: Optional[str]) -> None:
+                 path: str, default_ext: str | None) -> None:
   try:
     directory = call_node.location.filename.dir_path
     resolved_path = executor.ResolveFilePath(path,

@@ -55,7 +55,7 @@ class EndToEndTest(PyscribifyTestCase):
 
       # Compare Hello.tex with the golden.
       with OpenOutputFile('Hello.tex', 'rt') as output, (
-           open('Hello.tex', 'rt', encoding='utf8')) as golden:
+           open('Hello.tex', encoding='utf8')) as golden:
         self.assertEqual(output.read(), golden.read(),
                          msg='Hello.tex mismatch')
 

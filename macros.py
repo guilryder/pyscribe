@@ -3,11 +3,11 @@
 __author__ = 'Guillaume Ryder'
 
 from collections import defaultdict
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 import inspect
 import itertools
 import operator
-from typing import Any, Callable, cast, Optional, Protocol, TYPE_CHECKING, Union
+from typing import Any, cast, Optional, Protocol, TYPE_CHECKING
 
 from parsing import *
 
@@ -17,9 +17,9 @@ else:
   _ExecutorT = 'Executor'
 
 
-_Value = Optional[Union[str, NodesT]]
+_Value = str | NodesT | None
 
-_ArgsParser = Callable[[_ExecutorT, Optional[NodesT]], _Value]
+_ArgsParser = Callable[[_ExecutorT, NodesT | None], _Value]
 
 # The first argument is the parameter name without special prefixes/suffixes.
 _NamedArgsParser = tuple[str, _ArgsParser]
@@ -51,10 +51,10 @@ MacrosT = dict[str, StandardMacroT]
 class macro:
   """Decorator for macro callbacks."""
 
-  __arg_parsers: Optional[_NamedArgsParsers]
+  __arg_parsers: _NamedArgsParsers | None
   __attributes: dict[str, Any]
 
-  def __init__(self, public_name: Optional[str]=None, args_signature: str='',
+  def __init__(self, public_name: str | None=None, args_signature: str='',
                auto_args_parser: bool=True, text_compatible: bool=False,
                builtin: bool=True):
     """
@@ -100,14 +100,14 @@ class macro:
       return [], []
 
     def TextArgParser(
-        executor: _ExecutorT, arg: Optional[NodesT]) -> Optional[str]:
+        executor: _ExecutorT, arg: NodesT | None) -> str | None:
       if arg is None:
         return None
       else:
         return executor.EvalText(arg)
 
     def NodesArgParser(
-        unused_executor: _ExecutorT, arg: Optional[NodesT]) -> Optional[NodesT]:
+        unused_executor: _ExecutorT, arg: NodesT | None) -> NodesT | None:
       return arg
 
     def ParseArgSignature(arg_signature: str) -> tuple[bool, _NamedArgsParser]:
@@ -217,6 +217,7 @@ def GetPublicMacrosContainers() -> Collection[Any]:
 
 
 def ExecuteCallback(
+    # pylint: disable=consider-alternative-union-syntax
     nodes: NodesT, call_context: Optional['ExecutionContext']=None,
     **kwargs: Any) -> StandardMacroT:
   """Creates a macro callback that executes the given nodes.

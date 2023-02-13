@@ -7,8 +7,7 @@ __author__ = 'Guillaume Ryder'
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from io import StringIO
-from typing import \
-  Any, ClassVar, Generic, Optional, TextIO, TYPE_CHECKING, TypeVar, Union
+from typing import Any, ClassVar, Generic, TextIO, TYPE_CHECKING, TypeVar
 
 from log import NodeError
 from macros import *
@@ -31,21 +30,21 @@ class Branch(ABC, Generic[_SubBranchT]):
   """
 
   type_name: ClassVar[str]  # as returned by $branch.type
-  parent: Optional[Branch[Any]]  # None if root
+  parent: Branch[Any] | None  # None if root
   root: Branch[Any]  # self if the branch is root
   context: _ExecutionContextT
-  name: Optional[str]
+  name: str | None
   # The direct sub-branches of this branch.
   sub_branches: list[_SubBranchT]
   # Whether the branch has been inserted in its parent branch.
   # Always true for root branches.
   attached: bool
   #  The output writer of the root branch. None for child branches.
-  writer: Optional[TextIO]
+  writer: TextIO | None
 
-  def __init__(self, *, parent: Optional[Branch[Any]],
-               parent_context: Optional[_ExecutionContextT]=None,
-               name: Optional[str]=None, writer: Optional[TextIO]=None):
+  def __init__(self, *, parent: Branch[Any] | None,
+               parent_context: _ExecutionContextT | None=None,
+               name: str | None=None, writer: TextIO | None=None):
     """
     Args:
       parent: The parent branch, None for top-level branches.
@@ -169,7 +168,7 @@ class AbstractSimpleBranch(Branch[_SubBranchT], Generic[_SubBranchT, LeafT]):
 
   # The content leaves and sub-branches of branch.
   # Invariant: the last element is always _current_leaf.
-  __nodes: list[Union[LeafT, _SubBranchT]]
+  __nodes: list[LeafT | _SubBranchT]
 
   _current_leaf: LeafT  # The last leaf of the branch.
 
