@@ -86,16 +86,12 @@ class Main:
                                    help_suffix)
 
     # Conversions to perform.
-    group = parser.add_argument_group('HTML-based conversions (ePub, Mobi)')
-    AddAlias(group, 'psc-to-ebook', ('psc-to-epub', 'psc-to-mobi'))
+    group = parser.add_argument_group('HTML-based conversions (ePub)')
     AddAlias(group, 'psc-to-epub', ('psc-to-html', 'html-to-epub'))
-    AddAlias(group, 'psc-to-mobi', ('psc-to-html', 'html-to-mobi'))
     group.add_argument('--psc-to-html', action='store_true',
                        help='compile the *.psc files to HTML with PyScribe')
     group.add_argument('--html-to-epub', action='store_true',
                        help='compile the HTML files to ePub with Calibre')
-    group.add_argument('--html-to-mobi', action='store_true',
-                       help='compile the HTML files to Mobi with Calibre')
 
     group = parser.add_argument_group('Latex-based conversions (PDF)')
     AddAlias(group, 'psc-to-pdf', ('psc-to-latex', 'latex-to-pdf'))
@@ -111,7 +107,7 @@ class Main:
                        help='Latex to PDF compiler; default: %(default)s')
 
     group = parser.add_argument_group('Convenience aliases')
-    AddAlias(group, 'psc-to-all', ('psc-to-ebook', 'psc-to-pdf'),
+    AddAlias(group, 'psc-to-all', ('psc-to-epub', 'psc-to-pdf'),
              help_suffix='; enabled by default to no --X-to-Y flag is set')
     AddAlias(group, 'psc-to-interm', ('psc-to-html', 'psc-to-latex'))
 
@@ -142,11 +138,6 @@ class Main:
                        default='--dont-split-on-page-breaks'
                                ' --no-default-epub-cover',
                        help='ePub-specific command-line options for Calibre'
-                            '; default: %(default)s')
-    group.add_argument('--calibre-mobi-options', metavar='OPTIONS',
-                       default='--no-inline-toc --mobi-keep-original-images'
-                               ' --cover=' + os.devnull,
-                       help='Mobi-specific command-line options for Calibre'
                             '; default: %(default)s')
 
     group.add_argument('--texify-bin', metavar='PATH', type=Path,
@@ -218,12 +209,6 @@ class Main:
         self.__CallCalibre(input_path=output_path_noext + '.html',
                            output_path=output_path_noext + '.epub',
                            extra_options=args.calibre_epub_options)
-
-      # HTML to Mobi.
-      if psc_to_html_success and args.html_to_mobi:
-        self.__CallCalibre(input_path=output_path_noext + '.html',
-                           output_path=output_path_noext + '.mobi',
-                           extra_options=args.calibre_mobi_options)
 
     # Latex.
     if 'latex' in args.formats:

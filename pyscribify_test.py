@@ -63,9 +63,6 @@ class EndToEndTest(PyscribifyTestCase):
       with OpenOutputFile('Hello.html', 'rt') as output:
         self.assertIn('<title>Hello World</title>', output.read(),
                       msg='Hello.html mismatch')
-      with OpenOutputFile('Hello.mobi', 'rb') as output:
-        self.assertIn(b'BOOKMOBI', output.read(),
-                      msg='Hello.mobi mismatch')
       with OpenOutputFile('Hello.pdf', 'rb') as output:
         self.assertEqual(output.read(4), b'%PDF',
                       msg='Hello.pdf mismatch')
@@ -91,7 +88,6 @@ class DryRunTest(PyscribifyTestCase):
 
   __HELLO_PSC_TO_HTML = r'pyscribe.py.* Hello\.psc .*--format=html'
   __HELLO_HTML_TO_EPUB = r'ebook-convert.*Hello\.epub'
-  __HELLO_HTML_TO_MOBI = r'ebook-convert.*Hello\.mobi'
   __HELLO_PSC_TO_LATEX = r'pyscribe.py.* Hello\.psc .*--format=latex'
   __HELLO_LATEX_TO_PDF = r'texify.*Hello\.tex'
 
@@ -137,9 +133,6 @@ class DryRunTest(PyscribifyTestCase):
             r"ebook-convert.* output/Hello.html output/Hello.epub"
               r" --toc-filter=" + re.escape(r'\[[0-9]+\]') +
               r" --dont-split-on-page-breaks --no-default-epub-cover",
-            r"ebook-convert.* output/Hello.html output/Hello.mobi"
-              r" --toc-filter=" + re.escape(r'\[[0-9]+\]') +
-              r" --no-inline-toc --mobi-keep-original-images --cover=.*nul",
             r"pyscribe\.py Hello\.psc"
               r" --lib-dir=.*/pyscribe/lib --format=latex --output=output",
             r"texify.* -I .+/pyscribe/lib Hello\.tex"
@@ -181,7 +174,6 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             r'pyscribe.py.* Hello\.psc .*--format=html --output=foo/bar',
             r'ebook-convert.* foo/bar/Hello\.epub',
-            r'ebook-convert.* foo/bar/Hello\.mobi',
             r'pyscribe.py.* Hello\.psc .*--format=latex --output=foo/bar',
             r'texify.* Hello\.tex',  # changes the current directory before
         ])
@@ -192,7 +184,6 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
-            self.__HELLO_HTML_TO_MOBI,
         ])
 
   def testFormats_latexOnly(self):
@@ -228,23 +219,21 @@ class DryRunTest(PyscribifyTestCase):
 
   def testConversionOptions_recursive(self):
     self.__assertLines(
-        self.__Pyscribify(['Hello', '--psc-to-ebook']),
+        self.__Pyscribify(['Hello', '--psc-to-all']),
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
-            self.__HELLO_HTML_TO_MOBI,
+            self.__HELLO_PSC_TO_LATEX,
+            self.__HELLO_LATEX_TO_PDF,
         ])
 
   def testConversionOptions_all(self):
     self.__assertLines(
         self.__Pyscribify([
             'Hello',
-            '--psc-to-ebook',
             '--psc-to-epub',
-            '--psc-to-mobi',
             '--psc-to-html',
             '--html-to-epub',
-            '--html-to-mobi',
             '--psc-to-pdf',
             '--latex-to-pdf',
             '--psc-to-all',
@@ -253,7 +242,6 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
-            self.__HELLO_HTML_TO_MOBI,
             self.__HELLO_PSC_TO_LATEX,
             self.__HELLO_LATEX_TO_PDF,
         ])
@@ -267,7 +255,6 @@ class DryRunTest(PyscribifyTestCase):
         '--calibre-bin=/foo/calibre/bin',
         '--calibre-options=--calibre-opt -b',
         '--calibre-epub-options=--epub-opt -c',
-        '--calibre-mobi-options=--mobi-opt -d',
         '--texify-bin=/foo/texify/bin',
         '--texify-options=--texify-opt -e',
         '--latexmk-bin=/foo/latexmk/bin',
@@ -280,8 +267,6 @@ class DryRunTest(PyscribifyTestCase):
           r" --output=output --pyscribe-opt -a",
         r"^.foo/calibre/bin output/Hello.html output/Hello.epub"
           r" --calibre-opt -b --epub-opt -c",
-        r"^.foo/calibre/bin output/Hello.html output/Hello.mobi"
-          r" --calibre-opt -b --mobi-opt -d",
         r"^.+ .foo/pyscribe/bin Hello\.psc"
           r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
           r" --output=output --pyscribe-opt -a",
