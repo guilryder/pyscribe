@@ -9,7 +9,8 @@ from typing import Any, Generic, override, TextIO, TypeVar
 
 from branches import AbstractSimpleBranch
 from execution import Executor
-from macros import *
+import macros
+from macros import AppendTextMacro, macro
 from parsing import CallNode
 
 
@@ -96,7 +97,7 @@ class LatexBranch(AbstractSimpleBranch['LatexBranch', LatexWriter[StringIO]]):
     super().__init__(*args, **kwargs)
 
     if self.parent is None:
-      self.context.AddMacros(GetPublicMacros(Macros))
+      self.context.AddMacros(macros.GetPublicMacros(Macros))
 
   @override
   def _CreateLeaf(self) -> LatexWriter[StringIO]:

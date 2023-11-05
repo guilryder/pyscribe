@@ -4,14 +4,14 @@
 
 __author__ = 'Guillaume Ryder'
 
-from latex import *
-from testutils import *
+import latex
+import testutils
 
 
-class LatexEndToEndTest(ExecutionTestCase):
+class LatexEndToEndTest(testutils.ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):
-    return self.CreateBranch(executor, LatexBranch)
+    return self.CreateBranch(executor, latex.LatexBranch)
 
   def InputHook(self, text):
     return '$$special.chars.latex.mode\n' + text
@@ -23,23 +23,25 @@ class LatexEndToEndTest(ExecutionTestCase):
     self.assertExecution('', '')
 
   def testUnicode(self):
-    self.assertExecution(TEST_UNICODE, TEST_UNICODE)
+    self.assertExecution(testutils.TEST_UNICODE, testutils.TEST_UNICODE)
 
   def testEscape(self):
     self.assertExecution('^% ^&', '% &')
 
   def testSpecialChars_escapeAll(self):
     self.assertExecution(
-        '$$special.chars.escape.all\n' + SPECIAL_CHARS,
-        SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL)
+        '$$special.chars.escape.all\n' + testutils.SPECIAL_CHARS,
+        testutils.SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL)
 
   def testSpecialChars_latexMode(self):
     self.assertExecution(
-        SPECIAL_CHARS,
-        SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL.replace(r'\textbackslash{}', '\\'))
+        testutils.SPECIAL_CHARS,
+        testutils.SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL.replace(
+            r'\textbackslash{}', '\\'))
 
   def testOtherTextMacros(self):
-    self.assertExecution(OTHER_TEXT_MACROS, OTHER_TEXT_MACROS_AS_LATEX)
+    self.assertExecution(testutils.OTHER_TEXT_MACROS,
+                         testutils.OTHER_TEXT_MACROS_AS_LATEX)
 
   def testLatexSep_beforeWhitelistedChars_noop(self):
     self.assertExecution(
@@ -169,4 +171,4 @@ class LatexEndToEndTest(ExecutionTestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

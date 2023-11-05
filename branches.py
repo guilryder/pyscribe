@@ -10,8 +10,8 @@ from io import StringIO
 from typing import Any, ClassVar, Generic, override, TextIO, TYPE_CHECKING, \
   TypeVar
 
-from log import NodeError
-from macros import *
+import log
+from macros import AppendTextCallback
 
 if TYPE_CHECKING:
   from execution import ExecutionContext as _ExecutionContextT
@@ -103,12 +103,13 @@ class Branch(ABC, Generic[_SubBranchT]):
     """
     if sub_branch.parent is not self:
       assert sub_branch.parent
-      raise NodeError(
+      raise log.NodeError(
           f"expected a sub-branch created by branch '{self.name}'; "
           f"got one created by branch '{sub_branch.parent.name}'")
 
     if sub_branch.attached:
-      raise NodeError(f"the sub-branch '{sub_branch.name}' is already attached")
+      raise log.NodeError(
+          f"the sub-branch '{sub_branch.name}' is already attached")
 
     self._AppendSubBranch(sub_branch)
     sub_branch.attached = True

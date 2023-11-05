@@ -13,17 +13,17 @@ import sys
 import unittest
 
 import pyscribify
-from testutils import FakeArgumentParser, TESTDATA_DIR
+import testutils
 
 
-OUTPUT_DIR = TESTDATA_DIR / 'output'
+OUTPUT_DIR = testutils.TESTDATA_DIR / 'output'
 
 
 class PyscribifyTestCase(unittest.TestCase):
 
   def setUp(self):
     self.__orig_cwd = os.getcwd()
-    os.chdir(TESTDATA_DIR)
+    os.chdir(testutils.TESTDATA_DIR)
 
   def tearDown(self):
     os.chdir(self.__orig_cwd)
@@ -296,10 +296,10 @@ class CoverageTest(PyscribifyTestCase):
     main = pyscribify.Main(
         input_args=args,
         stdout=output,
-        ArgumentParser=lambda: FakeArgumentParser(output))
+        ArgumentParser=lambda: testutils.FakeArgumentParser(output))
     with self.assertRaises(SystemExit):
       main.Run()
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

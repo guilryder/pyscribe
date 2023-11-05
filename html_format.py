@@ -18,7 +18,8 @@ from lxml.etree import _Element
 from branches import Branch
 from execution import ENCODING, ExecutionContext, Executor
 from log import NodeError
-from macros import *
+import macros
+from macros import AppendTextMacro, macro
 from parsing import CallNode
 
 
@@ -174,7 +175,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     # Create the contexts tree.
     context = self.context
     if parent is None:
-      context.AddMacros(GetPublicMacros(Macros))
+      context.AddMacros(macros.GetPublicMacros(Macros))
       context = ExecutionContext(parent=context)
     self.__typography_context = context
     context = ExecutionContext(parent=context)
@@ -730,7 +731,7 @@ class Typography(ABC):
     if self.macros_container is None:
       self.macros_container = self
     self.context = ExecutionContext(parent=None)
-    self.context.AddMacros(GetPublicMacros(self.macros_container))
+    self.context.AddMacros(macros.GetPublicMacros(self.macros_container))
 
   @staticmethod
   @abstractmethod

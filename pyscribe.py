@@ -7,8 +7,9 @@ import argparse
 from pathlib import PurePath
 import sys
 
-from branch_macros import BRANCH_TYPES
-from execution import PYSCRIBE_EXT, Executor, FileSystem, PathLikeT
+import branch_macros
+import execution
+from execution import FileSystem, PathLikeT
 import log
 
 
@@ -75,7 +76,7 @@ class Main:
     parser.add_argument('-f', '--format', metavar='FORMAT',
                         dest='format',
                         default='html',
-                        choices=sorted(BRANCH_TYPES),
+                        choices=sorted(branch_macros.BRANCH_TYPES),
                         help='format to render into; sets $format; '
                              'default: %(default)s')
     parser.add_argument('-o', '--output', metavar='DIR',
@@ -121,10 +122,10 @@ class Main:
     args = self.__args
 
     # Compute the absolute input file path.
-    input_path = Executor.ResolveFilePathStatic(
+    input_path = execution.Executor.ResolveFilePathStatic(
         args.input_filename,
         abs_directory=self.__current_dir,
-        default_ext=PYSCRIBE_EXT,
+        default_ext=execution.PYSCRIBE_EXT,
         fs=fs)
 
     # Compute the path constants based on the input path.
@@ -144,9 +145,10 @@ class Main:
     # Create the output directory.
     fs.makedirs(output_dir, exist_ok=True)
 
-    executor = Executor(logger=self.__logger, fs=fs,
-                        current_dir=self.__current_dir,
-                        output_path_prefix=output_path_prefix)
+    executor = execution.Executor(
+        logger=self.__logger, fs=fs,
+        current_dir=self.__current_dir,
+        output_path_prefix=output_path_prefix)
 
     # Set the constants.
     executor.AddConstants(constants)

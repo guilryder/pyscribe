@@ -4,16 +4,14 @@
 
 __author__ = 'Guillaume Ryder'
 
-from branches import TextBranch
-from builtin_macros import *
-from execution import *
-from testutils import *
+import branches
+import testutils
 
 
-class BranchWriteTest(ExecutionTestCase):
+class BranchWriteTest(testutils.ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):
-    self.CreateBranch(executor, TextBranch, name='other')
+    self.CreateBranch(executor, branches.TextBranch, name='other')
     return executor.system_branch
 
   def testCurrentBranch(self):
@@ -32,7 +30,7 @@ class BranchWriteTest(ExecutionTestCase):
         messages=['/root:1: $branch.write: branch not found: invalid'])
 
 
-class BranchCreateTest(ExecutionTestCase):
+class BranchCreateTest(testutils.ExecutionTestCase):
 
   def testRoot_text(self):
     self.assertExecution(
@@ -185,7 +183,7 @@ class BranchCreateTest(ExecutionTestCase):
         'before inside after')
 
 
-class BranchAppendTest(ExecutionTestCase):
+class BranchAppendTest(testutils.ExecutionTestCase):
 
   def testParentMismatch_siblings(self):
     self.assertExecution(
@@ -233,4 +231,4 @@ class BranchAppendTest(ExecutionTestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

@@ -3,28 +3,30 @@
 
 __author__ = 'Guillaume Ryder'
 
-import importlib
+import importlib.util
 
 from execution import Executor
-from macros import *
+import log
+import macros
+from macros import macro
 from parsing import CallNode
-from testutils import *
+import testutils
 
 
-class MacroTest(TestCase):
+class MacroTest(testutils.TestCase):
   # pylint: disable=attribute-defined-outside-init
 
   def setUp(self):
     super().setUp()
-    self.logger = FakeLogger()
-    fs = FakeFileSystem()
+    self.logger = testutils.FakeLogger()
+    fs = testutils.FakeFileSystem()
     self.executor = Executor(logger=self.logger, fs=fs,
                              current_dir=fs.Path('/cur'),
                              output_path_prefix=fs.Path('/output'))
     self.executor.EvalText = lambda args: 'T' + args
 
   def __MacroCall(self, macro_callback, args):
-    call_node = CallNode(TEST_LOCATION, 'name', args)
+    call_node = CallNode(testutils.TEST_LOCATION, 'name', args)
     self.called = False
     macro_callback(self.executor, call_node)
 
@@ -38,8 +40,8 @@ class MacroTest(TestCase):
     self.assertTrue(self.called)
 
   def __CheckMacroCallFailure(self, macro_callback, args, expected_message):
-    expected_message_full = f'{TEST_LOCATION}: {expected_message}'
-    with self.assertRaises(FatalError) as ctx:
+    expected_message_full = f'{testutils.TEST_LOCATION}: {expected_message}'
+    with self.assertRaises(log.FatalError) as ctx:
       self.__MacroCall(macro_callback, args)
     self.logger.LogException(ctx.exception)
     self.assertFalse(self.called, 'expected macro callback not invoked')
@@ -127,23 +129,23 @@ class MacroTest(TestCase):
         raise NotImplementedError
 
 
-class GetMacroSignatureTest(TestCase):
+class GetMacroSignatureTest(testutils.TestCase):
 
   def testNoArgs(self):
     @macro()
     def MacroCallback():
       raise NotImplementedError
-    self.assertEqual(GetMacroSignature('name', MacroCallback), '$name')
+    self.assertEqual(macros.GetMacroSignature('name', MacroCallback), '$name')
 
   def testSomeArgs(self):
     @macro(args_signature='one,two,three')
     def MacroCallback():
       raise NotImplementedError
-    self.assertEqual(GetMacroSignature('name', MacroCallback),
+    self.assertEqual(macros.GetMacroSignature('name', MacroCallback),
                      '$name(one,two,three)')
 
 
-class GetPublicMacrosTest(TestCase):
+class GetPublicMacrosTest(testutils.TestCase):
 
   class TestClass:
     @staticmethod
@@ -162,9 +164,9 @@ class GetPublicMacrosTest(TestCase):
       raise NotImplementedError
 
   def testOnClass(self):
-    self.assertDictEqual(GetPublicMacros(self.TestClass),
-                         dict(public1=self.TestClass.PublicMacro1,
-                              public2=self.TestClass.PublicMacro2))
+    self.assertEqual(macros.GetPublicMacros(self.TestClass),
+                     dict(public1=self.TestClass.PublicMacro1,
+                          public2=self.TestClass.PublicMacro2))
 
   def testOnModule(self):
     module_spec = importlib.util.spec_from_loader('test', loader=None)
@@ -186,13 +188,13 @@ def PublicMacro2():
   pass
 """)
     exec(code, module.__dict__)  # pylint: disable=exec-used
-    self.assertDictEqual(GetPublicMacros(module),
-                         dict(public1=getattr(module, 'PublicMacro1'),
-                              public2=getattr(module, 'PublicMacro2')))
+    self.assertEqual(macros.GetPublicMacros(module),
+                     dict(public1=getattr(module, 'PublicMacro1'),
+                          public2=getattr(module, 'PublicMacro2')))
 
   def testMultipleCalls(self):
-    self.assertDictEqual(GetPublicMacros(self.TestClass),
-                         GetPublicMacros(self.TestClass))
+    self.assertEqual(macros.GetPublicMacros(self.TestClass),
+                     macros.GetPublicMacros(self.TestClass))
 
   def testDuplicatePublicName(self):
     class TestClassDuplicate:
@@ -207,8 +209,8 @@ def PublicMacro2():
         raise NotImplementedError
 
     with self.assertRaises(AssertionError):
-      GetPublicMacros(TestClassDuplicate)
+      macros.GetPublicMacros(TestClassDuplicate)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

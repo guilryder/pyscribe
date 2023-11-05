@@ -7,10 +7,10 @@ import collections
 import shlex
 
 import pyscribe
-from testutils import *
+import testutils
 
 
-class EndToEndTestCase(TestCase):
+class EndToEndTestCase(testutils.TestCase):
 
   def setUp(self):
     super().setUp()
@@ -31,8 +31,8 @@ class EndToEndTestCase(TestCase):
     main = pyscribe.Main(
         input_args=args,
         fs=self.fs,
-        main_file=FAKE_PYSCRIBE_DIR / 'pyscribe.py',
-        ArgumentParser=lambda: FakeArgumentParser(self.fs.stderr))
+        main_file=testutils.FAKE_PYSCRIBE_DIR / 'pyscribe.py',
+        ArgumentParser=lambda: testutils.FakeArgumentParser(self.fs.stderr))
     if expect_failure:
       with self.assertRaises(SystemExit):
         main.Run()
@@ -259,7 +259,7 @@ for definition in GOLDEN_TEST_DEFINITIONS.items():
   GoldenTest.AddTestMethod(*definition)
 
 
-class ComputePathConstantsTest(TestCase):
+class ComputePathConstantsTest(testutils.TestCase):
 
   def testAbsoluteInputPaths(self):
     fs = self.GetFileSystem({})
@@ -301,4 +301,4 @@ class ComputePathConstantsTest(TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

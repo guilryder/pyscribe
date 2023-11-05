@@ -16,15 +16,12 @@ import unittest
 
 import execution
 from execution import PathLikeT
-from log import FatalError, Filename, Location, Logger, LoggerFormat, NodeError
-from macros import macro, GetPublicMacros
+import log
+import macros
 
 
-__import__('tests')  # for unittest hooks
-
-
-def loc(display_path: str, lineno: int, dir_path: str='/cur') -> Location:
-  return Location(Filename(display_path, dir_path), lineno)
+def loc(display_path: str, lineno: int, dir_path: str='/cur') -> log.Location:
+  return log.Location(log.Filename(display_path, dir_path), lineno)
 
 TEST_LOCATION = loc('file.txt', 42)
 TEST_UNICODE = 'Îñţérñåţîöñåļîžåţîöñ'
@@ -151,7 +148,7 @@ OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # ^ A\xa0B C\xadD"
 OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\-D'
 
 
-class FakeLogger(Logger):
+class FakeLogger(log.Logger):
 
   """
   Records logged entries in a string buffer.
@@ -159,7 +156,7 @@ class FakeLogger(Logger):
   Example output: GetOutput() == 'file.txt:42: some error'
   """
 
-  FORMAT = LoggerFormat(
+  FORMAT = log.LoggerFormat(
       name='test',
       top='{location!r}: {message}\n',
       stack_frame='  {call_node.location!r}: ${call_node.name}\n')
@@ -345,13 +342,13 @@ class TestCase(unittest.TestCase):
 class ExecutionTestCase(TestCase):
 
   @staticmethod
-  @macro(public_name='identity', args_signature='*contents')
+  @macros.macro(public_name='identity', args_signature='*contents')
   def IdentityMacro(executor, unused_call_node, contents):
     executor.ExecuteNodes(contents)
 
   def setUp(self):
     super().setUp()
-    self.additional_builtin_macros = GetPublicMacros(self)
+    self.additional_builtin_macros = macros.GetPublicMacros(self)
 
   @staticmethod
   def GetBranchFilename(branch_name):
@@ -449,7 +446,7 @@ class ExecutionTestCase(TestCase):
     try:
       executor.ExecuteFile(fs.Path('/root'))
       actual_fatal_error = False
-    except FatalError as e:
+    except log.FatalError as e:
       logger.LogException(e)
       actual_fatal_error = True
 
@@ -458,7 +455,7 @@ class ExecutionTestCase(TestCase):
     if not actual_fatal_error:
       try:
         executor.RenderBranches()
-      except NodeError as e:
+      except log.NodeError as e:
         actual_fatal_error = True
         logger.LogException(e)
       actual_outputs = fs.GetOutputs()

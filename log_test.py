@@ -4,31 +4,34 @@
 __author__ = 'Guillaume Ryder'
 
 from abc import abstractmethod
+import pathlib
 import sys
 
-from log import *
-from parsing import CallNode
-from testutils import *
+import log
+from log import Filename, Location
+import parsing
+import testutils
+from testutils import TEST_LOCATION
 
 
-class FormatMessageTest(TestCase):
+class FormatMessageTest(testutils.TestCase):
 
   def testNoneMessage(self):
-    self.assertEqual(FormatMessage(None), 'unknown error')
+    self.assertEqual(log.FormatMessage(None), 'unknown error')
 
   def testEmptyMessage(self):
-    self.assertEqual(FormatMessage(''), 'unknown error')
+    self.assertEqual(log.FormatMessage(''), 'unknown error')
 
   def testStringMessage(self):
-    self.assertEqual(FormatMessage('message {blah}'), 'message {blah}')
+    self.assertEqual(log.FormatMessage('message {blah}'), 'message {blah}')
 
   def testException(self):
-    self.assertEqual(FormatMessage(OSError(5, 'Fake', 'file')),
+    self.assertEqual(log.FormatMessage(OSError(5, 'Fake', 'file')),
                      "[Errno 5] Fake: 'file'")
 
 
 class Helpers:
-  class ExceptionClassTestCase(TestCase):
+  class ExceptionClassTestCase(testutils.TestCase):
 
     @abstractmethod
     def exception(self, *unused_args):
@@ -50,15 +53,15 @@ class Helpers:
 
 class FatalErrorTest(Helpers.ExceptionClassTestCase):
 
-  exception = FatalError
+  exception = log.FatalError
 
 
 class NodeErrorTest(Helpers.ExceptionClassTestCase):
 
-  exception = NodeError
+  exception = log.NodeError
 
 
-class FilenameTest(TestCase):
+class FilenameTest(testutils.TestCase):
 
   test_filename = Filename('file.txt', '/cur')
 
@@ -77,7 +80,7 @@ class FilenameTest(TestCase):
     self.assertNotEqual(self.test_filename, Filename('file.txt', '/'))
 
 
-class LocationTest(TestCase):
+class LocationTest(testutils.TestCase):
 
   def testRepr(self):
     self.assertEqual(repr(TEST_LOCATION), 'file.txt:42')
@@ -88,7 +91,7 @@ class LocationTest(TestCase):
     self.assertNotEqual(TEST_LOCATION, Location(TEST_LOCATION.filename, 43))
 
 
-class LoggerTest(TestCase):
+class LoggerTest(testutils.TestCase):
 
   def setUp(self):
     super().setUp()
@@ -99,15 +102,15 @@ class LoggerTest(TestCase):
     kwargs.setdefault('fmt', 'simple')
     kwargs.setdefault('err_file', self.err_file)
     kwargs.setdefault('info_file', self.info_file)
-    return Logger(**kwargs)
+    return log.Logger(**kwargs)
 
   @staticmethod
   def __LogMaximalLocationError(logger):
     e = logger.LocationError(
         TEST_LOCATION, 'message {ignored tag}',
         call_stack=(
-            CallNode(loc('file1.txt', 1), 'one', []),
-            CallNode(loc('file2.txt', 2), 'two', [])))
+            parsing.CallNode(testutils.loc('file1.txt', 1), 'one', []),
+            parsing.CallNode(testutils.loc('file2.txt', 2), 'two', [])))
     try:
       raise RuntimeError('fake error')
     except RuntimeError:
@@ -164,8 +167,8 @@ class LoggerTest(TestCase):
 
   def testLogException_inSequence(self):
     logger = self.__CreateLogger(fmt='simple')
-    logger.LogException(FatalError('error 1\n'))
-    logger.LogException(FatalError('error 2\n'))
+    logger.LogException(log.FatalError('error 1\n'))
+    logger.LogException(log.FatalError('error 2\n'))
     self.assertOutputs(err=['error 1', 'error 2'])
 
   def testLogInfo_enabled(self):
@@ -182,4 +185,4 @@ class LoggerTest(TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

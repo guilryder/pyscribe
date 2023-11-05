@@ -3,15 +3,15 @@
 
 __author__ = 'Guillaume Ryder'
 
-from branches import *
-from testutils import *
+import branches
+import testutils
 
 
-class TextBranchTest(BranchTestCase):
+class TextBranchTest(testutils.BranchTestCase):
 
   def setUp(self):
     super().setUp()
-    self.branch = TextBranch(parent=None, name='dummy')
+    self.branch = branches.TextBranch(parent=None, name='dummy')
 
   def assertRender(self, expected):
     with self.FakeOutputFile() as writer:
@@ -42,4 +42,4 @@ class TextBranchTest(BranchTestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

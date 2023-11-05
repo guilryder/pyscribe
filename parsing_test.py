@@ -4,17 +4,21 @@
 
 __author__ = 'Guillaume Ryder'
 
-from parsing import *
-from testutils import *
+import log
+import parsing
+from parsing import CallNode, FormatNodes, PeekableIterator, TextNode
+import testutils
+from testutils import loc, TEST_LOCATION
 
 
-class TokenTest(TestCase):
+class TokenTest(testutils.TestCase):
 
   def testRepr(self):
-    self.assertEqual(repr(Token('TEXT', 42, 'a\nb')), r"(TEXT l42 'a\nb')")
+    self.assertEqual(repr(parsing.Token('TEXT', 42, 'a\nb')),
+                     r"(TEXT l42 'a\nb')")
 
 
-class TextNodeTest(TestCase):
+class TextNodeTest(testutils.TestCase):
 
   def testStr(self):
     self.assertEqual(str(TextNode(TEST_LOCATION, 'a\nb')), r"'a\nb'")
@@ -31,7 +35,7 @@ class TextNodeTest(TestCase):
     self.assertNotEqual(node, TextNode(TEST_LOCATION, 'other'))
 
 
-class CallNodeTest(TestCase):
+class CallNodeTest(testutils.TestCase):
 
   def testStr_noArgs(self):
     self.assertEqual(str(CallNode(TEST_LOCATION, 'name', [])),
@@ -59,7 +63,7 @@ class CallNodeTest(TestCase):
     self.assertNotEqual(node, CallNode(TEST_LOCATION, 'other', ['one', 'two']))
 
 
-class FormatNodesTest(TestCase):
+class FormatNodesTest(testutils.TestCase):
 
   def testEmpty(self):
     self.assertEqual(FormatNodes([]), '')
@@ -79,7 +83,7 @@ class FormatNodesTest(TestCase):
                      "'onetwo'")
 
 
-class PeekableIteratorTest(TestCase):
+class PeekableIteratorTest(testutils.TestCase):
 
   def testEmpty(self):
     it = PeekableIterator([])
@@ -116,7 +120,7 @@ class PeekableIteratorTest(TestCase):
     self.assertEqual(list(it), [])
 
 
-class ParsingTest(TestCase):
+class ParsingTest(testutils.TestCase):
 
   __KNOWN_INSTRUCTIONS = (
       '$$special.chars.escape.all, $$special.chars.escape.none, '
@@ -124,18 +128,18 @@ class ParsingTest(TestCase):
       '$$whitespace.preserve, $$whitespace.skip')
 
   def assertParsing(self, input_text, output=None, messages=(),
-                    fatal_error=None, filename=Filename('root', '/cur')):
+                    fatal_error=None, filename=log.Filename('root', '/cur')):
     # By default, expect a fatal error if log messages are expected.
     if fatal_error is None:
       fatal_error = bool(messages)
 
-    logger = FakeLogger()
+    logger = testutils.FakeLogger()
 
     # Create a fake input file and parse it.
     input_file = self.FakeInputFile(input_text)
     try:
-      nodes = ParseFile(input_file, filename, logger=logger)
-    except FatalError as e:
+      nodes = parsing.ParseFile(input_file, filename, logger=logger)
+    except log.FatalError as e:
       logger.LogException(e)
       nodes = None
 
@@ -151,7 +155,7 @@ class ParsingTest(TestCase):
         self.assertEqualExt(FormatNodes(nodes), output, 'nodes text mismatch')
       else:
         self.assertEqualExt(nodes, output, 'nodes mismatch',
-                            fmt=ReprNodes)
+                            fmt=parsing.ReprNodes)
 
     # Verify the log messages.
     self.assertEqualExt(logger.ConsumeStdErr(), '\n'.join(messages),
@@ -171,7 +175,7 @@ class ParsingTest(TestCase):
     self.assertParsing('text', "'text'")
 
   def testUnicode(self):
-    self.assertParsing(TEST_UNICODE, repr(TEST_UNICODE))
+    self.assertParsing(testutils.TEST_UNICODE, repr(testutils.TEST_UNICODE))
 
   def testStrips(self):
     self.assertParsing(' \t\n\r\f\v\xa0text\xa0 \t\n\r\f\v',
@@ -524,12 +528,14 @@ class ParsingTest(TestCase):
         )))
 
   def testSpecialChars_escapeAll(self):
-    self.assertParsing(SPECIAL_CHARS, SPECIAL_CHARS_AS_PARSING_ESCAPE_ALL)
+    self.assertParsing(testutils.SPECIAL_CHARS,
+                       testutils.SPECIAL_CHARS_AS_PARSING_ESCAPE_ALL)
 
   def testSpecialChars_escapeNone(self):
     self.assertParsing(
-        '$$special.chars.escape.none\n' + SPECIAL_CHARS,
-        '"{}"'.format(SPECIAL_CHARS_AS_RAW_TEXT.replace('\\', '\\\\')))
+        '$$special.chars.escape.none\n' + testutils.SPECIAL_CHARS,
+        '"{}"'.format(
+            testutils.SPECIAL_CHARS_AS_RAW_TEXT.replace('\\', '\\\\')))
 
   def testNoValidToken(self):
     self.assertParsing(
@@ -573,4 +579,4 @@ class ParsingTest(TestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

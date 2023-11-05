@@ -4,12 +4,12 @@
 
 __author__ = 'Guillaume Ryder'
 
-from builtin_macros import *
-from execution import *
-from testutils import *
+from builtin_macros import ArabicToRoman
+import log
+import testutils
 
 
-class CaseTest(ExecutionTestCase):
+class CaseTest(testutils.ExecutionTestCase):
 
   def testLower(self):
     self.assertExecution("$case.lower[Ôô! ça Ç'était]", "ôô! ça ç'était")
@@ -18,7 +18,7 @@ class CaseTest(ExecutionTestCase):
     self.assertExecution("$case.upper[Ôô! ça Ç'était]", "ÔÔ! ÇA Ç'ÉTAIT")
 
 
-class AlphaLatinTest(ExecutionTestCase):
+class AlphaLatinTest(testutils.ExecutionTestCase):
 
   def testValidArabicNumber(self):
     self.assertExecution('$alpha.latin[1] $alpha.latin[5] $alpha.latin[26]',
@@ -46,18 +46,18 @@ class AlphaLatinTest(ExecutionTestCase):
         ])
 
 
-class ArabicToRomanTest(TestCase):
+class ArabicToRomanTest(testutils.TestCase):
 
   def testZeroUnsupported(self):
-    with self.assertRaises(NodeError):
+    with self.assertRaises(log.NodeError):
       ArabicToRoman(0)
 
   def testNegativeUnsupported(self):
-    with self.assertRaises(NodeError):
+    with self.assertRaises(log.NodeError):
       ArabicToRoman(-1)
 
   def testTooLargeUnsupported(self):
-    with self.assertRaises(NodeError):
+    with self.assertRaises(log.NodeError):
       ArabicToRoman(5000)
 
   def testSmallValues(self):
@@ -81,7 +81,7 @@ class ArabicToRomanTest(TestCase):
         ArabicToRoman(arabic)
 
 
-class RomanTest(ExecutionTestCase):
+class RomanTest(testutils.ExecutionTestCase):
 
   def testValidArabicNumber(self):
     self.assertExecution('$roman[42]', 'XLII')
@@ -99,7 +99,7 @@ class RomanTest(ExecutionTestCase):
         ])
 
 
-class IfDefTest(ExecutionTestCase):
+class IfDefTest(testutils.ExecutionTestCase):
 
   def testDef_builtin(self):
     self.assertExecution('$identity[$if.def[identity][yes][no]]', 'yes')
@@ -122,7 +122,7 @@ class IfDefTest(ExecutionTestCase):
     self.assertExecution('$identity[$if.def[foobar][yes]]', '')
 
 
-class IfEqTest(ExecutionTestCase):
+class IfEqTest(testutils.ExecutionTestCase):
 
   def testEq(self):
     self.assertExecution('$identity[$if.eq[test][test][yes][no]]', 'yes')
@@ -137,7 +137,7 @@ class IfEqTest(ExecutionTestCase):
     self.assertExecution('$identity[$if.eq[one][two][yes]]', '')
 
 
-class RepeatTest(ExecutionTestCase):
+class RepeatTest(testutils.ExecutionTestCase):
 
   def testCountInvalid(self):
     self.assertExecution(
@@ -168,7 +168,7 @@ class RepeatTest(ExecutionTestCase):
         ' 1 2 3')
 
 
-class CounterTest(ExecutionTestCase):
+class CounterTest(testutils.ExecutionTestCase):
 
   def testCreate_overwritesExisting(self):
     self.assertExecution(
@@ -238,4 +238,4 @@ class CounterTest(ExecutionTestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

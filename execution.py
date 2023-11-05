@@ -13,11 +13,12 @@ import sys
 from typing import Any, TextIO
 
 from branches import Branch, TextBranch
-from log import FatalError as FatalErrorT, Filename, FormatMessage, Location, \
-  Logger, MessageT, NodeError
-from macros import AppendTextCallback, GetMacroSignature, GetPublicMacros, \
-  GetPublicMacrosContainers, MacrosT, StandardMacroT
-from parsing import CallNode, ParseFile, NodesT
+import log
+from log import NodeError
+import macros
+from macros import MacrosT, StandardMacroT
+import parsing
+from parsing import CallNode, NodesT
 
 
 ENCODING = 'utf-8'
@@ -55,6 +56,7 @@ class ExecutionContext:
         f'args_signature missing for {name}')
     self.macros[name] = callback
 
+  # pylint: disable=redefined-outer-name
   def AddMacros(self, macros: MacrosT) -> None:
     """Adds some macros to this context.
 
@@ -144,7 +146,7 @@ class Executor:
   2) the branch context: self.current_branch.context
   """
 
-  logger: Logger
+  logger: log.Logger
   fs: FileSystem
   __current_dir: PurePath  # The absolute path of the current directory.
 
@@ -171,9 +173,9 @@ class Executor:
   # The current macro call stack, pre-allocated to MAX_NESTED_CALLS frames.
   __call_stack: list[tuple[CallNode, StandardMacroT] | None]
   __call_stack_size: int  # The number of frames in __call_stack.
-  __include_stack: list[Filename]  # The stack of included file names.
+  __include_stack: list[log.Filename]  # The stack of included file names.
 
-  def __init__(self, *, logger: Logger, fs: FileSystem=FileSystem(),
+  def __init__(self, *, logger: log.Logger, fs: FileSystem=FileSystem(),
                current_dir: PurePath, output_path_prefix: PurePath):
     assert current_dir.is_absolute()
     assert output_path_prefix.is_absolute(), str(output_path_prefix)
@@ -192,8 +194,9 @@ class Executor:
     self.__call_stack_size = 0
     self.__include_stack = []
     self.RegisterBranch(self.system_branch)
-    for macros_container in GetPublicMacrosContainers():
-      self.system_branch.context.AddMacros(GetPublicMacros(macros_container))
+    for macros_container in macros.GetPublicMacrosContainers():
+      self.system_branch.context.AddMacros(
+          macros.GetPublicMacros(macros_container))
 
   def AddConstants(self, constants: Mapping[str, str]) -> None:
     """Adds constant macros to the system branch.
@@ -203,7 +206,7 @@ class Executor:
     """
     context = self.system_branch.context
     for name, value in constants.items():
-      context.AddMacro(name, AppendTextCallback(value))
+      context.AddMacro(name, macros.AppendTextCallback(value))
 
   def GetOutputWriter(self, filename_suffix: str) -> TextIO:
     """Creates a writer for the given output file.
@@ -296,14 +299,14 @@ class Executor:
     """
     assert path.is_absolute()
     self.opened_paths.add(path)
-    filename = Filename(path, path.parent)
+    filename = log.Filename(path, path.parent)
     with self.fs.open(path, mode='rt') as reader:
       if len(self.__include_stack) >= MAX_NESTED_INCLUDES:
         raise NodeError('too many nested includes')
 
       self.__include_stack.append(filename)
       try:
-        nodes = ParseFile(reader, filename, logger=self.logger)
+        nodes = parsing.ParseFile(reader, filename, logger=self.logger)
         self.ExecuteNodes(nodes)
       finally:
         self.__include_stack.pop()
@@ -417,8 +420,8 @@ class Executor:
         self.__current_text_writer = old_text_writer
       return text_writer.getvalue()
 
-  def FatalError(self, location: Location, message: MessageT, *,
-                 call_frame_skip: int=0) -> FatalErrorT:
+  def FatalError(self, location: log.Location, message: log.MessageT, *,
+                 call_frame_skip: int=0) -> log.FatalError:
     """Logs and raises a fatal error."""
     frame_count = max(0, self.__call_stack_size - call_frame_skip)
     call_stack: list[tuple[CallNode, StandardMacroT]] = (
@@ -426,12 +429,13 @@ class Executor:
     call_nodes = [call_node for call_node, callback in reversed(call_stack)]
     return self.logger.LocationError(location, message, call_stack=call_nodes)
 
-  def MacroFatalError(self, call_node: CallNode, message: MessageT, *,
-                      call_frame_skip: int=1) -> FatalErrorT:
+  def MacroFatalError(self, call_node: CallNode, message: log.MessageT, *,
+                      call_frame_skip: int=1) -> log.FatalError:
     """Logs and raises a macro fatal error."""
-    return self.FatalError(call_node.location,
-                           f'${call_node.name}: {FormatMessage(message)}',
-                           call_frame_skip=call_frame_skip)
+    return self.FatalError(
+        call_node.location,
+        f'${call_node.name}: {log.FormatMessage(message)}',
+        call_frame_skip=call_frame_skip)
 
   def LookupMacro(
       self, name: str, text_compatible: bool) -> StandardMacroT | None:
@@ -529,7 +533,7 @@ class Executor:
     expected_message += f'{min_args_count}'
     if min_args_count < max_args_count:
       expected_message += f'..{max_args_count}'
-    signature = GetMacroSignature(call_node.name, macro_callback)
+    signature = macros.GetMacroSignature(call_node.name, macro_callback)
     raise self.FatalError(
         call_node.location,
         f'{signature}: arguments count mismatch: '

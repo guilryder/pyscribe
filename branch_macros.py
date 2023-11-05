@@ -6,19 +6,21 @@ __author__ = 'Guillaume Ryder'
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from branches import Branch, TextBranch
+import branches
+from branches import Branch
 from execution import Executor
-from html_format import HtmlBranch
-from latex import LatexBranch
-from log import NodeError
-from macros import *
+import html_format
+import latex
+import log
+import macros
+from macros import macro
 from parsing import CallNode, NodesT, TextNode
 
 
 __BRANCH_CLASSES: Iterable[type[Branch[Any]]] = (
-    HtmlBranch,
-    LatexBranch,
-    TextBranch,
+    html_format.HtmlBranch,
+    latex.LatexBranch,
+    branches.TextBranch,
 )
 BRANCH_TYPES = {branch_class.type_name: branch_class
                 for branch_class in __BRANCH_CLASSES}
@@ -60,7 +62,7 @@ def BranchCreateRoot(executor: Executor, call_node: CallNode,
   branch_class = BRANCH_TYPES.get(branch_type)
   if branch_class is None:
     known = ', '.join(sorted(BRANCH_TYPES))
-    raise NodeError(
+    raise log.NodeError(
         f'unknown branch type: {branch_type}; expected one of: {known}')
   branch_class_safe = branch_class  # mypy workaround
 
@@ -113,7 +115,7 @@ def __ParseBranchName(executor: Executor, branch_name: str) -> Branch[Any]:
   """
   branch = executor.branches.get(branch_name)
   if branch is None:
-    raise NodeError(f'branch not found: {branch_name}')
+    raise log.NodeError(f'branch not found: {branch_name}')
   return branch
 
 
@@ -135,7 +137,8 @@ def __CreateBranch(executor: Executor, call_node: CallNode, name_or_ref: str,
   branch = branch_factory()
   if not is_reference:
     if name_or_ref in executor.branches:
-      raise NodeError(f'a branch of this name already exists: {name_or_ref}')
+      raise log.NodeError(
+          f'a branch of this name already exists: {name_or_ref}')
     branch.name = name_or_ref
 
   executor.RegisterBranch(branch)
@@ -144,4 +147,4 @@ def __CreateBranch(executor: Executor, call_node: CallNode, name_or_ref: str,
     assert branch.name
     executor.current_branch.context.AddMacro(
         name_or_ref[1:],
-        ExecuteCallback([TextNode(call_node.location, branch.name)]))
+        macros.ExecuteCallback([TextNode(call_node.location, branch.name)]))

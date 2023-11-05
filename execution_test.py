@@ -6,13 +6,15 @@ __author__ = 'Guillaume Ryder'
 import pathlib
 
 from branches import TextBranch
-from branch_macros import BRANCH_TYPES
-from execution import *
+import branch_macros
+import execution
+import log
+from macros import macro
 from parsing import CallNode
-from testutils import *
+import testutils
 
 
-class ExecutorTest(TestCase):
+class ExecutorTest(testutils.TestCase):
 
   @macro(public_name='name')
   def MacroCallback(self):
@@ -24,10 +26,11 @@ class ExecutorTest(TestCase):
         '/exists-no-ext': '',
     })
     self.fs = fs
-    self.logger = FakeLogger()
-    self.executor = Executor(logger=self.logger, fs=fs,
-                             current_dir=fs.Path('/cur'),
-                             output_path_prefix=fs.Path('/output'))
+    self.logger = testutils.FakeLogger()
+    self.executor = execution.Executor(
+        logger=self.logger, fs=fs,
+        current_dir=fs.Path('/cur'),
+        output_path_prefix=fs.Path('/output'))
 
   def testResolveFilePath_resolvesDots(self):
     self.assertEqual(
@@ -133,13 +136,13 @@ class ExecutorTest(TestCase):
 
   def CheckArgumentCount(self, min_args_count, max_args_count,
                          actual_args_count):
-    call_node = CallNode(TEST_LOCATION, 'name',
+    call_node = CallNode(testutils.TEST_LOCATION, 'name',
                          [str(i) for i in range(actual_args_count)])
     self.executor.CheckArgumentCount(
         call_node, self.MacroCallback, min_args_count, max_args_count)
 
   def assertCheckArgumentCountFailure(self, expected_error, *args, **kwargs):
-    with self.assertRaises(FatalError) as ctx:
+    with self.assertRaises(log.FatalError) as ctx:
       self.CheckArgumentCount(*args, **kwargs)
     self.logger.LogException(ctx.exception)
     self.assertEqual(self.logger.ConsumeStdErr(),
@@ -176,7 +179,7 @@ class ExecutorTest(TestCase):
         2, -1, actual_args_count=1)
 
 
-class ExecutorEndToEndTest(ExecutionTestCase):
+class ExecutorEndToEndTest(testutils.ExecutionTestCase):
 
   def testBranchType(self):
     self.assertExecution('$identity[$branch.type]', 'text')
@@ -185,7 +188,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
     self.assertExecution('', '', expected_infos=[])
 
   def testUnicode(self):
-    self.assertExecution(TEST_UNICODE, TEST_UNICODE)
+    self.assertExecution(testutils.TEST_UNICODE, testutils.TEST_UNICODE)
 
   def testSyntaxError(self):
     self.assertExecution(
@@ -214,11 +217,11 @@ class ExecutorEndToEndTest(ExecutionTestCase):
             '$recurse',
         ),
         messages=['/root:1: $recurse: too many nested macro calls'] +
-                 ['  /root:1: $recurse'] * (MAX_NESTED_CALLS - 1) +
+                 ['  /root:1: $recurse'] * (execution.MAX_NESTED_CALLS - 1) +
                  ['  /root:2: $recurse'])
 
   def testMaxNestedCalls_limitNotReached(self):
-    expected_loop_iterations = MAX_NESTED_CALLS//2 - 1
+    expected_loop_iterations = execution.MAX_NESTED_CALLS//2 - 1
     self.assertExecution(
         (
             '$counter.create[i]',
@@ -291,7 +294,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
         {'/output.tex': '\\%test\\&'})
 
   def testAllBranchTypes(self):
-    for type_name in BRANCH_TYPES:
+    for type_name in branch_macros.BRANCH_TYPES:
       executor = self.assertExecution(
           (
               f'$branch.create.root[{type_name}][new][.suffix]',
@@ -318,7 +321,7 @@ class ExecutorEndToEndTest(ExecutionTestCase):
           f' in branch of type {branch_type_name}')
 
 
-class ExecutorAddConstantsTest(ExecutionTestCase):
+class ExecutorAddConstantsTest(testutils.ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):
     executor.AddConstants({
@@ -332,9 +335,9 @@ class ExecutorAddConstantsTest(ExecutionTestCase):
 
 
 
-class FileSystemTest(TestCase):
+class FileSystemTest(testutils.TestCase):
 
-  fs = FileSystem()
+  fs = execution.FileSystem()
   cwd: pathlib.PurePath = pathlib.Path.cwd()
   home: pathlib.PurePath = pathlib.Path.home()
 
@@ -398,7 +401,7 @@ class FileSystemTest(TestCase):
 
 class FakeFileSystemTest(FileSystemTest):
 
-  fs = FakeFileSystem()
+  fs = testutils.FakeFileSystem()
   cwd = fs.cwd
   home = fs.Path('/fake/home')
 
@@ -421,4 +424,4 @@ class FakeFileSystemTest(FileSystemTest):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

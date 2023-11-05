@@ -4,8 +4,8 @@
 __author__ = 'Guillaume Ryder'
 
 from execution import Executor
-from log import NodeError
-from macros import *
+import log
+from macros import macro
 from parsing import CallNode, NodesT
 
 
@@ -15,7 +15,7 @@ def ParseArabic(number: str) -> int:
   try:
     return int(number)
   except ValueError as e:
-    raise NodeError(f'invalid Arabic number: {number}') from e
+    raise log.NodeError(f'invalid Arabic number: {number}') from e
 
 
 @macro(public_name='case.lower', args_signature='text', text_compatible=True)
@@ -40,7 +40,7 @@ def AlphaLatin(executor: Executor, _: CallNode, number: str) -> None:
   # Validate the input.
   arabic_num = ParseArabic(number)
   if not 1 <= arabic_num <= 26:
-    raise NodeError(
+    raise log.NodeError(
         f'unsupported number for conversion to latin letter: {number}')
 
   # Convert the Arabic number to a letter.
@@ -57,10 +57,10 @@ def ArabicToRoman(number: int) -> str:
     Its Roman representation in uppercase, for instance 'CLII'.
 
   Raises:
-    NodeError: The number has no Roman representation.
+    log.NodeError: The number has no Roman representation.
   """
   if not 0 < number < 4000:
-    raise NodeError(f'unsupported number for conversion to Roman: {number}')
+    raise log.NodeError(f'unsupported number for conversion to Roman: {number}')
 
   conv_table = ((1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
                  (100, 'C'),  (90, 'XC'),  (50, 'L'),  (40, 'XL'),
@@ -165,4 +165,4 @@ def _ParseInt(text: str) -> int:
   try:
     return int(text)
   except ValueError as e:
-    raise NodeError(f'invalid integer value: {text}') from e
+    raise log.NodeError(f'invalid integer value: {text}') from e

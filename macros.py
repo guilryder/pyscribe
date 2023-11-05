@@ -9,7 +9,7 @@ import itertools
 import operator
 from typing import Any, cast, Optional, Protocol, TYPE_CHECKING
 
-from parsing import *
+from parsing import CallNode, NodesT
 
 if TYPE_CHECKING:
   from execution import ExecutionContext, Executor as _ExecutorT

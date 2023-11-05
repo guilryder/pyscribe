@@ -4,19 +4,20 @@
 
 __author__ = 'Guillaume Ryder'
 
-from branches import TextBranch
-from builtin_macros import *
-from execution import *
-from testutils import *
+import branches
+from macros import macro
+import testutils
 
 
-class SpecialCharsTest(ExecutionTestCase):
+class SpecialCharsTest(testutils.ExecutionTestCase):
 
   def testRawSpecialChars(self):
-    self.assertExecution(SPECIAL_CHARS, SPECIAL_CHARS_AFTER_TEXT_MACROS)
+    self.assertExecution(testutils.SPECIAL_CHARS,
+                         testutils.SPECIAL_CHARS_AFTER_TEXT_MACROS)
 
   def testTextMacros(self):
-    self.assertExecution(OTHER_TEXT_MACROS, OTHER_TEXT_MACROS_AS_TEXT)
+    self.assertExecution(testutils.OTHER_TEXT_MACROS,
+                         testutils.OTHER_TEXT_MACROS_AS_TEXT)
 
   def testSoftHyphenAlias(self):
     self.assertExecution(
@@ -30,7 +31,7 @@ class SpecialCharsTest(ExecutionTestCase):
     self.assertExecution('A$newline^B', 'A\nB')
 
 
-class EmptyTest(ExecutionTestCase):
+class EmptyTest(testutils.ExecutionTestCase):
 
   def testNodes(self):
     self.assertExecution('before$empty^after', 'beforeafter')
@@ -42,7 +43,7 @@ class EmptyTest(ExecutionTestCase):
     self.assertExecution('$eval.text[$empty]', '')
 
 
-class EvalTextTest(ExecutionTestCase):
+class EvalTextTest(testutils.ExecutionTestCase):
 
   def testText(self):
     self.assertExecution('$eval.text[inside $text.hash]', 'inside #')
@@ -57,7 +58,7 @@ class EvalTextTest(ExecutionTestCase):
     self.assertExecution('$eval.text[$eval.text[inside]]', 'inside')
 
 
-class LogTest(ExecutionTestCase):
+class LogTest(testutils.ExecutionTestCase):
 
   def testBasic(self):
     self.assertExecution(
@@ -87,7 +88,7 @@ class LogTest(ExecutionTestCase):
         expected_infos=['inside', 'before  after'])
 
 
-class IncludeTest(ExecutionTestCase):
+class IncludeTest(testutils.ExecutionTestCase):
 
   def testNested(self):
     self.assertExecution(
@@ -151,7 +152,7 @@ class IncludeTest(ExecutionTestCase):
                  ['  /root:1: $include'] * 24)
 
 
-class IncludeTextTest(ExecutionTestCase):
+class IncludeTextTest(testutils.ExecutionTestCase):
 
   def testBasic(self):
     self.assertExecution(
@@ -166,8 +167,8 @@ class IncludeTextTest(ExecutionTestCase):
         '$$invalid',
         '$foo',
         '^',
-        TEST_UNICODE,
-        SPECIAL_CHARS,
+        testutils.TEST_UNICODE,
+        testutils.SPECIAL_CHARS,
     ))
     self.assertExecution(
         {
@@ -200,7 +201,7 @@ class IncludeTextTest(ExecutionTestCase):
         'Hello, World!')
 
 
-class MacroNewTest(ExecutionTestCase):
+class MacroNewTest(testutils.ExecutionTestCase):
 
   def testNoArgs(self):
     self.assertExecution(
@@ -417,7 +418,7 @@ class MacroNewTest(ExecutionTestCase):
         'x=1 y=2')
 
 
-class MacroOverrideTest(ExecutionTestCase):
+class MacroOverrideTest(testutils.ExecutionTestCase):
 
   def testNoArgs(self):
     self.assertExecution(
@@ -625,7 +626,7 @@ class MacroOverrideTest(ExecutionTestCase):
         'initial!new(initial!)!initial!')
 
 
-class MacroWrapTest(ExecutionTestCase):
+class MacroWrapTest(testutils.ExecutionTestCase):
 
   def testBasic(self):
     self.assertExecution(
@@ -775,7 +776,7 @@ class MacroWrapTest(ExecutionTestCase):
         ))
 
 
-class MacroCallTest(ExecutionTestCase):
+class MacroCallTest(testutils.ExecutionTestCase):
 
   @staticmethod
   @macro(public_name='wrap', args_signature='*contents', text_compatible=True)
@@ -834,10 +835,10 @@ class MacroCallTest(ExecutionTestCase):
                   '  /root:1: $macro.call'])
 
 
-class MacroContextNewTest(ExecutionTestCase):
+class MacroContextNewTest(testutils.ExecutionTestCase):
 
   def GetExecutionBranch(self, executor):
-    self.CreateBranch(executor, TextBranch, name='other')
+    self.CreateBranch(executor, branches.TextBranch, name='other')
     return executor.system_branch
 
   def testText(self):
@@ -897,4 +898,4 @@ class MacroContextNewTest(ExecutionTestCase):
 
 
 if __name__ == '__main__':
-  unittest.main()
+  testutils.unittest.main()

@@ -8,11 +8,12 @@ from collections.abc import Callable, Sequence
 from pathlib import PurePath
 import re
 
-from execution import ExecutionContext, Executor, PYSCRIBE_EXT
+import execution
+from execution import ExecutionContext, Executor
 from log import FatalError, NodeError
-from macros import *
-from parsing import \
-  CallNode, NodesT, VALID_MACRO_NAME_PATTERN, VALID_MACRO_NAME_REGEXP
+from macros import AppendTextMacro, ExecuteCallback, macro, StandardMacroT
+import parsing
+from parsing import CallNode, NodesT
 
 
 class SpecialCharacters:
@@ -77,7 +78,7 @@ def Include(executor: Executor, call_node: CallNode, path: str) -> None:
       file name has no extension.
   """
   _IncludeFile(executor.ExecuteFile,
-               executor, call_node, path, default_ext=PYSCRIBE_EXT)
+               executor, call_node, path, default_ext=execution.PYSCRIBE_EXT)
 
 
 @macro(public_name='include.text', args_signature='path', text_compatible=True)
@@ -110,11 +111,11 @@ def _IncludeFile(resolved_path_handler: Callable[[PurePath], None],
 
 __SIGNATURE_REGEX = re.compile(
     r'^ \s*' +
-    r'(?P<name>' + VALID_MACRO_NAME_PATTERN + r') \s*' +
+    r'(?P<name>' + parsing.VALID_MACRO_NAME_PATTERN + r') \s*' +
     r'(?:' +
         r'\( \s* (' +
-            '(?:' + VALID_MACRO_NAME_PATTERN + r'\s*,\s* )*' +
-            VALID_MACRO_NAME_PATTERN +
+            '(?:' + parsing.VALID_MACRO_NAME_PATTERN + r'\s*,\s* )*' +
+            parsing.VALID_MACRO_NAME_PATTERN +
         r'\s* )? \)' +
     r')?' +
     r'\s* $',
@@ -230,7 +231,7 @@ def MacroOverride(executor: Executor, _: CallNode,
   * $original set to the overridden macro
   """
   macro_name, macro_arg_names = ParseMacroSignature(signature)
-  if VALID_MACRO_NAME_REGEXP.match(original) is None:
+  if parsing.VALID_MACRO_NAME_REGEXP.match(original) is None:
     raise NodeError(f'invalid original macro name: {original}')
   if original in macro_arg_names:
     raise NodeError('original macro name conflicts with signature: '
