@@ -5,7 +5,7 @@ from __future__ import annotations
 __author__ = 'Guillaume Ryder'
 
 from io import StringIO
-from typing import Any, Generic, TextIO, TypeVar
+from typing import Any, Generic, override, TextIO, TypeVar
 
 from branches import AbstractSimpleBranch
 from execution import Executor
@@ -98,18 +98,22 @@ class LatexBranch(AbstractSimpleBranch['LatexBranch', LatexWriter[StringIO]]):
     if self.parent is None:
       self.context.AddMacros(GetPublicMacros(Macros))
 
+  @override
   def _CreateLeaf(self) -> LatexWriter[StringIO]:
     return LatexWriter(StringIO())
 
+  @override
   def AppendText(self, text: str) -> None:
     self._current_leaf.AppendText(text)
 
   def AppendSep(self) -> None:
     self._current_leaf.AppendSep()
 
+  @override
   def CreateSubBranch(self) -> LatexBranch:
     return LatexBranch(parent=self)
 
+  @override
   def _Render(self, writer: TextIO) -> None:
     render_latex_writer = LatexWriter(writer)
     for leaf_latex_writer in self._IterLeaves():

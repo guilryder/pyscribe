@@ -4,7 +4,7 @@ extension-pkg-whitelist=lxml.etree
 load-plugins=pylint.extensions.typing
 
 [MESSAGES CONTROL]
-disable=invalid-name,missing-docstring,no-else-return,protected-access,superfluous-parens,too-few-public-methods,too-many-arguments,too-many-instance-attributes,too-many-lines,too-many-locals,too-many-public-methods,unused-private-member,unused-wildcard-import,use-dict-literal,wildcard-import
+disable=cyclic-import,invalid-name,missing-docstring,no-else-return,protected-access,superfluous-parens,too-few-public-methods,too-many-arguments,too-many-instance-attributes,too-many-lines,too-many-locals,too-many-public-methods,unused-private-member,unused-wildcard-import,use-dict-literal,wildcard-import
 
 [FORMAT]
 max-line-length=80

@@ -7,7 +7,8 @@ __author__ = 'Guillaume Ryder'
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from io import StringIO
-from typing import Any, ClassVar, Generic, TextIO, TYPE_CHECKING, TypeVar
+from typing import Any, ClassVar, Generic, override, TextIO, TYPE_CHECKING, \
+  TypeVar
 
 from log import NodeError
 from macros import *
@@ -185,6 +186,7 @@ class AbstractSimpleBranch(Branch[_SubBranchT], Generic[_SubBranchT, LeafT]):
     self._current_leaf = self._CreateLeaf()
     self.__nodes.append(self._current_leaf)
 
+  @override
   def _AppendSubBranch(self, sub_branch: _SubBranchT) -> None:
     self.__nodes.append(sub_branch)
     self.__AppendLeaf()
@@ -202,15 +204,19 @@ class TextBranch(AbstractSimpleBranch['TextBranch', StringIO]):
 
   type_name = 'text'
 
+  @override
   def _CreateLeaf(self) -> StringIO:
     return StringIO()
 
+  @override
   def AppendText(self, text: str) -> None:
     self._current_leaf.write(text)
 
+  @override
   def CreateSubBranch(self) -> TextBranch:
     return TextBranch(parent=self)
 
+  @override
   def _Render(self, writer: TextIO) -> None:
     for leaf in self._IterLeaves():
       writer.write(leaf.getvalue())

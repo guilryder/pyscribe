@@ -9,7 +9,7 @@ from collections.abc import Callable
 from abc import ABC, abstractmethod
 import enum
 import re
-from typing import Any, ClassVar, TextIO
+from typing import Any, ClassVar, override, TextIO
 
 from lxml import etree
 from lxml.etree import _Element
@@ -236,6 +236,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     self.__text_accu.append(text)
     self.__line_tail = self.__text_sep = ''
 
+  @override
   def AppendText(self, text: str) -> None:
     paras = self.__AUTO_PARA_DELIMITER.split(text)
 
@@ -536,15 +537,18 @@ class HtmlBranch(Branch['HtmlBranch']):
       raise NodeError(f'no element found for target: {target}')
     action(elem_info.elem)
 
+  @override
   def CreateSubBranch(self) -> HtmlBranch:
     return HtmlBranch(parent=self)
 
+  @override
   def _AppendSubBranch(self, sub_branch: HtmlBranch) -> None:
     self.__FlushText()
     self.AutoParaTryClose()
     self.__current_elem.append(sub_branch.__root_elem)
     self.AutoParaTryOpen()
 
+  @override
   def _Render(self, writer: TextIO) -> None:
     self.__Finalize()
 
@@ -773,6 +777,7 @@ class NeutralTypography(Typography):
   macros_container = __import__('core_macros').SpecialCharacters
 
   @staticmethod
+  @override
   def FormatNumber(number: str) -> str:
     return number
 
@@ -783,6 +788,7 @@ class EnglishTypography(Typography):
   name = 'english'
 
   @staticmethod
+  @override
   def FormatNumber(number: str) -> str:
     return Typography.FormatNumberCustom(number, ',')
 
@@ -796,6 +802,7 @@ class FrenchTypography(Typography):
   name = 'french'
 
   @staticmethod
+  @override
   def FormatNumber(number: str) -> str:
     return Typography.FormatNumberCustom(number, NBSP)
 
