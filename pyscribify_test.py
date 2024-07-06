@@ -131,8 +131,7 @@ class DryRunTest(PyscribifyTestCase):
             r"pyscribe\.py Hello\.psc"
               r" --lib-dir=.*/pyscribe/lib --format=html --output=output",
             r"ebook-convert.* output/Hello.html output/Hello.epub"
-              r" --toc-filter=" + re.escape(r'\[[0-9]+\]') +
-              r" --dont-split-on-page-breaks --no-default-epub-cover",
+              r" .*--dont-split-on-page-breaks .*--no-default-epub-cover.*",
             r"pyscribe\.py Hello\.psc"
               r" --lib-dir=.*/pyscribe/lib --format=latex --output=output",
             r"texify.* -I .+/pyscribe/lib Hello\.tex"
@@ -253,7 +252,6 @@ class DryRunTest(PyscribifyTestCase):
         '--pyscribe-bin=/foo/pyscribe/bin',
         '--pyscribe-options=--pyscribe-opt -a',
         '--calibre-bin=/foo/calibre/bin',
-        '--calibre-options=--calibre-opt -b',
         '--calibre-epub-options=--epub-opt -c',
         '--texify-bin=/foo/texify/bin',
         '--texify-options=--texify-opt -e',
@@ -266,7 +264,7 @@ class DryRunTest(PyscribifyTestCase):
           r" --lib-dir=.+/testdata/foo/lib/dir --format=html"
           r" --output=output --pyscribe-opt -a",
         r"^.foo/calibre/bin output/Hello.html output/Hello.epub"
-          r" --calibre-opt -b --epub-opt -c",
+          r" --epub-opt -c",
         r"^.+ .foo/pyscribe/bin Hello\.psc"
           r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
           r" --output=output --pyscribe-opt -a",

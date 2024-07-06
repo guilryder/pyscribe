@@ -17,6 +17,18 @@ from typing import Any, TextIO
 
 _FORMATS = ('html', 'latex')
 
+_DEFAULT_CALIBRE_EPUB_OPTIONS = (
+  '--allow-local-files-outside-root',
+  '--chapter=/',
+  '--disable-font-rescaling',
+  '--disable-remove-fake-margins',
+  '--dont-split-on-page-breaks',
+  '--no-default-epub-cover',
+  '--page-breaks-before=/',
+  r'--toc-filter="\[[0-9]+\]"',
+  '-v',
+)
+
 
 def _TryFindExecutable(filename: str, default: str | None=None) -> str:
   return shutil.which(filename) or default or filename
@@ -127,16 +139,11 @@ class Main:
     group.add_argument('--calibre-bin', metavar='PATH', type=Path,
                        default=_TryFindExecutable(
                           'ebook-convert',
-                          r'C:\Program Files\Calibre\ebook-convert.exe'
+                          r'C:\Program Files\Calibre2\ebook-convert.exe'
                               if platform.system() == 'Windows' else None),
                        help='Calibre converter path; default: %(default)s')
-    group.add_argument('--calibre-options', metavar='OPTIONS',
-                       default=r'--toc-filter="\[[0-9]+\]"',
-                       help='shared command-line options for Calibre'
-                            '; default: %(default)s')
     group.add_argument('--calibre-epub-options', metavar='OPTIONS',
-                       default='--dont-split-on-page-breaks'
-                               ' --no-default-epub-cover',
+                       default=' '.join(_DEFAULT_CALIBRE_EPUB_OPTIONS),
                        help='ePub-specific command-line options for Calibre'
                             '; default: %(default)s')
 
@@ -206,9 +213,11 @@ class Main:
 
       # HTML to ePub.
       if psc_to_html_success and args.html_to_epub:
-        self.__CallCalibre(input_path=output_path_noext + '.html',
-                           output_path=output_path_noext + '.epub',
-                           extra_options=args.calibre_epub_options)
+        self.__CallProgram(
+            args.calibre_bin,
+            output_path_noext + '.html',
+            output_path_noext + '.epub',
+            *shlex.split(args.calibre_epub_options))
 
     # Latex.
     if 'latex' in args.formats:
@@ -251,13 +260,6 @@ class Main:
         f'--format={psc_format}',
         f'--output={output_dir}',
         *shlex.split(args.pyscribe_options))
-
-  def __CallCalibre(self, *, input_path: str, output_path: str,
-                    extra_options: str) -> bool:
-    args = self.__args
-    return self.__CallProgram(
-        args.calibre_bin, input_path, output_path,
-        *(shlex.split(args.calibre_options) + shlex.split(extra_options)))
 
   def __CallProgram(self, *args: Any, **kwargs: Any) -> bool:
     """
