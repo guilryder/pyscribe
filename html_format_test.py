@@ -54,8 +54,8 @@ class AppendTextToXmlTest(testutils.TestCase):
     expected_xml_string = '<root>' + expected_xml_string + '</root>'
     tree = ParseXml(initial_xml_string)
     html_format.HtmlBranch._AppendTextToXml(text,
-                                            tail_elem=tree.find('//tail'),
-                                            text_elem=tree.find('//text'))
+                                            tail_elem=tree.find('.//tail'),
+                                            text_elem=tree.find('.//text'))
     self.assertTextEqual(XmlToString(tree),
                          expected_xml_string,
                          'output mismatch')
@@ -86,7 +86,8 @@ class InlineXmlElementTest(testutils.TestCase):
 
   def check(self, initial_xml_string, expected_xml_string):
     tree = ParseXml(initial_xml_string)
-    html_format.HtmlBranch(parent=None)._InlineXmlElement(tree.find('//inline'))
+    html_format.HtmlBranch(parent=None)._InlineXmlElement(
+        tree.find('.//inline'))
     self.assertTextEqual(XmlToString(tree), expected_xml_string)
 
   def testEmptyAlone(self):
