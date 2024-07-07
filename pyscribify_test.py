@@ -63,6 +63,9 @@ class EndToEndTest(PyscribifyTestCase):
       with OpenOutputFile('Hello.html', 'rt') as output:
         self.assertIn('<title>Hello World</title>', output.read(),
                       msg='Hello.html mismatch')
+      with OpenOutputFile('Hello.kfx', 'rb') as output:
+        self.assertEqual(output.read(4), b'CONT',
+                      msg='Hello.kfx mismatch')
       with OpenOutputFile('Hello.pdf', 'rb') as output:
         self.assertEqual(output.read(4), b'%PDF',
                       msg='Hello.pdf mismatch')
@@ -88,6 +91,7 @@ class DryRunTest(PyscribifyTestCase):
 
   __HELLO_PSC_TO_HTML = r'pyscribe.py.* Hello\.psc .*--format=html'
   __HELLO_HTML_TO_EPUB = r'ebook-convert.*Hello\.epub'
+  __HELLO_EPUB_TO_KFX = r'calibre-debug.*Hello\.kfx'
   __HELLO_PSC_TO_LATEX = r'pyscribe.py.* Hello\.psc .*--format=latex'
   __HELLO_LATEX_TO_PDF = r'texify.*Hello\.tex'
 
@@ -132,6 +136,8 @@ class DryRunTest(PyscribifyTestCase):
               r" --lib-dir=.*/pyscribe/lib --format=html --output=output",
             r"ebook-convert.* output/Hello.html output/Hello.epub"
               r" .*--dont-split-on-page-breaks .*--no-default-epub-cover.*",
+            r"calibre-debug.* -- --quality --logs"
+              r" output/Hello.epub output/Hello.kfx",
             r"pyscribe\.py Hello\.psc"
               r" --lib-dir=.*/pyscribe/lib --format=latex --output=output",
             r"texify.* -I .+/pyscribe/lib Hello\.tex"
@@ -173,6 +179,7 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             r'pyscribe.py.* Hello\.psc .*--format=html --output=foo/bar',
             r'ebook-convert.* foo/bar/Hello\.epub',
+            r'calibre-debug.* foo/bar/Hello\.kfx',
             r'pyscribe.py.* Hello\.psc .*--format=latex --output=foo/bar',
             r'texify.* Hello\.tex',  # changes the current directory before
         ])
@@ -183,6 +190,7 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
+            self.__HELLO_EPUB_TO_KFX,
         ])
 
   def testFormats_latexOnly(self):
@@ -218,21 +226,24 @@ class DryRunTest(PyscribifyTestCase):
 
   def testConversionOptions_recursive(self):
     self.__assertLines(
-        self.__Pyscribify(['Hello', '--psc-to-all']),
+        self.__Pyscribify(['Hello', '--psc-to-ebook']),
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
-            self.__HELLO_PSC_TO_LATEX,
-            self.__HELLO_LATEX_TO_PDF,
+            self.__HELLO_EPUB_TO_KFX,
         ])
 
   def testConversionOptions_all(self):
     self.__assertLines(
         self.__Pyscribify([
             'Hello',
+            '--psc-to-ebook',
             '--psc-to-epub',
+            '--psc-to-kfx',
             '--psc-to-html',
             '--html-to-epub',
+            '--html-to-kfx',
+            '--epub-to-kfx',
             '--psc-to-pdf',
             '--latex-to-pdf',
             '--psc-to-all',
@@ -241,6 +252,7 @@ class DryRunTest(PyscribifyTestCase):
         self.__HELLO_HEADER + [
             self.__HELLO_PSC_TO_HTML,
             self.__HELLO_HTML_TO_EPUB,
+            self.__HELLO_EPUB_TO_KFX,
             self.__HELLO_PSC_TO_LATEX,
             self.__HELLO_LATEX_TO_PDF,
         ])
@@ -253,6 +265,8 @@ class DryRunTest(PyscribifyTestCase):
         '--pyscribe-options=--pyscribe-opt -a',
         '--calibre-bin=/foo/calibre/bin',
         '--calibre-epub-options=--epub-opt -c',
+        '--calibre-debug-bin=/foo/calibre-debug/bin',
+        '--calibre-kfx-options=--kfx-opt -d',
         '--texify-bin=/foo/texify/bin',
         '--texify-options=--texify-opt -e',
         '--latexmk-bin=/foo/latexmk/bin',
@@ -265,6 +279,8 @@ class DryRunTest(PyscribifyTestCase):
           r" --output=output --pyscribe-opt -a",
         r"^.foo/calibre/bin output/Hello.html output/Hello.epub"
           r" --epub-opt -c",
+        r"^.foo/calibre-debug/bin --kfx-opt -d"
+          r" output/Hello.epub output/Hello.kfx",
         r"^.+ .foo/pyscribe/bin Hello\.psc"
           r" --lib-dir=.+/testdata/foo/lib/dir --format=latex"
           r" --output=output --pyscribe-opt -a",
