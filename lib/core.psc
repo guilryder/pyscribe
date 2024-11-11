@@ -317,7 +317,7 @@ $macro.new[root.open.html][
   # Table of contents
   $macro.new[header.render.toc(level,title)][
     $id.new
-    $id.attr.set[header]
+    $id.attr.set[header][current]
     $header.render.toc.entry[$level][
       $tag[a][inline][
         $id.href.set[header]
@@ -385,15 +385,14 @@ $macro.new[root.open.html][
   $counter.create[id.counter]
   $macro.new[id.new][$id.counter.incr]
   $macro.new[id.current(prefix)][$prefix$id.counter]
-  $macro.new[id.attr.set.custom.element(id,element.target)][$tag.attr.set[$element.target][id][$id]]
-  $macro.new[id.attr.set.custom(id)][$id.attr.set.custom.element[$id][current]]
+  $macro.new[id.attr.set.custom(id,element.target)][$tag.attr.set[$element.target][id][$id]]
   $macro.new[id.href.set.custom(id)][$tag.attr.set[current][href][^#$id]]
-  $macro.new[id.attr.set(prefix)][$id.attr.set.custom[$id.current[$prefix]]]
+  $macro.new[id.attr.set(prefix,element.target)][$id.attr.set.custom[$id.current[$prefix]][$element.target]]
   $macro.new[id.href.set(prefix)][$id.href.set.custom[$id.current[$prefix]]]
 
   # Named references.
   $macro.new[reference.target(id,element.target)][
-    $id.attr.set.custom.element[ref-$id][$element.target]
+    $id.attr.set.custom[ref-$id][$element.target]
   ]
   $macro.new[reference.target.inline(id,contents)][
     $tag[span][inline][
@@ -406,6 +405,11 @@ $macro.new[root.open.html][
       $id.href.set.custom[ref-$target.id]
       $contents
     ]
+  ]
+
+  # Epub
+  $macro.new[epub.type.set(type,element.target)][
+    $tag.attr.set[$element.target][{http://www.idpf.org/2007/ops}type][$type]
   ]
 
   # Footnotes
@@ -431,11 +435,12 @@ $macro.new[root.open.html][
   ]
 
   # Footnote mark link
-  # source: prefix of the ID to give to the mark
+  # source: prefix of the ID to give to the mark, ignored if empty
   # dest: prefix of the ID of the link target
   $macro.new[footnotes.counter.mark(source,dest)][
     $tag[a][inline][
-      $id.attr.set[$source]
+      $epub.type.set[noteref][current]
+      $if.eq[$source][][][$id.attr.set[$source][current]]
       $id.href.set[$dest]
       ^[$footnotes.counter^]
     ]
@@ -445,7 +450,13 @@ $macro.new[root.open.html][
     $footnotes.counter.incr
     $id.new
     ^ $footnotes.counter.mark[fnl][fnc]
-    $branch.write[$footnotes.branch][$footnotes.counter.mark[fnc][fnl]^ $contents$par]
+    $branch.write[$footnotes.branch][
+      $tag[aside][block,autopara=p][
+        $epub.type.set[footnote][nonauto]
+        $id.attr.set[fnc][nonauto]
+        $footnotes.counter.mark[][fnl]^ $contents$par
+      ]
+    ]
   ]
 
   $footnotes.reset

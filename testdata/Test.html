@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
 <style type="text/css"><!--
@@ -259,25 +258,25 @@ sep +1 234 567,890 1</p></div>
 <h2 id="header9" class="medskip">G)   Links</h2>
 <p><span class="typewriter">$hyperlink</span> <a href="https://example.org">hyperlink caption</a></p>
 <p class="medskip"><a href="#ref-dummy-target">Links to the target above.</a></p>
-<p><span class="typewriter">$footnotes.add</span> Before <a id="fnl10" href="#fnc10">[1]</a> after.</p>
+<p><span class="typewriter">$footnotes.add</span> Before <a epub:type="noteref" id="fnl10" href="#fnc10">[1]</a> after.</p>
 <h3 class="medskip">1.   Header level 3</h3>
-<p><span class="typewriter">$footnotes.add</span> Foonote two <a id="fnl11" href="#fnc11">[2]</a></p>
+<p><span class="typewriter">$footnotes.add</span> Foonote two <a epub:type="noteref" id="fnl11" href="#fnc11">[2]</a></p>
 <h3 class="medskip">2.   Header level 3 again</h3>
-<p><span class="typewriter">$footnotes.add</span> Foonote three <a id="fnl12" href="#fnc12">[3]</a></p>
+<p><span class="typewriter">$footnotes.add</span> Foonote three <a epub:type="noteref" id="fnl12" href="#fnc12">[3]</a></p>
 <div class="footnotes"><hr/>
-<p><a id="fnc10" href="#fnl10">[1]</a> Footnote contents.</p>
-<p><a id="fnc11" href="#fnl11">[2]</a> Foonote two contents.</p>
-<p><a id="fnc12" href="#fnl12">[3]</a> Foonote three contents.</p></div>
+<aside epub:type="footnote" id="fnc10"><p><a epub:type="noteref" href="#fnl10">[1]</a> Footnote contents.</p></aside>
+<aside epub:type="footnote" id="fnc11"><p><a epub:type="noteref" href="#fnl11">[2]</a> Foonote two contents.</p></aside>
+<aside epub:type="footnote" id="fnc12"><p><a epub:type="noteref" href="#fnl12">[3]</a> Foonote three contents.</p></aside></div>
 <h2 id="header13">H)   Footnotes flushing</h2>
 <p class="medskip">Footnotes flushed after header level 2.</p>
-<p class="medskip"><span class="typewriter">$footnotes.add</span> Footnote four <a id="fnl14" href="#fnc14">[1]</a> restarts from 1.</p>
+<p class="medskip"><span class="typewriter">$footnotes.add</span> Footnote four <a epub:type="noteref" id="fnl14" href="#fnc14">[1]</a> restarts from 1.</p>
 <p><span class="typewriter">$footnotes.flush</span> Before</p>
 <div class="footnotes"><hr/>
-<p><a id="fnc14" href="#fnl14">[1]</a> Footnote four contents.</p></div>
+<aside epub:type="footnote" id="fnc14"><p><a epub:type="noteref" href="#fnl14">[1]</a> Footnote four contents.</p></aside></div>
 <p class="medskip">After</p>
-<p><span class="typewriter">$footnotes.add</span> Footnote five <a id="fnl15" href="#fnc15">[1]</a></p>
+<p><span class="typewriter">$footnotes.add</span> Footnote five <a epub:type="noteref" id="fnl15" href="#fnc15">[1]</a></p>
 <div class="footnotes"><hr/>
-<p><a id="fnc15" href="#fnl15">[1]</a> Footnote five contents.</p></div>
+<aside epub:type="footnote" id="fnc15"><p><a epub:type="noteref" href="#fnl15">[1]</a> Footnote five contents.</p></aside></div>
 <h2 id="header16" class="medskip">I)   HTML</h2>
 <p><span class="typewriter">$para.css.custom</span></p>
 <div class="red"><p>contents</p></div>

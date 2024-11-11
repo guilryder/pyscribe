@@ -13,9 +13,8 @@ import testutils
 
 _STUB_PREFIX1 = (
     '<?xml version="1.0" encoding="utf-8"?>\n'
-    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" '
-        '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'
-    '<html>\n'
+    '<html xmlns="http://www.w3.org/1999/xhtml"'
+         ' xmlns:epub="http://www.idpf.org/2007/ops">\n'
       '<head>\n'
         '<meta http-equiv="Content-Type" '
               'content="application/xhtml+xml; charset=utf-8"/>\n'
