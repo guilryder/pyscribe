@@ -21,12 +21,41 @@
 
 Special characters: \% \& \textbackslash{} \string^ \_ \$ \# © ® ™
 
-Neutral typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
-English typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
-French typography: Lorem\dots{} ipsum\dots{}dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. \par
+
+\medskip
+\par{\raggedright
+Typography neutral:
+sep\dots{} sep\dots{}sep \\
+«inside» sep « inside » sep «~inside~» sep \\
+sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
+sep! sep: sep; sep? sep!? sep, sep \\
+sep ! sep : sep ; sep ? sep !? sep, sep \\
+sep~! sep~: sep~; sep~? sep~!? sep,~sep \\
+sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
+\par \medskip
+Typography english:
+sep\dots{} sep\dots{}sep \\
+«inside» sep « inside » sep «~inside~» sep \\
+sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
+sep! sep: sep; sep? sep!? sep, sep \\
+sep ! sep : sep ; sep ? sep !? sep, sep \\
+sep~! sep~: sep~; sep~? sep~!? sep,~sep \\
+sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
+\par \medskip
+Typography french:
+sep\dots{} sep\dots{}sep \\
+«inside» sep « inside » sep «~inside~» sep \\
+sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
+sep! sep: sep; sep? sep!? sep, sep \\
+sep ! sep : sep ; sep ? sep !? sep, sep \\
+sep~! sep~: sep~; sep~? sep~!? sep,~sep \\
+sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
+\par \medskip\par}
 
 \par\medskip
-\texttt{\$-} beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
+\texttt{\$-} beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter beforebeforebefore\-afterafterafter 
+\par\medskip
+\texttt{\$text.nbsp} beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter beforebeforebefore~afterafterafter 
 
 \chapter{\texttt{core.psc} macros}
 
@@ -140,27 +169,33 @@ Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \
  {\Huge three}}}
 
 \par\medskip
-\texttt{\$number} \\ Neutral typography: separator \nombre{12}
-separator \nombre{-12.3}
-separator \nombre{1234567.8901}
-separator \nombre{-1234567.8901}
-separator \nombre{1234567,8901}
-separator \nombre{+1234567,8901}
-\\
-English typography: separator \nombre{12}
-separator \nombre{-12.3}
-separator \nombre{1234567.8901}
-separator \nombre{-1234567.8901}
-separator \nombre{1234567,8901}
-separator \nombre{+1234567,8901}
-\\
-French typography: separator \nombre{12}
-separator \nombre{-12.3}
-separator \nombre{1234567.8901}
-separator \nombre{-1234567.8901}
-separator \nombre{1234567,8901}
-separator \nombre{+1234567,8901}
-\\
+\texttt{\$number} \\ 
+\medskip
+\par{\raggedright
+Typography neutral:
+sep \nombre{12}
+sep \nombre{-12.3}
+sep \nombre{1234567.8901}
+sep \nombre{-1234567.8901}
+sep \nombre{1234567,8901}
+sep \nombre{+1234567,8901}
+\par \medskip
+Typography english:
+sep \nombre{12}
+sep \nombre{-12.3}
+sep \nombre{1234567.8901}
+sep \nombre{-1234567.8901}
+sep \nombre{1234567,8901}
+sep \nombre{+1234567,8901}
+\par \medskip
+Typography french:
+sep \nombre{12}
+sep \nombre{-12.3}
+sep \nombre{1234567.8901}
+sep \nombre{-1234567.8901}
+sep \nombre{1234567,8901}
+sep \nombre{+1234567,8901}
+\par \medskip\par}
 
 \section{Paragraph formatting}
 

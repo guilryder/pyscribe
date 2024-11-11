@@ -32,11 +32,33 @@ color: red;
 <p class="toc2"><a href="#header16">I)   HTML</a></p></div>
 <p id="ref-dummy-target">Used as link target</p>
 <h1 id="header1">I   Typography</h1>
-<p>Special characters : % &amp; \ ^ _ $ # © ® ™</p>
-<p>Neutral typography : Lorem… ipsum…dolor «sit» amet, consectetur `adipiscing' elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua.</p>
-<p>English typography: Lorem… ipsum…dolor «sit» amet, consectetur ‘adipiscing’ elit, “sed do” eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua.</p>
-<p class="medskip">French typography: Lorem… ipsum…dolor « sit » amet, consectetur ‘adipiscing’ elit, “sed do” eiusmod ! tempor : incididunt ; ut ? labore !? et dolore magna aliqua.</p>
-<p><span class="typewriter">$-</span> beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter</p>
+<p class="medskip">Special characters : % &amp; \ ^ _ $ # © ® ™</p>
+<div class="flushleft medskip"><p class="medskip">Typography neutral:
+sep… sep…sep <br/>
+«inside» sep « inside » sep « inside » sep <br/>
+sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep <br/>
+sep! sep: sep; sep? sep!? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep</p>
+<p class="medskip">Typography english:
+sep… sep…sep <br/>
+«inside» sep « inside » sep « inside » sep <br/>
+sep ‘inside’ sep ‘ inside ’ sep “inside” sep “ inside ” sep <br/>
+sep! sep: sep; sep? sep!? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep</p>
+<p class="medskip">Typography french :
+sep… sep…sep <br/>
+« inside » sep « inside » sep « inside » sep <br/>
+sep ‘inside’ sep ‘ inside ’ sep “inside” sep “ inside ” sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep <br/>
+sep ! sep : sep ; sep ? sep !? sep, sep</p></div>
+<p class="medskip"><span class="typewriter">$-</span> beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter beforebeforebefore­afterafterafter</p>
+<p><span class="typewriter">$text.nbsp</span> beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter beforebeforebefore afterafterafter</p>
 <h1 id="header2">II   <span class="typewriter">core.psc</span> macros</h1>
 <h2 id="header3" class="medskip">A)   Various</h2>
 <p class="medskip"><span class="typewriter">$\</span> before <br/> after</p>
@@ -163,27 +185,28 @@ color: red;
 <p class="medskip"><span class="typewriter">$fmt.size.p4</span> <span class="sizep4">one
  <span class="sizep4">two
  <span class="sizep4">three</span></span></span></p>
-<p><span class="typewriter">$number</span> <br/> Neutral typography : separator 12
-separator -12.3
-separator 1234567.8901
-separator -1234567.8901
-separator 1234567,8901
-separator +1234567,8901
-<br/>
-English typography: separator 12
-separator –12.3
-separator 1,234,567.890,1
-separator –1,234,567.890,1
-separator 1,234,567,890,1
-separator +1,234,567,890,1
-<br/>
-French typography: separator 12
-separator –12.3
-separator 1 234 567.890 1
-separator –1 234 567.890 1
-separator 1 234 567,890 1
-separator +1 234 567,890 1
-<br/></p>
+<p><span class="typewriter">$number</span> <br/></p>
+<div class="flushleft"><p class="medskip">Typography neutral:
+sep 12
+sep -12.3
+sep 1234567.8901
+sep -1234567.8901
+sep 1234567,8901
+sep +1234567,8901</p>
+<p class="medskip">Typography english:
+sep 12
+sep –12.3
+sep 1,234,567.890,1
+sep –1,234,567.890,1
+sep 1,234,567,890,1
+sep +1,234,567,890,1</p>
+<p class="medskip">Typography french :
+sep 12
+sep –12.3
+sep 1 234 567.890 1
+sep –1 234 567.890 1
+sep 1 234 567,890 1
+sep +1 234 567,890 1</p></div>
 <h2 id="header6">D)   Paragraph formatting</h2>
 <div class="center medskip"><p>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/>$para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center $para.center <br/></p>
 <div class="flushleft"><p>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/>$para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left $para.left <br/></p>

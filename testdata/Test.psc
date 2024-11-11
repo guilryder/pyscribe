@@ -48,23 +48,31 @@ $$special.chars.escape.all
 
 $$whitespace.preserve
 
-$macro.new[repeat.30(body)][
-  $repeat[3][$repeat[10][$body]]
-]
-
 $macro.new[repeat.2lines(body)][
   $repeat[2][$repeat[10][$body] $\]
 ]
 
 $macro.new[test.typography(contents)][
-  Neutral typography: $typo.set[neutral]$contents
-  English typography: $typo.set[english]$contents
-  French typography: $typo.set[french]$contents
+  $macro.new[test.typography.typo(typo)][
+    $typo.set[$typo]Typography $typo:
+    $contents
+    $par $medskip
+  ]
+  $medskip
+  $para.flushleft[
+    $test.typography.typo[neutral]
+    $test.typography.typo[english]
+    $test.typography.typo[french]
+  ]
 ]
 
 $macro.new[para.macro(macro.name,contents)][
   $par$medskip
   $fmt.typewriter[$text.dollar$macro.name]^ $contents
+]
+
+$macro.new[para.macro.linewrap(macro.name)][
+  $para.macro[$macro.name][$repeat[10][beforebeforebefore$macro.call[$macro.name]afterafterafter^ ]]
 ]
 
 $$whitespace.skip
@@ -92,10 +100,17 @@ $header[1][Typography]
 Special characters: % & \ $text.caret _ $text.dollar $text.hash © ® ™
 
 $test.typography[
-  Lorem... ipsum...dolor <<sit>> amet, consectetur `adipiscing' elit, ``sed do'' eiusmod! tempor: incididunt; ut? labore!? et dolore magna aliqua. $par
+  sep... sep...sep $\
+  <<inside>> sep << inside >> sep <<~inside~>> sep $\
+  sep `inside' sep ` inside ' sep ``inside'' sep `` inside '' sep $\
+  sep! sep: sep; sep? sep!? sep, sep $\
+  sep ! sep : sep ; sep ? sep !? sep, sep $\
+  sep~! sep~: sep~; sep~? sep~!? sep,~sep $\
+  sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
 ]
 
-$para.macro[^-][$repeat.30[beforebeforebefore$-afterafterafter^ ]]
+$para.macro.linewrap[^-]
+$para.macro.linewrap[text.nbsp]
 
 $header[1][$fmt.typewriter[core.psc] macros]
 
@@ -111,8 +126,8 @@ $para.macro[code.nopipe][$code.nopipe[foo@example.com]]
 
 $para.macro[page.new][before $par $page.new $par after]
 $para.macro[page.before.avoid][before $par $page.before.avoid $par after]
-$par $repeat.30[Before $par]
-$para.macro[page.same][$page.same[$repeat.30[Inside $par]]]
+$par $repeat[30][Before $par]
+$para.macro[page.same][$page.same[$repeat[30][Inside $par]]]
 
 $para.macro[image][
   $image[Image alt text][
@@ -156,13 +171,12 @@ $para.macro.text.formatting[fmt.size.p4]
 
 $para.macro[number][
   $\ $test.typography[
-    separator $number[12]
-    separator $number[-12.3]
-    separator $number[1234567.8901]
-    separator $number[-1234567.8901]
-    separator $number[1234567,8901]
-    separator $number[+1234567,8901]
-    $\
+    sep $number[12]
+    sep $number[-12.3]
+    sep $number[1234567.8901]
+    sep $number[-1234567.8901]
+    sep $number[1234567,8901]
+    sep $number[+1234567,8901]
   ]
 ]
 

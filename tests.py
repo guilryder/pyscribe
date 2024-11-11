@@ -118,7 +118,9 @@ class TestsManager:
 
   def RegenerateGoldens(self):
     """Regenerates the golden output files under testdata/."""
-    from pyscribe_test import GOLDEN_TEST_DEFINITIONS, TESTDATA_DIR
+    # Local imports to avoid impacting coverage reports.
+    from pyscribe_test import GOLDEN_TEST_DEFINITIONS
+    from testutils import TESTDATA_DIR
     print(f'Switching to: {TESTDATA_DIR}')
     os.chdir(TESTDATA_DIR)
     for cmdline in GOLDEN_TEST_DEFINITIONS:
