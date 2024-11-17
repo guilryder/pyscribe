@@ -28,6 +28,11 @@ VALID_MACRO_NAME_PATTERN = (
     r'(?:[\\_]|-|[a-zA-Z](?:[a-zA-Z0-9_.]*[a-zA-Z0-9_])?)')
 VALID_MACRO_NAME_REGEXP = re.compile(r'\A' + VALID_MACRO_NAME_PATTERN + r'\Z')
 
+NBSP = '\xa0'
+NBSP_THIN = '\u202f'
+SP_FIXED = '\u2004'
+SP_ALL = (NBSP, NBSP_THIN, SP_FIXED)
+
 
 class TokenType(enum.Enum):
   LBRACKET = enum.auto()  # value: ignored

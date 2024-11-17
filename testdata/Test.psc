@@ -117,6 +117,8 @@ $test.typography[
 
 $para.macro.linewrap[^-]
 $para.macro.linewrap[text.nbsp]
+$para.macro.linewrap[text.nbsp.thin]
+$para.macro.linewrap[text.sp.fixed]
 
 $header[1][$fmt.typewriter[core.psc] macros]
 

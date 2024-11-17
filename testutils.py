@@ -12,6 +12,7 @@ import pathlib
 from pathlib import PurePath
 import sys
 from typing import Any, IO, NoReturn, TextIO
+import unicodedata
 import unittest
 
 import execution
@@ -88,7 +89,6 @@ SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT = ' '.join((
 TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     'neutral': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
-
         "«e»",
         "« f »",
         "`g'h' 'g`h`",
@@ -99,7 +99,6 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     )),
     'english': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
-
         "«e»",
         "« f »",
         "‘g’h’ ’g‘h‘",
@@ -110,14 +109,13 @@ TYPO_TO_SPECIAL_CHARS_AS_HTML = {
     )),
     'french': ' '.join((
         SPECIAL_CHARS_AS_HTML_TYPO_INDEPENDENT,
-
         "«\xa0e\xa0»",
         "«\xa0f\xa0»",
         "‘g’h’ ’g‘h‘",
         "“i”j” ”k“l“",
         "“‘m”’",
-        "n\xa0! o\xa0: p\xa0; q\xa0?",
-        "r\xa0!:;?",
+        "n\u202f! o\xa0: p\u202f; q\u202f?",
+        "r\u202f!:;?",
     )),
 }
 SPECIAL_CHARS_AS_LATEX_ESCAPE_ALL = ' '.join((
@@ -141,11 +139,13 @@ OTHER_TEXT_MACROS = ' '.join((
     '$text.hash',
     '$text.caret',
     'A$text.nbsp^B',
-    'C$-D',
+    'C$text.nbsp.thin^D',
+    'E$text.sp.fixed^F',
+    'G$-H',
 ))
-OTHER_TEXT_MACROS_AS_TEXT = "& $ # ^ A\xa0B C\xadD"
-OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # ^ A\xa0B C\xadD"
-OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\-D'
+OTHER_TEXT_MACROS_AS_TEXT = "& $ # ^ A\xa0B C\u202fD E\u2004F G\xadH"
+OTHER_TEXT_MACROS_AS_HTML = "&amp; $ # ^ A\xa0B C\u202fD E\u2004F G\xadH"
+OTHER_TEXT_MACROS_AS_LATEX = r'\& \$ \# \string^ A~B C\,D E\textspfixed F G\-H'
 
 
 class FakeLogger(log.Logger):
@@ -267,7 +267,7 @@ class TestCase(unittest.TestCase):
   def assertTextEqual(self, actual, expected, msg=None):
     """Same as assertEqual but prints arguments without escaping them."""
     if not actual == expected:  # pragma: no cover
-      if '\xa0' in actual or '\xa0' in expected:
+      if any(unicodedata.category(c) == 'Zs' for c in set(actual + expected)):
         actual, expected = repr(actual), repr(expected)
       raise self.failureException(self.__FailureMessage(
           msg, f'Actual:\n{actual}\nExpected:\n{expected}'))

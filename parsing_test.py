@@ -534,8 +534,7 @@ class ParsingTest(testutils.TestCase):
   def testSpecialChars_escapeNone(self):
     self.assertParsing(
         '$$special.chars.escape.none\n' + testutils.SPECIAL_CHARS,
-        '"{}"'.format(
-            testutils.SPECIAL_CHARS_AS_RAW_TEXT.replace('\\', '\\\\')))
+        repr(testutils.SPECIAL_CHARS_AS_RAW_TEXT))
 
   def testNoValidToken(self):
     self.assertParsing(

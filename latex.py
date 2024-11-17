@@ -130,6 +130,8 @@ class Macros:
   TextDollar = AppendTextMacro('text.dollar', r'\$')
   TextHash = AppendTextMacro('text.hash', r'\#')
   TextNbsp = AppendTextMacro('text.nbsp', '~')
+  TextNbspThin = AppendTextMacro('text.nbsp.thin', r'\,')
+  TextSpFixed = AppendTextMacro('text.sp.fixed', r'\textspfixed ')
   TextSoftHyphen = AppendTextMacro('text.softhyphen', r'\-')
   TextDashEn = AppendTextMacro('text.dash.en', '--')
   TextDashEm = AppendTextMacro('text.dash.em', '---')

@@ -64,3 +64,6 @@
   \usepackage[#1]{babel}
   \ifdefined\frenchsetup\frenchsetup{og=«,fg=»}\fi
 }
+
+% Special characters
+\newcommand\textspfixed{\hskip 0.333em \relax}

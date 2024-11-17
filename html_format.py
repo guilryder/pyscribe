@@ -20,10 +20,8 @@ from execution import ENCODING, ExecutionContext, Executor
 from log import NodeError
 import macros
 from macros import AppendTextMacro, macro
-from parsing import CallNode
+from parsing import CallNode, NBSP, NBSP_THIN, SP_ALL
 
-
-NBSP = '\xa0'
 
 # Groups:
 # 0: sign (possibly empty)
@@ -160,7 +158,7 @@ class HtmlBranch(Branch['HtmlBranch']):
   __line_tail: str
 
   # The separator for AppendText to insert before the next
-  # chunk of non-whitespace text. Expected to be ' ' or NBSP.
+  # chunk of non-whitespace text. Expected to be ' ' or in SP_ALL.
   # If empty, whitespaces are appended as is.
   # If not empty, whitespaces are skipped.
   __text_sep: str
@@ -255,7 +253,7 @@ class HtmlBranch(Branch['HtmlBranch']):
         # Should never happen: at most one paragraph break per chunk of text.
         self.AppendLineText(para)
 
-  __NBSP_TRIM_REGEXP = re.compile(r' *' + NBSP + r' *')
+  __NBSP_TRIM_REGEXP = re.compile(r' *(' + '|'.join(SP_ALL) + r') *')
   __MULTIPLE_SPACES = re.compile(r' {2,}')
 
   def AppendLineText(self, text: str) -> None:
@@ -266,7 +264,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     Args:
       text: The non-empty string to append. Must not contain any '\n'.
     """
-    text = self.__NBSP_TRIM_REGEXP.sub(NBSP, text)
+    text = self.__NBSP_TRIM_REGEXP.sub(r'\1', text)
     text = self.__MULTIPLE_SPACES.sub(' ', text)
     assert text
 
@@ -277,14 +275,14 @@ class HtmlBranch(Branch['HtmlBranch']):
         return
       if text[0] == ' ':
         # The text starts with a space:
-        # insert the separator if it is not a space (i.e. NBSP),
+        # insert the separator if it is not a space (i.e. one of SP_ALL),
         # then skip the space of the text.
         if sep != ' ':
           text = sep + text[1:]
-      elif text[0] != NBSP:
+      elif text[0] not in SP_ALL:
         # The text does not start with whitespace: insert the separator.
         text = sep + text
-      # Separator dropped if the text starts with NBSP.
+      # Separator dropped if the text starts with one of SP_ALL.
 
     # At this point the separator has been consumed.
     # Compute the new separator.
@@ -298,7 +296,7 @@ class HtmlBranch(Branch['HtmlBranch']):
       self.__text_sep = ''
 
     # Drop space prefixes after whitespace.
-    if text.startswith(' ') and self.__line_tail.endswith(NBSP):
+    if text.startswith(' ') and self.__line_tail.endswith(SP_ALL):
       text = text[1:]
 
     # Append the remaining text.
@@ -310,23 +308,23 @@ class HtmlBranch(Branch['HtmlBranch']):
     """Appends a line break to the current paragraph.
 
     Drops pending trailing spaces in the current line.
-    Cancels the effect of RequireNonBreakingSpace() if it has just been called.
+    Cancels the effect of RequireSpecialSpace() if it has just been called.
 
     This method is a noop after __InlineFlush().
     """
     self.__line_tail = self.__text_sep = ''
 
-  def RequireNonBreakingSpace(self) -> None:
-    """Requests a non-breaking space (NBSP) to be present.
+  def RequireSpecialSpace(self, space) -> None:
+    """Requests a special space (one of SP_ALL) to be present.
 
-    Inserts a new NBSP only if:
+    Inserts the special space only if:
     * not at the beginning of a line
     * not at the end of a line
-    * no NBSP is already present
+    * no special space is already present
     """
     tail = self.__line_tail
-    if tail and tail[-1] != NBSP:
-      self.__text_sep = NBSP
+    if tail and tail[-1] not in SP_ALL:
+      self.__text_sep = space
 
   def GetTailChar(self) -> str | None:
     """Returns the tail character of the current line."""
@@ -395,7 +393,7 @@ class HtmlBranch(Branch['HtmlBranch']):
     if level.is_inline:
       # Flush the separator.
       sep = self.__text_sep
-      if sep and (sep != ' ' or not self.__line_tail.endswith(NBSP)):
+      if sep and (sep != ' ' or not self.__line_tail.endswith(SP_ALL)):
         self.__text_accu.append(sep)
         self.__line_tail = sep
       self.__FlushText()
@@ -745,7 +743,7 @@ class Typography(ABC):
     """
 
   @staticmethod
-  def FormatNumberCustom(number: str, thousands_sep: str) -> str:
+  def FormatNumberCustom(number: str, *, thousands_sep: str) -> str:
     number_match = _NUMBER_REGEXP.match(number)
     if number_match is None:
       return number
@@ -789,7 +787,7 @@ class EnglishTypography(Typography):
   @staticmethod
   @override
   def FormatNumber(number: str) -> str:
-    return Typography.FormatNumberCustom(number, ',')
+    return Typography.FormatNumberCustom(number, thousands_sep=',')
 
   TextBacktick = AppendTextMacro('text.backtick', "‘")
   TextApostrophe = AppendTextMacro('text.apostrophe', "’")
@@ -803,7 +801,7 @@ class FrenchTypography(Typography):
   @staticmethod
   @override
   def FormatNumber(number: str) -> str:
-    return Typography.FormatNumberCustom(number, NBSP)
+    return Typography.FormatNumberCustom(number, thousands_sep=NBSP_THIN)
 
   TextBacktick = AppendTextMacro('text.backtick', "‘")
   TextApostrophe = AppendTextMacro('text.apostrophe', "’")
@@ -813,13 +811,13 @@ class FrenchTypography(Typography):
   def TextGuillemetOpen(executor: Executor, _: CallNode) -> None:
     branch: HtmlBranch = executor.current_branch  # type: ignore[assignment]
     branch.AppendLineText('«')
-    branch.RequireNonBreakingSpace()
+    branch.RequireSpecialSpace(NBSP)
 
   @staticmethod
   @macro(public_name='text.guillemet.close')
   def TextGuillemetClose(executor: Executor, _: CallNode) -> None:
     branch: HtmlBranch = executor.current_branch  # type: ignore[assignment]
-    branch.RequireNonBreakingSpace()
+    branch.RequireSpecialSpace(NBSP)
     branch.AppendLineText('»')
 
   @staticmethod
@@ -830,7 +828,8 @@ class FrenchTypography(Typography):
       return
     branch: HtmlBranch = executor.current_branch  # type: ignore[assignment]
     if branch.GetTailChar() not in ('…', '.'):
-      branch.RequireNonBreakingSpace()
+      branch.RequireSpecialSpace(
+          NBSP if contents.startswith(':') else NBSP_THIN)
     branch.AppendLineText(contents)
 
 

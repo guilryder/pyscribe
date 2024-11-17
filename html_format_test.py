@@ -437,8 +437,8 @@ class NeutralTypographyTest(HtmlExecutionTestCase):
                          '<p>what !?;: wtf:;?!</p>')
 
   def testPunctuationDouble_afterNbsp(self):
-    self.assertExecution('dialog~!',
-                         '<p>dialog\xa0!</p>')
+    self.assertExecution('one~! two~:',
+                         '<p>one\xa0! two\xa0:</p>')
 
   def testGuillemets_keepsSpaces(self):
     self.assertExecution('one « two » three',
@@ -581,12 +581,12 @@ class EnglishTypographyTest(HtmlExecutionTestCase):
                          '<p>what !?;: wtf:;?!</p>')
 
   def testPunctuationDouble_afterNbsp(self):
-    self.assertExecution('$macro.new[test][dialog~]$test?',
-                         '<p>dialog\xa0?</p>')
+    self.assertExecution('$macro.new[test][one~]$test? two~:',
+                         '<p>one\xa0? two\xa0:</p>')
 
   def testPunctuationDouble_afterNbspAndSpace(self):
-    self.assertExecution('$macro.new[test][dialog~]$test ?',
-                         '<p>dialog\xa0?</p>')
+    self.assertExecution('$macro.new[test][one~]$test ? two~ :',
+                         '<p>one\xa0? two\xa0:</p>')
 
   def testPunctuationDouble_cornerCases(self):
     self.assertExecution(
@@ -665,26 +665,26 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
 
   def testFormatNumber_long(self):
     self.assertEqual(self.typo.FormatNumber('12345678'),
-                     '12\xa0345\xa0678')
+                     '12\u202f345\u202f678')
     self.assertEqual(self.typo.FormatNumber('123456'),
-                     '123\xa0456')
+                     '123\u202f456')
 
   def testFormatNumber_negative(self):
     self.assertEqual(self.typo.FormatNumber('-1234,5678'),
-                     '\u20131\xa0234,567\xa08')
+                     '\u20131\u202f234,567\u202f8')
 
   def testFormatNumber_positive(self):
     self.assertEqual(self.typo.FormatNumber('+1234.5678'),
-                     '+1\xa0234.567\xa08')
+                     '+1\u202f234.567\u202f8')
 
   def testFormatNumber_decimalShort(self):
     self.assertEqual(self.typo.FormatNumber('3.5'), '3.5')
 
   def testFormatNumber_decimalLong(self):
     self.assertEqual(self.typo.FormatNumber('3.567890'),
-                     '3.567\xa0890')
+                     '3.567\u202f890')
     self.assertEqual(self.typo.FormatNumber('3,5678901'),
-                     '3,567\xa0890\xa01')
+                     '3,567\u202f890\u202f1')
 
   def testFormatNumber_decimalOnly(self):
     self.assertEqual(self.typo.FormatNumber('.5'), '.5')
@@ -693,7 +693,7 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
 
   def testTypoNumber(self):
     self.assertExecution('before $typo.number[-12345678] after',
-                         '<p>before \u201312\xa0345\xa0678 after</p>')
+                         '<p>before \u201312\u202f345\u202f678 after</p>')
 
   def testAllSpecialChars(self):
     self.assertExecution(
@@ -703,12 +703,12 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
   def testPunctuationDouble_convertsSpaces(self):
     self.assertExecution(
         'one ! two : three ; four ? five , six .',
-        '<p>one\xa0! two\xa0: three\xa0; four\xa0? five , six .</p>')
+        '<p>one\u202f! two\xa0: three\u202f; four\u202f? five , six .</p>')
 
   def testPunctuationDouble_insertsSpaces(self):
     self.assertExecution(
         'one! two: three; four? five, six.',
-        '<p>one\xa0! two\xa0: three\xa0; four\xa0? five, six.</p>')
+        '<p>one\u202f! two\xa0: three\u202f; four\u202f? five, six.</p>')
 
   def testPunctuationDouble_insertsSpacesAfterInlineTag(self):
     self.assertExecution(
@@ -719,10 +719,10 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
             '$tag.open[span][inline]four$tag.close[span]? ',
         ), (
             '<p>'
-              '<span>one</span>\xa0! '
+              '<span>one</span>\u202f! '
               '<span>two</span>\xa0: '
-              '<span>three</span>\xa0; '
-              '<span>four</span>\xa0?'
+              '<span>three</span>\u202f; '
+              '<span>four</span>\u202f?'
             '</p>'
         ))
 
@@ -744,7 +744,7 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
   def testPunctuationDouble_convertsSpaceAfterEllipsis(self):
     self.assertExecution(
         'Err... ? Ah... ! Yes..... : here',
-        '<p>Err…\xa0? Ah…\xa0! Yes.....\xa0: here</p>')
+        '<p>Err…\u202f? Ah…\u202f! Yes.....\xa0: here</p>')
 
   def testPunctuationDouble_insertsNoSpaceAfterEllipsis(self):
     self.assertExecution(
@@ -753,15 +753,15 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
 
   def testPunctuationDouble_multipleInSequence(self):
     self.assertExecution('what !?;: wtf:;?!',
-                         '<p>what\xa0!?;: wtf\xa0:;?!</p>')
+                         '<p>what\u202f!?;: wtf\xa0:;?!</p>')
 
   def testPunctuationDouble_afterNbsp(self):
-    self.assertExecution('$macro.new[test][dialog~]$test?',
-                         '<p>dialog\xa0?</p>')
+    self.assertExecution('$macro.new[test][one~]$test? two~:',
+                         '<p>one\xa0? two\xa0:</p>')
 
   def testPunctuationDouble_afterNbspAndSpace(self):
-    self.assertExecution('$macro.new[test][dialog~]$test ?',
-                         '<p>dialog\xa0?</p>')
+    self.assertExecution('$macro.new[test][one~]$test ? two~ :',
+                         '<p>one\xa0? two\xa0:</p>')
 
   def testPunctuationDouble_cornerCases(self):
     self.assertExecution(
@@ -769,9 +769,11 @@ class FrenchTypographyTest(HtmlExecutionTestCase):
             'A', '$text.punctuation.double[]',
             'B', '$text.punctuation.double[ ]',
             'C', '$text.punctuation.double[^ ]',
-            'D',
+            'D', '$text.punctuation.double[:?]',
+            'E', '$text.punctuation.double[?:]',
+            'F',
         ),
-        '<p>ABC\xa0D</p>')
+        '<p>ABC\u202fD\xa0:?E\u202f?:F</p>')
 
   def testGuillemets_convertsSpaces(self):
     self.assertExecution('one « two » three',
@@ -856,7 +858,7 @@ class SimpleMacrosTest(HtmlExecutionTestCase):
             '$typo.set[french]',
             'c?',
         ),
-        '<p>a\xa0?b?c\xa0?</p>')
+        '<p>a\u202f?b?c\u202f?</p>')
 
   def testTypoName_default(self):
     self.assertExecution('$typo.name', '<p>neutral</p>')
@@ -882,8 +884,8 @@ class SimpleMacrosTest(HtmlExecutionTestCase):
             '$branch.write[one][$branch.append[two]]',
             '$branch.write[two][two $typo.name?]',
         ), (
-            '<p>root french\xa0?</p>',
-            '<p>one french\xa0?</p>',
+            '<p>root french\u202f?</p>',
+            '<p>one french\u202f?</p>',
             '<p>two neutral?</p>',
         ))
 
