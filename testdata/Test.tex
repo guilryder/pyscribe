@@ -3,7 +3,7 @@
 
 \titleset{Test Title}
 \authorset{Test Author}
-\languageset{french}
+\languageset{english,french}
 
 \begin{document}
 \begin{center}
@@ -24,7 +24,7 @@ Special characters: \% \& \textbackslash{} \string^ \_ \$ \# © ® ™
 
 \medskip
 \par{\raggedright
-Typography neutral:
+\selectlanguage{english}Typography neutral:
 sep\dots{} sep\dots{}sep \\
 «inside» sep « inside » sep «~inside~» sep \\
 sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
@@ -33,7 +33,7 @@ sep ! sep : sep ; sep ? sep !? sep, sep \\
 sep~! sep~: sep~; sep~? sep~!? sep,~sep \\
 sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
 \par \medskip
-Typography english:
+\selectlanguage{english}Typography english:
 sep\dots{} sep\dots{}sep \\
 «inside» sep « inside » sep «~inside~» sep \\
 sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
@@ -42,7 +42,7 @@ sep ! sep : sep ; sep ? sep !? sep, sep \\
 sep~! sep~: sep~; sep~? sep~!? sep,~sep \\
 sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
 \par \medskip
-Typography french:
+\selectlanguage{french}Typography french:
 sep\dots{} sep\dots{}sep \\
 «inside» sep « inside » sep «~inside~» sep \\
 sep `inside' sep ` inside ' sep “inside” sep “ inside ” sep \\
@@ -172,29 +172,29 @@ Inside \par Inside \par Inside \par Inside \par Inside \par Inside \par Inside \
 \texttt{\$number} \\ 
 \medskip
 \par{\raggedright
-Typography neutral:
-sep \nombre{12}
-sep \nombre{-12.3}
-sep \nombre{1234567.8901}
-sep \nombre{-1234567.8901}
-sep \nombre{1234567,8901}
-sep \nombre{+1234567,8901}
+\selectlanguage{english}Typography neutral:
+sep \numprint{12}
+sep \numprint{-12.3}
+sep \numprint{1234567.8901}
+sep \numprint{-1234567.8901}
+sep \numprint{1234567,8901}
+sep \numprint{+1234567,8901}
 \par \medskip
-Typography english:
-sep \nombre{12}
-sep \nombre{-12.3}
-sep \nombre{1234567.8901}
-sep \nombre{-1234567.8901}
-sep \nombre{1234567,8901}
-sep \nombre{+1234567,8901}
+\selectlanguage{english}Typography english:
+sep \numprint{12}
+sep \numprint{-12.3}
+sep \numprint{1234567.8901}
+sep \numprint{-1234567.8901}
+sep \numprint{1234567,8901}
+sep \numprint{+1234567,8901}
 \par \medskip
-Typography french:
-sep \nombre{12}
-sep \nombre{-12.3}
-sep \nombre{1234567.8901}
-sep \nombre{-1234567.8901}
-sep \nombre{1234567,8901}
-sep \nombre{+1234567,8901}
+\selectlanguage{french}Typography french:
+sep \numprint{12}
+sep \numprint{-12.3}
+sep \numprint{1234567.8901}
+sep \numprint{-1234567.8901}
+sep \numprint{1234567,8901}
+sep \numprint{+1234567,8901}
 \par \medskip\par}
 
 \section{Paragraph formatting}

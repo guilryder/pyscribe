@@ -1,4 +1,4 @@
-\NeedsTeXFormat{LaTeX2e}[1999/01/01]
+\NeedsTeXFormat{LaTeX2e}[2018/12/01]
 \ProvidesClass{pyscribe}[2011/07/18]
 
 % Whether to format as an e-book: small page size, no margins.
@@ -35,13 +35,12 @@
 \fi
 
 % Generic packages
-\RequirePackage{fixltx2e}          % \textsubscript{}
 \RequirePackage{xspace}            % Automatic spacing
 \RequirePackage[normalem]{ulem}    % Underlining, striking out
 \RequirePackage{ifpdf}             % PDF mode detection
 \RequirePackage[utf8]{inputenc}    % Accents, special characters
 \RequirePackage[T1]{fontenc}       % French guillemets
-\RequirePackage{numprint}          % Number formatting
+\RequirePackage[autolanguage]{numprint}  % Number formatting
 \RequirePackage{textcomp}          % TS1 encoding
 \RequirePackage{graphicx}          % Images
 
@@ -63,5 +62,5 @@
 }
 \newcommand\languageset[1]{
   \usepackage[#1]{babel}
-  \ifdefined\frenchbsetup\frenchbsetup{og=,fg=}\fi
+  \ifdefined\frenchsetup\frenchsetup{og=«,fg=»}\fi
 }

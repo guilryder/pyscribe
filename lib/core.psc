@@ -68,12 +68,9 @@ $macro.new[metadata.all.set][
   $metadata.author.set[$book.author]
   $metadata.language.set[$book.language]
   $format.select[][$preamble.append[$newline]]
-  $typo.set[$book.typo]
 ]
-# Default typography: derived from the language.
-$macro.new[book.typo][$macro.call[language.name.$book.language]]
 
-# Map of language codes to names.
+# Map of language code to name.
 $macro.new[language.name.fr][french]
 $macro.new[language.name.en][english]
 
@@ -241,6 +238,7 @@ $macro.new[root.open.html][
   $macro.new[metadata.language.set(language.code)][
     $head.meta.name[dc.language][$language.code]
     $head.meta.httpequiv[content-language][$language.code]
+    $typo.set[$macro.call[language.name.$language.code]]
   ]
 
   # Headers
@@ -492,6 +490,7 @@ $macro.new[root.close.html][
 $macro.new[output.ext.latex][^.tex]
 $macro.new[root.branch.type.latex][latex]
 $macro.new[latex.class.options][]
+$macro.new[latex.languages.extra][]  # comma-separated with trailing comma
 
 $macro.new[root.open.latex][
   $branch.create.sub[preamble]
@@ -510,9 +509,10 @@ $macro.new[root.open.latex][
     $preamble.append[\authorset{$eval.text[$author]}$newline]
   ]
   $macro.new[metadata.language.set(language.code)][
-    $preamble.append[\languageset{$macro.call[language.name.$language.code]}$newline]
+    $preamble.append[
+      \languageset{$latex.languages.extra$macro.call[language.name.$language.code]}$newline
+    ]
   ]
-  $macro.new[typo.set(typo.name)][]
 
   # Latex helpers
   $macro.new[latex.cmd(name)][$name$latex.sep]
@@ -575,7 +575,7 @@ $macro.new[root.open.latex][
   $macro.new[fmt.tex(cmd.name,contents)][
     {$latex.cmd[$cmd.name]$contents}
   ]
-  $latex.macro.new[number][\nombre]
+  $latex.macro.new[number][\numprint]
 
   # Paragraph formatting
   $macro.new[para.tex(cmd.name,contents)][

@@ -36,6 +36,11 @@ $macro.wrap[root.open.latex][][
   # Headers
   $headers.config.chaptersandsections.latex
 
+  # Typographies
+  $macro.new[typo.set(typo)][
+    \selectlanguage{$if.eq[$typo][neutral][english][$typo]}
+  ]
+
   # Various
   $preamble.append.section[
     \newcommand\scripttext^[1^]{{\fontfamily{pzc}\selectfont\large^#1}}
@@ -83,6 +88,7 @@ $macro.new[book.author][Test Author]
 $macro.new[book.language][fr]
 
 $macro.new[latex.class.options][demo]
+$macro.new[latex.languages.extra][english,]
 
 $root.create[
 $$whitespace.preserve
