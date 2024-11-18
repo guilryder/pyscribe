@@ -1,3 +1,11 @@
+* {
+  text-align: left;
+}
+
+p, li {
+  text-align: justify;
+}
+
 p {
   margin: 0;
   text-indent: 1.2em;
@@ -11,7 +19,7 @@ ul, ol {
 .medskip { margin-bottom: 2ex; }
 .bigskip { margin-bottom: 3ex; }
 
-.noindent,
+.noindent, .noindent p,
 .center p,
 .flushleft p,
 .flushright p,
@@ -27,9 +35,9 @@ ul, ol {
 .nospace-before { margin-top: 0; }
 .nospace-after { margin-bottom: 0; }
 
-.center { text-align: center; }
-.flushleft { text-align: left; }
-.flushright { text-align: right; }
+.center, .center p { text-align: center; }
+.flushleft, .flushleft p { text-align: left; }
+.flushright, .flushright p { text-align: right; }
 
 .bold { font-weight: bold; }
 .italic { font-style: italic; }
@@ -52,4 +60,8 @@ ul, ol {
   font-weight: bold;
   margin: 3ex 0;
   page-break-before: always;
+}
+
+.toc p {
+  text-align: left;
 }
