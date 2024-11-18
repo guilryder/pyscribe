@@ -23,6 +23,7 @@ _DEFAULT_CALIBRE_EPUB_OPTIONS = (
   '--disable-font-rescaling',
   '--disable-remove-fake-margins',
   '--dont-split-on-page-breaks',
+  '--max-toc-links=1000',
   '--no-default-epub-cover',
   '--page-breaks-before=/',
   r'--toc-filter="\[[0-9]+\]"',
