@@ -142,11 +142,18 @@ $macro.new[page.toc.withtitle(title)][
   $format.select[
     $page.toc.initialize
     $footnotes.flush
-    $para.block.css[toc-title][$title]
-    $para.block.css[toc][$branch.append[toc]]
+    $tag[nav][block][
+      $epub.type.set[toc][current]
+      $para.block.css[toc-title][$title]
+      $para.block.css[toc][$branch.append[toc]]
+    ]
   ][
+    $document.preamble.append[
+      \addtocontents{toc}{\protect\thispagestyle{empty}}$newline
+    ]
     \renewcommand\contentsname{$title}$newline
-    \addtocontents{toc}{\protect\thispagestyle{empty}}$newline
+    \clearpage
+    \pagestyle{empty}
     \tableofcontents
   ]
 ]
@@ -293,7 +300,7 @@ $macro.new[root.open.html][
     $macro.call[header.level$level^.counter.fmt]~~~$title
   ]
   $macro.new[header.title.numbered.toc(level,title.toc)][
-    $header.title.numbered[$level][$title.toc]
+    $macro.call[header.level$level^.counter.fmt]. $title.toc
   ]
   $macro.new[header.nonumber(level,title)][
     $header.nonumber.withtoc[$level][$title][$title]
@@ -501,6 +508,11 @@ $macro.new[root.open.latex][
     $preamble.append[$contents$newline$newline]
   ]
 
+  $branch.create.sub[document.preamble]
+  $macro.new[document.preamble.append(contents)][
+    $branch.write[document.preamble][$contents]
+  ]
+
   # Metadata
   $macro.new[metadata.title.set(title)][
     $preamble.append[\titleset{$eval.text[$title]}$newline]
@@ -601,6 +613,9 @@ $macro.new[root.open.latex][
     \href{$url}{$contents}
   ]
 
+  # Epub
+  $macro.new[epub.type.set(type,element.target)][]
+
   # Footnotes
   $latex.macro.new[footnotes.add][\footnote]
 
@@ -610,7 +625,7 @@ $macro.new[root.open.latex][
   $macro.new[line.break][$latex.cmd[\newline]]
   $macro.new[par][$latex.cmd[\par]]
 
-  $macro.new[page.new][$latex.cmd[\newpage]]
+  $macro.new[page.new][$latex.cmd[\clearpage]]
   $macro.new[page.before.avoid][\nopagebreak^[4^]]
   $latex.env.new[page.same][samepage]
 
@@ -628,6 +643,7 @@ $macro.new[root.open.latex][
   \documentclass$if.eq[$latex.class.options][][][^[$latex.class.options^]]{pyscribe}$newline
   $branch.append[preamble]
   \begin{document}$newline
+  $branch.append[document.preamble]
 ]
 
 $macro.new[root.close.latex][

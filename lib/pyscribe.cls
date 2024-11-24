@@ -18,7 +18,7 @@
 \RequirePackage[papersize={90mm,120mm},margin=2mm]{geometry}
 \RequirePackage{fourier}
 \sloppy
-\pagestyle{empty}
+\newcommand\defaultpagestyle{empty}
 
 \else
 \ifsimple
@@ -27,12 +27,15 @@
 \LoadClass[a4paper,oneside,11pt]{book}
 \RequirePackage{a4wide}
 \fi
+\newcommand\defaultpagestyle{plain}
 
 \RequirePackage{lmodern}
 
 \RequirePackage{slantsc}
 \renewcommand\scitdefault{\scsldefault}
 \fi
+
+\pagestyle{\defaultpagestyle}
 
 % Generic packages
 \RequirePackage{xspace}            % Automatic spacing

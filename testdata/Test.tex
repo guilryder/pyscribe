@@ -6,14 +6,14 @@
 \languageset{english,french}
 
 \begin{document}
+\addtocontents{toc}{\protect\thispagestyle{empty}}
 \begin{center}
 {\Large Test Title\par}
 \end{center}
-\newpage
+\clearpage
 
 \renewcommand\contentsname{Sommaire}
-\addtocontents{toc}{\protect\thispagestyle{empty}}
-\tableofcontents
+\clearpage\pagestyle{empty}\tableofcontents
 
 
 
@@ -80,7 +80,7 @@ sep ~ ! sep ~ : sep ~ ; sep ~ ? sep ~ !? sep, ~ sep
 \texttt{\$code.nopipe} \verb|foo@example.com|
 
 \par\medskip
-\texttt{\$page.new} before \par \newpage \par after
+\texttt{\$page.new} before \par \clearpage \par after
 \par\medskip
 \texttt{\$page.before.avoid} before \par \nopagebreak[4] \par after
 \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par Before \par
