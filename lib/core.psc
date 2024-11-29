@@ -143,7 +143,7 @@ $macro.new[page.toc.withtitle(title)][
     $page.toc.initialize
     $footnotes.flush
     $tag[nav][block][
-      $epub.type.set[toc][current]
+      $epub.type.set[toc][nonauto]
       $para.block.css[toc-title][$title]
       $para.block.css[toc][$branch.append[toc]]
     ]
